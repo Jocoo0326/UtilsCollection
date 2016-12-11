@@ -88,6 +88,7 @@ public class CircleImage extends ImageView {
             mCircleRect = new Rect((width - height) / 2, 0, (height + width) / 2, height);
         }
 
+        // dx and dy is relative to ImageView's origin
         if (widthBitmap < heightBitmap) {
             scale = mSideLength / widthBitmap;
             dy = mCircleRect.top + (mSideLength - heightBitmap * scale) / 2;
