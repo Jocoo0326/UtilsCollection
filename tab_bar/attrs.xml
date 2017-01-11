@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TAB_ITEM_VIEW_ATTRS">
+        <attr name="tab_icon_on" format="reference" />
+        <attr name="tab_icon_off" format="reference" />
+        <attr name="tab_text" format="string" />
+        <attr name="tab_icon_height" format="dimension" />
+        <attr name="tab_text_size" format="dimension" />
+        <attr name="tab_icon_text_margin" format="dimension" />
+        <attr name="tab_text_color_on" format="color" />
+        <attr name="tab_text_color_off" format="color" />
+    </declare-styleable>
+</resources>
