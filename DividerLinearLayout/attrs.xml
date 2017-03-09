@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DIVIDER_LINEARLAYOUT">
+        <attr name="content_divider_padding_left" format="dimension" />
+        <attr name="content_divider_padding_right" format="dimension" />
+        <attr name="content_divider_color" format="color" />
+        <attr name="top_end_divider_color" format="color" />
+    </declare-styleable>
+</resources>

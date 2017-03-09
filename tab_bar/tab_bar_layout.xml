@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:jocoo="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DEDEDE" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="47dp">
+
+        <com.jocoo.daggerdemo.TabItemView
+            android:id="@+id/tab_home"
+            style="@style/tab_item_view_style"
+            jocoo:tab_icon_off="@mipmap/bp3"
+            jocoo:tab_icon_on="@mipmap/bp4"
+            jocoo:tab_text="@string/tab_home" />
+
+        <com.jocoo.daggerdemo.TabItemView
+            android:id="@+id/tab_catagory"
+            style="@style/tab_item_view_style"
+            jocoo:tab_icon_off="@mipmap/bp1"
+            jocoo:tab_icon_on="@mipmap/bp2"
+            jocoo:tab_text="@string/tab_catagory" />
+
+        <com.jocoo.daggerdemo.TabItemView
+            android:id="@+id/tab_cart"
+            style="@style/tab_item_view_style"
+            jocoo:tab_icon_off="@mipmap/boz"
+            jocoo:tab_icon_on="@mipmap/bp0"
+            jocoo:tab_text="@string/tab_cart" />
+    </LinearLayout>
+</LinearLayout>
