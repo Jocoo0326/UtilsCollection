@@ -1,4 +1,4 @@
-package com.jocoo.daggerdemo.widget;
+package com.gdmm.lib.widget;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -10,7 +10,8 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.LinearLayout;
 
-import com.jocoo.daggerdemo.R;
+import com.gdmm.lib.R;
+
 
 public class DividerLinearLayout extends LinearLayout {
     private int mContentPaddingLeft;
@@ -19,6 +20,7 @@ public class DividerLinearLayout extends LinearLayout {
     private int mContentDividerColor = Color.parseColor("#E5E5E5");
     private Drawable mDivider;
     private int mDividerHeight;
+    private int mShowDividers;
 
     public DividerLinearLayout(Context context) {
         this(context, null);
@@ -44,6 +46,7 @@ public class DividerLinearLayout extends LinearLayout {
     }
 
     private void init() {
+        mShowDividers = getShowDividers();
     }
 
     @Override
@@ -67,16 +70,21 @@ public class DividerLinearLayout extends LinearLayout {
 
     private void drawTopEndDivider(Canvas canvas) {
         mDivider.setColorFilter(mTopEndDividerColor, PorterDuff.Mode.SRC_OVER);
-        mDivider.setBounds(getPaddingLeft(), getPaddingTop(),
-                getWidth() - getPaddingRight(), getPaddingTop() + mDividerHeight);
-        mDivider.draw(canvas);
+        if ((mShowDividers & SHOW_DIVIDER_BEGINNING) != 0) {
+            mDivider.setBounds(getPaddingLeft(), getPaddingTop(),
+                    getWidth() - getPaddingRight(), getPaddingTop() + mDividerHeight);
+            mDivider.draw(canvas);
+        }
 
-        mDivider.setBounds(getPaddingLeft(), getHeight() - getPaddingBottom() - mDividerHeight,
-                getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
-        mDivider.draw(canvas);
+        if ((mShowDividers & SHOW_DIVIDER_END) != 0) {
+            mDivider.setBounds(getPaddingLeft(), getHeight() - getPaddingBottom() - mDividerHeight,
+                    getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
+            mDivider.draw(canvas);
+        }
     }
 
     private void drawContentDivider(Canvas canvas) {
+        if ((mShowDividers & SHOW_DIVIDER_MIDDLE) != 0)
         mDivider.setColorFilter(mContentDividerColor, PorterDuff.Mode.SRC);
         final int count = getChildCount();
         for (int i = 1; i < count; i++) {
