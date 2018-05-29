@@ -71,3 +71,14 @@
      - 有时候代理目标不便实现额外的接口，限定调用者实现特定接口有些侵入性，cglib动态代理就没有这个限制
      - 只操作我们关心的类，而不必为其他相关类增加工作量
      - 高性能
+** Okio总结
+**** 弥补了原生java.io的不足
+     - 原生io大量使用装饰者模式，实现字符流的读取通常要包装很多层，涉及到很多类
+     - 原生io的缓冲机制效率不高
+**** io操作少不了缓冲机制，Okio提供了非常高效的缓冲机制Buffer，主要体现在Buffer到Buffer的读写尽可能的减少数据拷贝，而使用Segment的转移
+**** 接口简单明了，一个类中提供了所有的操作方法，字符、字节读写通过方法区分(readByte, readString, etc)，读写操作粒度丰富，功能强大，调用简单，典型的例子：
+     - try (BufferdSource bufferedSource = Okio.buffer(Okio.source(socket))) {
+     -   String content = bufferedsource.readUTF8();
+     - } catch (IOException e) {
+     -   e.printStackTrace();
+     - }
