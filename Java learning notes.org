@@ -82,3 +82,7 @@
      - } catch (IOException e) {
      -   e.printStackTrace();
      - }
+** int和Integer有什么区别
+**** int是原始类型，Integer是对象类型，Integer是int的包装类，它有一个int类型的字段存储数据，并且提供了基本操作，如数学操作、int和String之间转换等
+**** Integer可以根据上下文自动装箱和拆箱，实践中大部分数据操作都集中在有限的、较小的数值范围，所以Integer实现了值缓存，范围-128~127
+**** 自动装箱算是一种语法糖，javac替我们自动把装箱装换成Integer.valueOf()(能够利用值缓存)，把拆箱转换成Integer.intValue()
