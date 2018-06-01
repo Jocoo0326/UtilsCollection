@@ -93,7 +93,7 @@
 **** value是private final int，保证基本信息的安全和并发编程中线程安全
 **** 有趣的方法：
      - bitCount(int i)计算i二进制表示数中各位上1的个数，引用Hackers Delight中5-2算法:
-     - i = i - ((i >>> 1) & 0x55555555); // 考虑将两位二进制数1的和表示出来，0x11 -> 0x10，i = a.2 + b -> a + b = i - a = i - ((i >>> 1) & 0x01)
+     - i = i - ((i >>> 1) & 0x55555555); // 考虑将两位二进制数1的和表示出来，0x11 -> 0x10，i = 2a + b -> a + b = i - a = i - ((i >>> 1) & 0x01)
      - i = (i & 0x33333333) + ((i >>> 2) & 0x33333333); // 其他高位以此类推
      - i = (i + (i >>> 4)) & 0x0F0F0F0F;
      - i = i + (i >>> 8); // 最大值是32，只需考虑低6位
@@ -105,3 +105,19 @@
 **** LinkedList是双向链表，不需要扩容，非线程安全
 **** Vector和ArrayList作为动态数组，内部元素以数组形式顺序存储，所以非常适合随机访问的场合，除了尾部插入和删除元素，往往性能比较差，往中间插入一个元素，需要移动后续所有元素
 **** LinkedList进行节点插入、删除却要高效的多，但是随机访问性能要比动态数组慢
+** HashTable、HashMap、TreeMap有何区别
+**** HashTable是早期Java提供的哈希表实现，本身同步，不支持null键和值，initialCapacity=11，loadFactor=0.75，rehash之后newCapacity=(oldCapacity << 1) + 1，HashMap扩容后为原来2倍
+**** HashMap是应用更为广泛的哈希表实现，行为大致和HashTable一致，主要区别在于HashMap非同步，支持null键和值，通常情况下，HashMap进行put和get可以达到常数时间的性能，所以它是绝大部分利用键值对存储场景的首选
+**** HashMap的initialCapacity=16，loadFactor=0.75
+**** TreeMap则是基于红黑树的一种提供顺序访问的Map，和HashMap不同，它的get、put、remove之类的操作都是O(logn)的时间复杂度，具体顺序可以由指定的Comparator来决定，或者根据键的自然顺序来判断
+**** HashMap并发环境可能出现无限循环(桶内的链表变成了环形链表导致)
+**** HashMap的性能表现非常依赖于哈希码的有效性，所以hashCode和equals的一些基本约定：
+     - equals相等，hashCode一定要相等
+     - 重写了hashCode也要重写equals
+     - hashCode需要保持一致性，状态改变返回的哈希值仍然要一致
+     - equals的对称、反射、传递等特性
+**** HashMap的hash(Object key):
+     - int h;
+     - return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16); // 将高位数据与低位数据合并，可以有效减少碰撞
+**** ConcurrentHashMap基于lock实现锁分段技术，首先将数据分段，为每个段分配一把锁，当一个线程占用锁访问其中一段数据时，其他段的数据也能被其他线程访问，ConcurrentHashmap不仅保证了多线程环境下的数据访问安全性，性能上也有长足的提升
+**** TODO 红黑树
