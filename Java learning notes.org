@@ -128,3 +128,25 @@
      - 各种线程安全队列(Queue/Deque)，ArrayBlockingQueue、SynchronousQueue
      - 各种有序容器的线程安全版本
 **** 利用Unsafe的CAS(Compare and swap，CPU原子指令)实现无锁并发机制，线程更新时判断内存值是否与期望值一致，若是说明没有其他线程修改过，则更新新值，否则返回失败，重试进行，直至成功，最重要的是CAS是CPU原子指令，CAS操作通常配合while无限循环
+*** Java提供了哪些io方式?NIO如何实现多路复用?
+**** 传统java.io基于流模型实现，提供输入输出流，读取写入字节或字符流，属于同步阻塞io，缺点是io效率和扩展性存在局限性
+**** Java1.4引入NIO框架，提供了Channel、Selector、Buffer等新的抽象，可以构建多路复用、同步非阻塞IO程序，同时提供了更接近操作系统底层的高性能数据操作方式
+**** Java7中，NIO进一步改进，也就是NIO2，引入了异步非阻塞IO，基于事件和回调机制
+**** select模式是使用一个线程做监听，而bio每次来一个链接都要做线程切换，所以节省的时间在线程切换上
+**** Selector管理channel，channel关心一种事件，当channel接受到某事件时，selector.select()方法会被通知，进而处理IO操作
+**** Linux上以来epoll机制，windows以来iocp
+*** ThreadPoolExecutor的理解
+**** 参数意义:
+     - corePoolSize: 核心Worker线程的数量
+     - maximumPoolSize: 线程池最大Worker线程的数量
+     - keepAliveTime: Worker线程结束之前的空闲时间
+     - unit: 时间的单位
+     - workQueue: 存放Runnable的阻塞队列
+     - threadFactory: 创建线程的工厂
+     - handler: 不能接受Runnable时的拒绝策略
+**** 执行规则:
+     1. 若currentThreadCount < corePoolSize 创建core线程，core线程会立即执行；
+     2. 若currentThreadCount >= corePoolSize 放入阻塞队列；
+     3. 队列已满后，若currentThreadCount < maximumPoolSize 创建新的线程。
+**** 为什么能够复用线程?以及空闲超时的原理?
+     提交任务Runnable后，线程池会创建一个Worker线程，线程中while循环执行任务，线程执行完当前任务后，会从等待队列里获取一个任务并执行，如此就避免了重复创建线程，实际是一个线程执行多个runnable， 线程的超时由队列的超时操作实现。
