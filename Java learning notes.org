@@ -98,7 +98,7 @@
      - i = (i + (i >>> 4)) & 0x0F0F0F0F;
      - i = i + (i >>> 8); // 最大值是32，只需考虑低6位
      - i = i + (i >>> 16);
-     - return i & 
+     - return i & 0x3f;
 *** Vector、ArrayList、LinkedList有何区别
 **** Vector是Java早期提供的线程安全的动态数组，内部使用对象数组保存数据，具有自动扩容能力
 **** ArrayList是应用更为广泛的动态数组实现，非线程安全，具有自动扩容能力，(初始大小是0，add一个元素后是10)，ArrayList扩容增加50%，Vector增加1倍
