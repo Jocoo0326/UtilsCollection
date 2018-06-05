@@ -134,7 +134,7 @@
 **** Java7中，NIO进一步改进，也就是NIO2，引入了异步非阻塞IO，基于事件和回调机制
 **** select模式是使用一个线程做监听，而bio每次来一个链接都要做线程切换，所以节省的时间在线程切换上
 **** Selector管理channel，channel关心一种事件，当channel接受到某事件时，selector.select()方法会被通知，进而处理IO操作
-**** Linux上以来epoll机制，windows以来iocp
+**** Linux上依赖epoll机制，windows依赖iocp
 *** ThreadPoolExecutor的理解
 **** 参数意义:
      - corePoolSize: 核心Worker线程的数量
