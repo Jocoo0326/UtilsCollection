@@ -10,4 +10,5 @@
 *** Activity启动过程 
     1. Launcher调用Instrumentation.execStartActivity
     2. ActivityThread.handleLaunchActivity->performLaunchActivity，创建activity实例，->activity.attach，attach中创建PhoneWindow，->activity.onCreate->PhoneWindow.installDecor(setContentView)
-    3. ->ActivityThread.handleResumeActivity
+    3. ->ActivityThread.handleResumeActivity->activity.onResume->WindowManagerGlobal.addView->创建ViewRootImpl->ViewRootImpl.setView->ViewRootImpl.requestLayout
+       
