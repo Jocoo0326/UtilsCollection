@@ -1,6 +1,11 @@
-*** Binder优势有哪些？
-    1. 性能角度：Binder数据拷贝只有一次，依靠内存映射mmap，将内核缓冲区映射到接收进程地址空间，性能仅次于共享内存
-    2. 稳定性角度：基于C/S架构，结构清晰，稳定性好
+*** Binder理解
+    - 优势有哪些？
+      1. 性能角度：Binder数据拷贝只有一次，依靠内存映射mmap，将内核缓冲区映射到接收进程地址空间，性能仅次于共享内存
+      2. 稳定性角度：基于C/S架构，结构清晰，稳定性好
+    - 原理简述
+      1. 通过ServiceManager获取代理对象，其实是以ServiceManagerProxy(BpBinder(0)) --> Binder driver --> ServiceManager --> handle --> BpBinder(handle)
+      2. 调用服务接口其实是代理对象的mRemote(BpBinder) --> Binder driver --> system_server(服务实现者) --> 返回结果
+    
 *** ActivityManagerService的理解
     1. 负责activity、service、app进程控制
     2. 当需要在新的进程中启动的activity或者service时，AMS会创建新的app进程(startProcessLocked->Process.start-> ZygoteProcess.zygoteSendArgsAndGetResult(socket通信Zygote进程)->ZygoteInit.main->ZygoteServer.runSelectLoop-> ZygoteConnection.runOnce->Zygote.forkAndSpecialize->ZygoteInit.zygoteInit->ZygoteInit.nativeZygoteInit(init Binder)->RuntimeInit.invokeStaticMain)
