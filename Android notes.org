@@ -29,3 +29,9 @@
     5. in /frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java --> runOnce() --> Zygote.forkAndSpecialize() --> handleChildProc(), fork a new process for application
     6. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteInit.zygoteInit() --> ZygoteInit.nativeZygoteInit() --> Runtime.applicationInit() --> throw new Zygote.MethodAndArgsCaller(m, argv) --> caller.run()
     7. This throw gets caught in ZygoteInit.main(), which responds by invoking the exception's run() method. This arrangement clears up all the stack frames that were required in setting up the process. For application, this invoke ActivityThread class's main() method.
+*** dagger2理解
+**** dagger2是编译时依赖注入框架
+**** 注入基本要素:
+     1. 注入需求方，用@Inject标记field，field不能是private
+     2. 注入提供方，@Inject标记构造函数，或者Module类(用@Module标记类)中用@Provides标记的方法(其返回值即为提供此对象的注入)
+     3. 注入器，用@Component标记的接口，其中一般有一个inject(Target target)方法，表明Target类中需要注入用@Inject标记的field

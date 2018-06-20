@@ -155,3 +155,19 @@
     2. ReentrantLock是再入锁，语义和Synchronized基本相同，通过调用lock方法获取锁，书写灵活，一般配合try-catch-finally，并在finally中调用unlock释放锁，当线程已获取了锁，lock方法会立即返回
     3. Reentrantlock提供更细粒度的同步操作，可以提供公平性(等待时间长的线程优先获取锁)，定义条件
     4. 通过lock.isHeldByCurrentThread可以判断当前线程是否拥有这个锁
+*** Java并发包工具类
+**** 主要特点
+    1. 提供了比synchronized更加高级的同步结构，包括CountDownLatch、CyclicBarrier、Semaphore，可以在更多实际场景下使用；
+    2. 并发容器类，如ConcurrentHashMap、CopyOnWriteArrayList
+    3. 并发队列实现类，如ArrayBlockingQueue, LinkedListBlockingQueue, PriorityBlockingQueue, SynchronousQueue
+    4. 强大的Executor框架，可以创建各种不同类型的线程池，调度任务运行等
+**** 目的：
+     1. 完成业务逻辑
+     2. 提高吞吐量
+**** Semaphore
+     1. 一种计数器，可以控制一定数量的permit，以限制通用资源的访问
+     2. acquire/release基本操作, acquire获取permit则执行，否则阻塞, release释放permit
+**** CountDownLatch和CyclicBarrier
+     1. CountDownLatch不可以重置，无法重用，CyclicBarrier可以重用
+     2. CountDownLatch基本操作是countDown/await, await会阻塞等待countDown达到足够的次数，不管在哪个线程countDown, CountDownLatch通常用于线程间等待操作
+     3. CyclicBarrier可以指定多个线程达到公共障碍点(common barrier point)前互相等待，然后一起执行，barrier重置
