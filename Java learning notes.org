@@ -137,8 +137,8 @@
 **** Linux上依赖epoll机制，windows依赖iocp
 *** ThreadPoolExecutor的理解
 **** 参数意义:
-     - corePoolSize: 核心Worker线程的数量
-     - maximumPoolSize: 线程池最大Worker线程的数量
+     - corePoolSize: 核心Worker线程的数量，可以理解为长期驻留的线程数目（除非设置了allowCoreThreadTimeOut）
+     - maximumPoolSize: 线程池最大Worker线程的数量，就是线程不够时能够创建最大线程数
      - keepAliveTime: Worker线程结束之前的空闲时间
      - unit: 时间的单位
      - workQueue: 存放Runnable的阻塞队列
@@ -150,6 +150,17 @@
      3. 队列已满后，若currentThreadCount < maximumPoolSize 创建新的线程。
 **** 为什么能够复用线程?以及空闲超时的原理?
      提交任务Runnable后，线程池会创建一个Worker线程，线程中while循环执行任务，线程执行完当前任务后，会从等待队列里获取一个任务并执行，如此就避免了重复创建线程，实际是一个线程执行多个runnable， 线程的超时由队列的超时操作实现。
+**** Thread和Runnable的理解
+     Runnable通常代表具体的业务逻辑，Thread代表操作系统线程的调度管理，早起java线程api将业务逻辑和线程创建调度管理混在一起，极为不便，就像HTTP请求还要处理TCP握手一样，很多框架的存在的意义也在于此，例如OKHTTP，用户用接口定义请求，然后执行，透明化HTTPS的细节
+**** Executors常用线程池配置
+     1. newCachedThreadPool(), 通常用来处理大量短时间的工作任务，特点：试图缓存线程并重用，当无线程可用时，创建新的线程执行任务；线程闲置60S后，自动移出线程池，长时间闲置不会消耗资源，corePoolSize为0，SynchronousQueue作为工作队列;
+     2. newFixedThreadPool(int nThreads), 重用指定数目(nThreads)的线程，使用LinkedBlockingQueue作为工作队列，任何时候最多只有nThreads个线程是活动的，任务超过nThreads后，任务会在工作队列中等待空闲线程，如果有工作线程退出，将会有新的线程被创建，以补足nThreads数目；
+     3. newSingleThreadExecutor(), 它创建的是ScheduledExecutorService，支持定时或周期性的工作调度，工作线程数目限制为1，所以任务都是被顺序执行，最多只会有一个任务处于活动状态，并且不允许改变线程池实例，避免改变线程数目；
+     4. newScheduledThreadPool(int corePoolSize), 同样是ScheduledExecutorService, 区别是会保持corePoolSize个工作线程;
+**** 线程池大小选择策略
+     1. 如果我们的任务主要是计算，那么意味着CPU的处理能力是稀缺资源，我们不能够通过增大线程数提高计算能力，因为线程越多，上下文切换的开销也越大，通常建议按照CPU核的数目N或N+1；
+     2. 如果是等待较多的任务，如I/O操作比较多，可以参考Brain Goetz推荐的计算方法：线程数 = CPU核数 x (1 + 平均等待时间/平均工作时间);
+     3. 实际可能受到各种系统资源限制影响，需要结合其他资源的使用，合理调整线程数量;
 *** Synchronized和ReentrantLock有什么区别？
     1. Synchronized是Java内建同步机制，提供了互斥的语义和可见性，一个线程获取锁，其他试图获取锁的线程只能等待或阻塞
     2. ReentrantLock是再入锁，语义和Synchronized基本相同，通过调用lock方法获取锁，书写灵活，一般配合try-catch-finally，并在finally中调用unlock释放锁，当线程已获取了锁，lock方法会立即返回
