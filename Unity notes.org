@@ -1,0 +1,10 @@
+*** Manual
+    1. 封装Input，将不同平台输入事件和具体游戏逻辑解耦;
+    2. transform可以嵌套，旋转使用Quaternion四元数;
+    3. ScenesManager.LoadScene加载新的场景; DontDestroyOnLoad()切换场景时保留;
+    4. 第一个scene通常是splashscreen;
+    5. Preset复制粘贴component的属性;
+    6. Prefab是GameObject的模板;
+    7. Audio Manager控制音量，渐变，多普勒效应，采样率;
+    8. Time Manager控制FixedUpdate()时间步长，正常时间scale，粒子系统时间步长;
+    9. 
