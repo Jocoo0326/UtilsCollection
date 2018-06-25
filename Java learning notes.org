@@ -182,3 +182,9 @@
      1. CountDownLatch不可以重置，无法重用，CyclicBarrier可以重用
      2. CountDownLatch基本操作是countDown/await, await会阻塞等待countDown达到足够的次数，不管在哪个线程countDown, CountDownLatch通常用于线程间等待操作
      3. CyclicBarrier可以指定多个线程达到公共障碍点(common barrier point)前互相等待，然后一起执行，barrier重置
+*** ThreadLocal的理解
+    1. 线程局部存储，提供一个线程独立的局部变量存储机制；
+    2. 通过Thread类中ThreadLocal.ThreadLocalMap threadLocals变量实现，每个线程独有此变量，这是一个类似于HashMap的结构，内部用Entry[]存储数据，
+     每个Entry是一个WeakReference<ThreadLocal<?>>扩展类，ThreadLocal作为key，欲存储的变量作为value，通过ThreadLocal.get()/set()方法操作当前线程关联的
+     map结构中对应的Entry数据键值对；
+    3. 一个ThreadLocal对应一个线程局部变量，若多个线程均需此局部变量，则ThreadLocal会被多个线程引用
