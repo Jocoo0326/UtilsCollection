@@ -21,14 +21,16 @@
        - Looper.loop()->MessageQueue.next()->MessageQueue.nativePollOnce()->Looper::pollInner()(cpp)->epoll_wait
        - 利用了pipe/epoll机制，当MessageQueue.enqueMessage时若处于block状态会调用nativeWake->Looper::wake->write data to eventFd->epoll_wait unblocked
     2. MessageQueue.postSyncBarrier 当设置了障碍后，队列中的同步消息会停止执行，直到removeSyncBarrier被调用，默认情况下，消息都是同步的
-*** Zygote进程启动过程
-    1. init进程加载init.rc文件，启动app_process --zygote --start-system-server, code base on android oreo 8.0.0_r4
-    2. in /frameworks/base/cmds/app_process/app_main.cpp::main()  --> AndroidRuntime::start("com.android.internal.os.ZygoteInit", true)
+*** Zygote进程启动过程以及创建新进程的过程
+    1. init进程加载init.zygote32.rc文件，启动service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server, code base on android oreo 8.0.0_r4
+    2. in /frameworks/base/cmds/app_process/app_main.cpp::main()  --> AndroidRuntime::start("com.android.internal.os.ZygoteInit", args, zygote)
     3. in /frameworks/base/core/jni/AndroidRuntime.cpp --> startVm() --> startReg()(注册jni方法) --> env->callStaticVoidMethod(), init android runtime, start java virtual machine and invoke ZygoteInit class's main method
     4. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteServer.registerZygoteSocket() --> startSystemServer() --> ZygoteServer.runSelectLoop(), prepare IPC channel via socket, waiting for request
     5. in /frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java --> runOnce() --> Zygote.forkAndSpecialize() --> handleChildProc(), fork a new process for application
-    6. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteInit.zygoteInit() --> ZygoteInit.nativeZygoteInit() --> Runtime.applicationInit() --> throw new Zygote.MethodAndArgsCaller(m, argv) --> caller.run()
-    7. This throw gets caught in ZygoteInit.main(), which responds by invoking the exception's run() method. This arrangement clears up all the stack frames that were required in setting up the process. For application, this invoke ActivityThread class's main() method.
+       following steps are in child process
+    6. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteInit.zygoteInit() --> ZygoteInit.nativeZygoteInit()(registed in AndroidRuntime.cpp) --> AndroidRuntime::onZygoteInit() --> AppRuntime::onZygoteInit() --> ProcessState::startThreadPool()
+    7. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> RuntimeInit.applicationInit() --> throw new Zygote.MethodAndArgsCaller(m, argv) --> caller.run()
+    8. This throw gets caught in ZygoteInit.main(), which responds by invoking the exception's run() method. This arrangement clears up all the stack frames that were required in setting up the process. For application, this invoke ActivityThread class's main() method.
 *** dagger2理解
 **** dagger2是编译时依赖注入框架
 **** 注入基本要素:
