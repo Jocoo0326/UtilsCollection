@@ -193,3 +193,19 @@
     1. CAS --CompareAndSwap, Unsafe提供的内部操作，基于CPU特定指令，属轻量级操作指令，实现free-lock机制的基础;
     2. AQS --AbstractQueuedSynchronizer, 基于FIFO队列实现的同步器，ReentrantLock, CountDownLatch, ThreadPoolExecutor$Worker等都是基于AQS实现;
     3. Free-lock高并发的基础-CAS，AQS是JAVA提供的封装CAS的实现;
+*** 类加载过程，双亲委派模型
+**** 加载(Loading):
+     将java字节码数据从不同的数据源读取到JVM中，并映射为JVM认可的数据结构(Class对象)，这里的数据源可能是各种各样的形态，如jar文件、class文件，甚至是网络数据源等；
+     如果输入数据不是ClassFile结构，会抛出ClassFormatError；
+**** 链接(Linking):
+     核心步骤，把原始类定义信息转化为JVM运行时信息
+     1. 验证(Verification), 这是虚拟机安全的重要保障，JVM需要验证字节信息是否符合JAVA虚拟机规范，否则认为VerifyError，这样防止恶意信息和
+	不合规信息危害JVM的运行，验证阶段可能出发更多class的加载;
+     2. 准备(Preparation), 创建类或者接口中的静态变量，并初始化静态变量的初始值，此处和显示初始化不同，重点在于分配内存空间，不会执行JVM指令;
+     3. 解析(Resolution), 这一步会将常量池中的符号引用(symbolic reference)替换为直接引用，以及类、接口、方法和字段的解析;
+**** 初始化(Initialization): 
+     这一步真正执行类初始化的代码逻辑，包括静态字段赋值的动作，以及执行类定义中的静态初始化块的逻辑，编译器在编译阶段将这部分逻辑准备好，
+     父类型的初始化逻辑优先于当前类型的逻辑。
+**** 双亲委派模型
+     类加载器试图加载某个类型的时候，除非父加载器找不到相应类型，否则尽量将这个任务代理给当前加载器的父加载器去做，目的是避免重复加载
+**** 两个class仅在字节码和加载器相同时才视为同一个class
