@@ -213,3 +213,15 @@
     1. 字节码操纵框架： ASM、cglib、Javassist
     2. 关键是由byte code生成class对象的过程, 考虑到类加载过程中，主要功能是defineClass方法实现了字节码数据到class对象的转换
     3. 动态代理其实就是运行时生成class
+*** JVM内存区域划分
+    1. 程序计数器(PC, Program Counter Register). 在JVM规范中，每个线程都有它自己的程序计数器，并且任何时间一个线程只有一个方法
+       在执行，也就是所谓的当前方法，程序计数器会存储当前线程正在执行的Java方法的JVM指令地址；若是本地方法，则是undefined;
+    2. Java虚拟机栈(Java Virtual Machine Stack). 每个线程创建时都会创建一个虚拟机栈，内部是一个个栈帧(Stack Frame)，对应一次次Java
+       方法调用，栈帧中存储着局部变量表、操作数栈、动态链接、方法正常退出或异常退出的定义等;
+    3. Java堆(Heap). Java内存管理的核心区域，用来放置Java对象实例，几乎所有创建的Java对象实例都是被直接分配在堆上。堆被所有的线程
+       共享，在虚拟机启动时，我们指定的"Xmx"之类的参数就是用来指定最大堆空间，堆根据不同的垃圾收集器有更进一步的划分，最有名的是
+       新生代和老年代的划分;
+    4. 方法区(Method Area). 也是所有线程共享的区域，用来存储元数据(Meta data)，如类结构信息，以及对应的运行时常量池、字段、方法代码等,
+       早期Hotspot JVM实现，很多人习惯于将方法区称为永久代(Permanent Generation)。Oracle JDK 8中将永久代移除，同时增加了元数据区(Metaspace);
+    5. 本地方法栈(Native Method Stack). 它和Java虚拟机栈非常类似，支持对本地方法的调用，也是每个线程创建一个，在Oracle Hotspot JVM中，
+       本地方法栈和Java虚拟机栈是在同一块区域，这取决于具体实现，规范未强制。
