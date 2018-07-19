@@ -15,6 +15,7 @@
 **** try-catch-finally 应该不推诿和延时异常的处理，不生吞异常，finally用于关闭资源和释放锁等，finally是一定会执行的代码块，注意和return、continue、break跳转语句的使用，finally应避免覆盖try中返回值
 *** 强引用、软引用、弱引用、幻象引用的区别
 **** 主要体现在对象的可达性(reachable)状态和对垃圾回收的影响
+     - JVM会把虚拟机栈和本地方法栈正在引用的对象、静态属性引用的对象和常量，作为GC Roots
 **** 强引用，常见的对象引用，超出了作用域或者显示赋值为null，就可以被垃圾回收了
 **** 软引用，当JVM内存不足时，会清除软引用指向的对象，常用于实现内存敏感的缓存，内存足够的时候缓存，不够的时候清除
 **** 弱引用， 当GC触发时会立即被回收，仅提供一种访问对象的途径，异步操作callback宿主类常用，防止内存泄漏，同样也是缓存的实现选择
@@ -24,7 +25,7 @@
 **** StringBuffer为了解决中间字符串的问题而生，使用append和add可以将字符串添加到已有序列的末尾或者指定位置，同时保证线程安全，通过将修改数据的方法加上synchronized实现，也会带来额外的性能开销
 **** StringBuilder功能上和StringBuffer一样，但去掉了线程安全的部分，减少了性能开销
 **** StringBuilder和StringBuffer都是继承自AbstractStringBuilder，区别就是修改数据的方法是否加了synchronized，数据是char[]，默认初始值是16，如果可以预计拼接的字符大小，应该提前指定，可以避免arraycopy
-**** 字符串通常都会占用很多内存，所以引入了字符串常量池，创建一个字符串时先判断池中是否已有相同字符串对象，有则使用池中对象，没有则创建字符串并放入池中，注意一下区别：
+**** 字符串通常都会占用很多内存，所以引入了字符串常量池，创建一个字符串时先判断池中是否已有相同字符串对象，有则使用池中对象，没有则创建字符串并放入池中，注意以下区别：
      - String str = "abc";// 通过直接量赋值方式，放入常量池
      - String str1 = "abc";
      - String str2 = new String("abc");// 通过new方式赋值，不放入常量池
@@ -110,7 +111,7 @@
 **** HashMap是应用更为广泛的哈希表实现，行为大致和HashTable一致，主要区别在于HashMap非同步，支持null键和值，通常情况下，HashMap进行put和get可以达到常数时间的性能，所以它是绝大部分利用键值对存储场景的首选
 **** HashMap的initialCapacity=16，loadFactor=0.75
 **** TreeMap则是基于红黑树的一种提供顺序访问的Map，和HashMap不同，它的get、put、remove之类的操作都是O(logn)的时间复杂度，具体顺序可以由指定的Comparator来决定，或者根据键的自然顺序来判断
-**** HashMap并发环境可能出现无限循环(桶内的链表变成了环形链表导致)
+**** HashMap并发环境可能出现无限循环(桶内的链表变成了环形链表导致, resize并发导致)
 **** HashMap的性能表现非常依赖于哈希码的有效性，所以hashCode和equals的一些基本约定：
      - equals相等，hashCode一定要相等
      - 重写了hashCode也要重写equals
@@ -121,7 +122,7 @@
      - return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16); // 将高位数据与低位数据合并，可以有效减少碰撞
 **** ConcurrentHashMap基于lock实现锁分段技术，首先将数据分段，为每个段分配一把锁，当一个线程占用锁访问其中一段数据时，其他段的数据也能被其他线程访问，ConcurrentHashmap不仅保证了多线程环境下的数据访问安全性，性能上也有长足的提升
 **** TODO 红黑树
-**** LinkedHashMap基于HashMap实现，提供了插入顺序和访问顺序功能，通过accessOrder设置，提供原生LRUCache功能实现
+**** LinkedHashMap基于HashMap实现，提供了插入顺序和访问顺序功能，通过accessOrder设置，通过双链表自身维护了访问的顺序，提供原生LRUCache功能实现
 *** 如何保证集合是线程安全的?ConcurrentHashMap如何实现高效的线程安全?
 **** Java提供了不同层面的线程安全支持。传统集合框架内部，除了HashTable等同步容器，还提供了同步包装器(Synchronized Wrapper)，我们可以调用Collections工具类提供的包装方法，获取一个同步容器(i.e: Collections.synchronizedMap etc)，但非常粗粒度的方式(利用自身作mutex)，性能低下
 **** 并发包提供的线程安全容器类
