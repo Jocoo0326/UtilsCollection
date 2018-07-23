@@ -248,3 +248,9 @@
 	 -XX:NewRatio=value(默认是3，老年代是新生代的3倍大)
        - Eden和Survivor的比例
 	 -XX:SurvivorRatio=value
+*** register-based VM and stack-based VM
+    1. 基于栈的虚拟机是操作数存储在栈上，通过pop操作数，执行指令，再push结果的虚拟机，代表有JVM、CPython、.NET CLR
+    2. 基于寄存器的虚拟机是将操作数直接存在寄存器上，执行指令，将结果写在另一个寄存器上的虚拟机，代表Lua、Dalvik
+    3. 栈虚拟机字节码占用空间较少，寄存器虚拟机执行效率较高
+    4. jvm操作数栈上long, double占8个字节, boolean byte short int float reference占4个字节(64位hotspot虚拟机)
+    5. Dalvik字节码2个字节，jvm字节码1个字节
