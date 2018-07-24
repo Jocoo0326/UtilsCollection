@@ -41,7 +41,7 @@
      - System.out.println(str1.hashCode() == str2.hashCode());// true
 **** intern()会检查常量池中是否有equals的字符串，有则返回池中对象，没有则放入池中，并返回池中对象
 **** JDK 8中字符串拼接操作会自动被javac转换成StringBuilder操作
-     - String str = "a" + "b" + "c" + "d";
+     - String str = "a" + "b" + "c" + "d"; // 等同于 String str = "abcd";
        // 字节码: ldc #2  // string abcd
      - String a = "a"; String str = a + "b" + "c" + "d";// 字节码:
        -  0: ldc           #2              // String a
