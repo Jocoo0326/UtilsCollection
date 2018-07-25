@@ -55,7 +55,7 @@
        - 16: invokespecial #5              // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
        - 19: invokespecial #7              // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
        - 22: astore_2
-**** Java中的char是两个bytes大小
+**** Java中的char是两个bytes大小, UTF-16
 *** 动态代理的原理
 **** 基于反射实现，反射是赋予程序运行时的自省能力(introspect)
      - 运行时获得一个对象的class
@@ -254,3 +254,66 @@
     3. 栈虚拟机字节码占用空间较少，寄存器虚拟机执行效率较高
     4. jvm操作数栈上long, double占8个字节, boolean byte short int float reference占4个字节(64位hotspot虚拟机)
     5. Dalvik字节码2个字节，jvm字节码1个字节
+*** Java Virtual Machine Specification
+**** Java Type
+***** primitive type
+    1. boolean jvm中映射为int Z default false(0) {false, true} boolean f = true; => iconst_1; istore_1; boolean数组映射为byte数组，操作使用byte数组的操作指令(baload, bastore)
+    2. byte     8-bit   signed B default 0      [-2^ 7, 2^ 7 - 1]
+    3. short   16-bit   signed S default 0      [-2^15, 2^15 - 1]
+    4. char    16-bit unsigned C default \u0000 [    0,    65535] UTF-16
+    5. int     32-bit   signed I default 0      [-2^31, 2^31 - 1]
+    6. long    64-bit   signed J default 0      [-2^63, 2^63 - 1]
+    7. float   32-bit   signed F default +0.0f  ~[-3.4E38, 3.4E38]   IEEE754
+    8. double  64-bit   signed D default +0.0d  ~[-1.8E308, 1.8E308] IEEE754
+***** Reference type
+      1. class type 引用类的实例
+      2. array type 引用数组
+      3. interface type 引用实现了特定接口的类实例或数组
+**** Run-Time Data Area
+***** The pc Register
+      每个线程独有一个程序计数器(program counter), 任一时刻，每个JVM线程都在执行某个方法的代码，即当前线程的当前方法，若非native方法，
+      pc会记录当前执行指令地址，native方法则为undefined
+***** Java Virtual Machine Stack
+      每个JVM线程启动时都会创建有一个私有的JVM栈, JVM栈类似于C语言栈, 每调用一个方法就会创建一个栈帧(frames), 栈帧主要分为局部变量区、
+      操作数栈; JVM栈允许设置大小xss; 若线程需求的内存超过JVM栈允许的大小抛出StackOverflowError(方法调用栈太深，超过栈的允许范围), 若JVM栈能够动态扩展，但没有足够的内存
+      完成JVM栈的扩展，或者启动新线程时没有足够的内存初始化JVM栈, 抛出OutOfMemoryError(栈无法分配或无法扩展);
+***** Heap
+      堆由所有JVM线程共享，用于创建类实例和数组对象，堆内存的释放由gc(garbage collector)处理; JVM 允许调整堆内存大小;
+***** Method Area
+      方法区由所有JVM线程共享, 用于存储运行时常量池，静态字段、静态方法，方法代码数据; 逻辑上属于堆的一部分, 但规范不限制
+      方法区的位置以及管理方法区内存的方式; JVM允许设置方法区的大小;
+***** Run-Time Constant Pool
+      常量池是每个类或者接口常量池表在运行时的内存体现, 包含编译时就知道的字面值、运行时需要的字段引用，类似于传统语言的符号引用,
+      但比这个更为宽泛; 常量池从方法区中分配内存, 当JVM创建class或者interface时创建对应的常量池;
+      
+***** Native Method Stacks
+*** 快速平方根倒数算法
+    1. IEEE754
+       32位float格式：
+       符号 指数(8) 有效数字(23)
+       0    01111100 01000000000000000000000
+       x = (-1)^Si·(1+m)·2^(E-B)
+       Si: Sign 符号位
+        m: Mantissa 有效数字的尾数, m∈[0, 1), m = 2^(-2) = 0.250
+	E: Exponent 偏移处理后的指数, E=124
+	B: 偏移量, 为了能表示[-127, 128]的指数, B=127
+       所以x = (1+0.250)·2^(-3) = 0.15625
+    2. code:
+       float Q_rsqrt( float number )
+       {
+          long i;
+	  float x2, y;
+	  const float threehalfs = 1.5F;
+		   
+          x2 = number * 0.5F;
+	  y  = number;
+	  i  = * ( long * ) &y;                       // evil floating point bit level hacking（对浮点数的邪恶位元hack）
+	  i  = 0x5f3759df - ( i >> 1 );               // what the fuck?（这他妈的是怎么回事？）
+	  y  = * ( float * ) &i;
+	  y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration （第一次迭代）
+          //      y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed（第二次迭代，可以删除）
+	  return y;
+       }
+    3. explaination:
+       思路: 先求取近似值，然后再用牛顿迭代提高精度
+       证明:[https://zh.wikipedia.org/wiki/%E5%B9%B3%E6%96%B9%E6%A0%B9%E5%80%92%E6%95%B0%E9%80%9F%E7%AE%97%E6%B3%95]

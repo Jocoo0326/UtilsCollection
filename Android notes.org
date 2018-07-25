@@ -119,4 +119,17 @@
 **** 进程保活
      1. [http://tech.dianwoda.com/2016/10/20/androidjin-cheng-bao-huo-gong-fang/]
      2. [http://mp.weixin.qq.com/s?__biz=MzA3ODg4MDk0Ng==&mid=403254393&idx=1&sn=8dc0e3a03031177777b5a5876cb210cc&scene=0#wechat_redirect]
-*** Dalvik是register-based VM，dex compiler将class文件编译为dex文件，(java byte code => dalvik byte code)减少空间并优化
+*** Dalvik vs ART
+    1. Dalvik是register-based VM，dex compiler(dx)将class文件编译为dex文件，(java byte code => dalvik byte code)压缩空间并优化
+       (如多个class中共有的字符串只会保留一份)，适合内存和处理器速度有限的系统
+    2. 大多数虚拟机包括JVM是基于堆栈的虚拟机，Dalvik是基于寄存器的虚拟机，各有优劣，一般而言，基于堆栈的虚拟机需要更多的指令，基于寄存器的虚拟机指令更长
+    3. Dalvik有自己的字节码，并非Java字节码
+    4. Zygote进程启动时创建vm
+    5. ART引入预编译AOT(Ahead of time), 代替JIT, 安装时编译DEX文件；GC方面的优化
+*** 小程序的工作原理
+*** requestLayout invalidate postInvalidate 区别
+*** 类加载机制
+*** Retrofit
+*** ButterKnife
+*** EventBus
+*** RxJava
