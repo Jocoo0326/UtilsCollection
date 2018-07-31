@@ -13,9 +13,12 @@
        - 初始化binder
        - 调用ActivityThread.main函数
 *** Activity启动过程 
-    1. Launcher调用Instrumentation.execStartActivity
-    2. ActivityThread.handleLaunchActivity->performLaunchActivity，创建activity实例，->activity.attach，attach中创建PhoneWindow，->activity.onCreate->PhoneWindow.installDecor(setContentView)
-    3. ->ActivityThread.handleResumeActivity->activity.onResume->WindowManagerGlobal.addView->创建ViewRootImpl->ViewRootImpl.setView->ViewRootImpl.requestLayout
+    1. Launcher调用Instrumentation.execStartActivity, -> ActivityManagerNative.getService().startActivity()(Binder)
+    2. AMS解析intent信息，判断是否要启动新的task、或clear top等操作，解析完成后，通过binder通知当前top activity进入pause状态
+    3. top activity通过binder通知AMS已进入pause状态，AMS就创建一个进程，以ActivityThread.main为入口(Process.start("ActivityThread"))
+    4. ActivityThread将ApplicationThread实例通过binder发送给AMS(ActivityThread.attach(false))，AMS通知ActivityThread此时可以真正执行启动activity
+    5. ActivityThread.handleLaunchActivity->performLaunchActivity，创建activity实例，->activity.attach，attach中创建PhoneWindow，->activity.onCreate->PhoneWindow.installDecor(setContentView)
+    6. ->ActivityThread.handleResumeActivity->activity.onResume->WindowManagerGlobal.addView->创建ViewRootImpl->ViewRootImpl.setView->ViewRootImpl.requestLayout
 *** Handler、Looper、MessageQueue
     1. Looper.loop()为何不会卡死主线程？
        - Looper.loop()->MessageQueue.next()->MessageQueue.nativePollOnce()->Looper::pollInner()(cpp)->epoll_wait
