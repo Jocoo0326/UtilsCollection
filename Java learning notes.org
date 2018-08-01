@@ -12,7 +12,27 @@
 **** Error是出现了严重的错误导致JVM处于非正常状态、不可恢复状态，常见的有OutOfMemoryError，NoClassDefFoundError等
 **** Exception分为checked Exception和unchecked Exception(RuntimeException)，可检查异常必须显示捕获处理，使程序恢复运行流程，不检查异常即运行时异常，一般有程序员错误导致
 **** try-with-resource可以用于关闭资源
-**** try-catch-finally 应该不推诿和延时异常的处理，不生吞异常，finally用于关闭资源和释放锁等，finally是一定会执行的代码块，注意和return、continue、break跳转语句的使用，finally应避免覆盖try中返回值
+**** try-catch-finally 应该不推诿和延时异常的处理，不生吞异常，finally用于关闭资源和释放锁等，finally是一定会执行的代码块，注意和return、continue、break跳转语句的使用，执行这些跳转语句之前，会先执行finally块中代码，然后再跳转， finally应避免覆盖try中返回值
+     public int test() {                     
+       try {                                 
+         tryBlock = 0;                       
+         System.out.println("try block");    
+	 return tryBlock;                    
+       } catch (Exception e) {               
+         catchBlock = 1;                     
+	 System.out.println("catch block");  
+       } finally {                           
+         finallyBlock = 2;                   
+         tryBlock++;                         
+	 System.out.println("finally block");
+       }                                     
+       methodBlock = 3;                      
+       return methodBlock;                   
+     }                                       
+     output:
+       try block
+       finally block
+       0
 *** 强引用、软引用、弱引用、幻象引用的区别
 **** 主要体现在对象的可达性(reachable)状态和对垃圾回收的影响
      - JVM会把虚拟机栈和本地方法栈正在引用的对象、静态属性引用的对象和常量，作为GC Roots
@@ -120,6 +140,7 @@
 **** HashMap的hash(Object key):
      - int h;
      - return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16); // 将高位数据与低位数据合并，可以有效减少碰撞
+     - index = (tab.length - ) & hash;
 **** ConcurrentHashMap基于lock实现锁分段技术，首先将数据分段，为每个段分配一把锁，当一个线程占用锁访问其中一段数据时，其他段的数据也能被其他线程访问，ConcurrentHashmap不仅保证了多线程环境下的数据访问安全性，性能上也有长足的提升
 **** TODO 红黑树
 **** LinkedHashMap基于HashMap实现，提供了插入顺序和访问顺序功能，通过accessOrder设置，通过双链表自身维护了访问的顺序，提供原生LRUCache功能实现
