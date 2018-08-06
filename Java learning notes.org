@@ -82,6 +82,10 @@
      - 运行时构造任意一个类的对象
      - 运行时获得一个类具有的成员和方法
      - 运行时调用一个对象的方法
+     - Method.invoke实际委派给MethodAccessor来处理, MethodAccessor有两个实现, 一个通过本地方法实现反射调用, 一个动态实现(使用委派模式), 
+       动态实现比本地实现快20倍, 因为动态实现无需Java~native层的切换, 由于生成字节码十分耗时, 仅一次调用反而比本地实现慢3~4倍, 考虑到
+       这种情况, JVM设置了一个阈值15(-Dsun.reflect.inflationThreshold=15调整), <=15本地实现(委托给NativeMethodAccessorImpl), >15动态实现(GeneratedMethodAccessor) 
+     - 变长参数方法，字节码层面最后一个参数会是Object数组
 **** 代理：将调用者与实现者解耦，对实现者透明，如日志，事物处理
 **** 动态：代理的interface(方法集)动态变化，编码时指定方法实现规则，静态代理是编码时确定了代理方法
 **** JDK proxy

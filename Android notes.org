@@ -1,4 +1,5 @@
-*** Binder理解
+*** Binder
+**** 理解
     - 优势有哪些？
       1. 性能角度：Binder数据拷贝只有一次，依靠内存映射mmap，将内核缓冲区映射到接收进程地址空间，性能仅次于共享内存
       2. 稳定性角度：基于C/S架构，结构清晰，稳定性好
@@ -6,6 +7,22 @@
       1. 通过ServiceManager获取代理对象，其实是以ServiceManagerProxy(BpBinder(0)) --> Binder driver --> ServiceManager --> handle --> BpBinder(handle)
       2. 调用服务接口其实是代理对象的mRemote(BpBinder) --> Binder driver --> system_server(服务实现者) --> 返回结果
     
+**** 原理
+     1. Binder driver
+	- 系统启动时, 通过init(), 创建/dev/binder设备节点
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_init]
+	- 进程需通信时, 通过open(), 获取Binder Driver的文件描述符, 创建binder_proc对象, 保存到全局binder_procs中
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_open]
+	- 通过ioctl(), 向Binder Driver读写数据
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_ioctl]
+	- 通过mmap(), (核心精髓)在内核虚拟地址空间，申请一块与用户虚拟内存相同大小的内存，然后再申请1个page大小的物理内存，
+	  再将此物理内存同时映射到内核虚拟空间和用户虚拟空间，为用户空间向内核空间传递数据减少一次拷贝(接收端)
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_mmap]
+     2. ServiceManager
+	- bs = binder_open(driver, 128*1024) 打开binder驱动
+	- binder_become_context_manager(bs) servicemanager 注册成为binder守护进程
+	- binder_loop() 事件循环, 处理请求
+     3. 
 *** ActivityManagerService的理解
     1. 负责activity、service、app进程控制
     2. 当需要在新的进程中启动的activity或者service时，AMS会创建新的app进程(startProcessLocked->Process.start-> ZygoteProcess.zygoteSendArgsAndGetResult(socket通信Zygote进程)->ZygoteInit.main->ZygoteServer.runSelectLoop-> ZygoteConnection.runOnce->Zygote.forkAndSpecialize->ZygoteInit.zygoteInit->ZygoteInit.nativeZygoteInit(init Binder)->RuntimeInit.invokeStaticMain)
