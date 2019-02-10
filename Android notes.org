@@ -1,4 +1,5 @@
-*** Binder理解
+*** Binder
+**** 理解
     - 优势有哪些？
       1. 性能角度：Binder数据拷贝只有一次，依靠内存映射mmap，将内核缓冲区映射到接收进程地址空间，性能仅次于共享内存
       2. 稳定性角度：基于C/S架构，结构清晰，稳定性好
@@ -6,6 +7,22 @@
       1. 通过ServiceManager获取代理对象，其实是以ServiceManagerProxy(BpBinder(0)) --> Binder driver --> ServiceManager --> handle --> BpBinder(handle)
       2. 调用服务接口其实是代理对象的mRemote(BpBinder) --> Binder driver --> system_server(服务实现者) --> 返回结果
     
+**** 原理
+     1. Binder driver
+	- 系统启动时, 通过init(), 创建/dev/binder设备节点
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_init]
+	- 进程需通信时, 通过open(), 获取Binder Driver的文件描述符, 创建binder_proc对象, 保存到全局binder_procs中
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_open]
+	- 通过ioctl(), 向Binder Driver读写数据
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_ioctl]
+	- 通过mmap(), (核心精髓)在内核虚拟地址空间，申请一块与用户虚拟内存相同大小的内存，然后再申请1个page大小的物理内存，
+	  再将此物理内存同时映射到内核虚拟空间和用户虚拟空间，为用户空间向内核空间传递数据减少一次拷贝(接收端)
+          ref[http://androidxref.com/kernel_3.18/xref/drivers/staging/android/binder.c#binder_mmap]
+     2. ServiceManager
+	- bs = binder_open(driver, 128*1024) 打开binder驱动
+	- binder_become_context_manager(bs) servicemanager 注册成为binder守护进程
+	- binder_loop() 事件循环, 处理请求
+     3. 
 *** ActivityManagerService的理解
     1. 负责activity、service、app进程控制
     2. 当需要在新的进程中启动的activity或者service时，AMS会创建新的app进程(startProcessLocked->Process.start-> ZygoteProcess.zygoteSendArgsAndGetResult(socket通信Zygote进程)->ZygoteInit.main->ZygoteServer.runSelectLoop-> ZygoteConnection.runOnce->Zygote.forkAndSpecialize->ZygoteInit.zygoteInit->ZygoteInit.nativeZygoteInit(init Binder)->RuntimeInit.invokeStaticMain)
@@ -13,25 +30,126 @@
        - 初始化binder
        - 调用ActivityThread.main函数
 *** Activity启动过程 
-    1. Launcher调用Instrumentation.execStartActivity
-    2. ActivityThread.handleLaunchActivity->performLaunchActivity，创建activity实例，->activity.attach，attach中创建PhoneWindow，->activity.onCreate->PhoneWindow.installDecor(setContentView)
-    3. ->ActivityThread.handleResumeActivity->activity.onResume->WindowManagerGlobal.addView->创建ViewRootImpl->ViewRootImpl.setView->ViewRootImpl.requestLayout
+    1. Launcher调用Instrumentation.execStartActivity, -> ActivityManagerNative.getService().startActivity()(Binder)
+    2. AMS解析intent信息，判断是否要启动新的task、或clear top等操作，解析完成后，通过binder通知当前top activity进入pause状态
+    3. top activity通过binder通知AMS已进入pause状态，AMS就创建一个进程，以ActivityThread.main为入口(Process.start("ActivityThread"))
+    4. ActivityThread将ApplicationThread实例通过binder发送给AMS(ActivityThread.attach(false))，AMS通知ActivityThread此时可以真正执行启动activity
+    5. ActivityThread.handleLaunchActivity->performLaunchActivity，创建activity实例，->activity.attach，attach中创建PhoneWindow，->activity.onCreate->PhoneWindow.installDecor(setContentView)
+    6. ->ActivityThread.handleResumeActivity->activity.onResume->WindowManagerGlobal.addView->创建ViewRootImpl->ViewRootImpl.setView->ViewRootImpl.requestLayout
 *** Handler、Looper、MessageQueue
     1. Looper.loop()为何不会卡死主线程？
        - Looper.loop()->MessageQueue.next()->MessageQueue.nativePollOnce()->Looper::pollInner()(cpp)->epoll_wait
        - 利用了pipe/epoll机制，当MessageQueue.enqueMessage时若处于block状态会调用nativeWake->Looper::wake->write data to eventFd->epoll_wait unblocked
     2. MessageQueue.postSyncBarrier 当设置了障碍后，队列中的同步消息会停止执行，直到removeSyncBarrier被调用，默认情况下，消息都是同步的
-*** Zygote进程启动过程
-    1. init进程加载init.rc文件，启动app_process --zygote --start-system-server, code base on android oreo 8.0.0_r4
-    2. in /frameworks/base/cmds/app_process/app_main.cpp::main()  --> AndroidRuntime::start("com.android.internal.os.ZygoteInit", true)
+*** Zygote进程启动过程以及创建新进程的过程
+    1. init进程加载init.zygote32.rc文件，启动service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server, code base on android oreo 8.0.0_r4
+    2. in /frameworks/base/cmds/app_process/app_main.cpp::main()  --> AndroidRuntime::start("com.android.internal.os.ZygoteInit", args, zygote)
     3. in /frameworks/base/core/jni/AndroidRuntime.cpp --> startVm() --> startReg()(注册jni方法) --> env->callStaticVoidMethod(), init android runtime, start java virtual machine and invoke ZygoteInit class's main method
     4. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteServer.registerZygoteSocket() --> startSystemServer() --> ZygoteServer.runSelectLoop(), prepare IPC channel via socket, waiting for request
     5. in /frameworks/base/core/java/com/android/internal/os/ZygoteConnection.java --> runOnce() --> Zygote.forkAndSpecialize() --> handleChildProc(), fork a new process for application
-    6. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteInit.zygoteInit() --> ZygoteInit.nativeZygoteInit() --> Runtime.applicationInit() --> throw new Zygote.MethodAndArgsCaller(m, argv) --> caller.run()
-    7. This throw gets caught in ZygoteInit.main(), which responds by invoking the exception's run() method. This arrangement clears up all the stack frames that were required in setting up the process. For application, this invoke ActivityThread class's main() method.
+       following steps are in child process
+    6. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> ZygoteInit.zygoteInit() --> ZygoteInit.nativeZygoteInit()(registed in AndroidRuntime.cpp) --> AndroidRuntime::onZygoteInit() --> AppRuntime::onZygoteInit() --> ProcessState::startThreadPool()
+    7. in /frameworks/base/core/java/com/android/internal/os/ZygoteInit.java --> RuntimeInit.applicationInit() --> throw new Zygote.MethodAndArgsCaller(m, argv) --> caller.run()
+    8. This throw gets caught in ZygoteInit.main(), which responds by invoking the exception's run() method. This arrangement clears up all the stack frames that were required in setting up the process. For application, this invoke ActivityThread class's main() method.
 *** dagger2理解
 **** dagger2是编译时依赖注入框架
 **** 注入基本要素:
-     1. 注入需求方，用@Inject标记field，field不能是private
-     2. 注入提供方，@Inject标记构造函数，或者Module类(用@Module标记类)中用@Provides标记的方法(其返回值即为提供此对象的注入)
-     3. 注入器，用@Component标记的接口，其中一般有一个inject(Target target)方法，表明Target类中需要注入用@Inject标记的field
+     1.注入需求方，用@Inject标记field，field不能是private, 
+       注意：@inject标注的类型必须和Provides、Inject标注的类型相同（父子类型也不行）
+     2.注入提供方，@Inject标记构造函数，或者Module类(用@Module标记类)中用@Provides标记的方法(其返回值即为提供此对象的注入), 
+       根据返回类型区别依赖，当Dagger2需要某类型的依赖时，会根据类型搜索找到提供依赖的方法生成依赖；若需要提供多个相同类型的依赖时，可以使用@Named注解区分
+     3.注入器，用@Component标记的接口，其中一般有一个inject(Target target)方法，表明Target类中需要注入用@Inject标记的field
+**** AndroidInjection的理解
+     1. 避免每个activity、fragment都要创建component, module, 注入的细节应该与被注入者保持透明, 被注入者中应该只有注入调用的模板方法，
+	以减少对注入框架的耦合;
+     2. 创建AppComponent;
+	@Component(modules = {
+          AllActivitiesModule.class
+        })
+        public interface AppComponent {
+          void inject(App app);
+        }
+     3. application 实现 HasActivityInjector接口, 并注入DispatchingAndroidInjector<Activity>:
+	public class App extends Application implements HasActivityInjector {
+	  @Inject DispatchingAndroidInjector<Activity> dispatchingAndroidInjector;
+	  
+	  @Override public AndroidInjector<Activity> activityInjector() {
+	    return dispatchingAndroidInjector;
+          }
+        }
+     4. activity的onCreate方法中调用AndroidInjection.inject(this):
+	public class BaseActivity extends AppCompactActivity {
+	  @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
+	    AndroidInjection.inject(this);
+	    super.onCreate(savedInstanceState)
+          }
+        }
+     5. 创建AllActivitiesModule, 提供了activity和module的关联;
+	@Module
+        public abstract class AllActivitiesModule {
+
+	  @ContributesAndroidInjector(modules = MainPageModule.class)
+	  abstract MainPageActivity contributeMainPageActivityInjector();
+        }
+
+**** Singleton Scope实现是DoubleCheck.provider()
+     1. module中provideInstanceXXX的创建过程是Provider<Module_ProvideInstanceXXXFactory> 
+        or Provider<Module_ContributeMainPageActivityInjector.MainPageActivitySubcomponent.Builder>, 
+        若@Singleton标记，则是DoubleCheck.provider(Module_ProvideInstanceFactory.create()), Provider提供了scope的功能;
+     2. Module_ContributeMainPageActivityInjector.MainPageActivitySubcomponent提供创建module的功能, 并创建
+	MainPageActivitySubcomponentImpl;
+     3. MainPageActivitySubcomponentImpl实现了AndroidInjection<MainPageActivity>接口，提供inject逻辑;
+*** View中一些flag
+    1.View.SYSTEM_UI_FLAG_TRANSLUCENT_STATUS:
+      View延伸至status bar下方；
+      api∈[21, ∞)，setStatusBar(int color)设置其颜色
+      api∈[19, 21)，系统加一层tint
+    2.View.SYSTEM_UI_FLAG_TRANSLUCENT_NAVIGATION:
+      View延伸至navigation bar下方；
+      api∈[21, ∞)，setNavigationBar(int color)设置其颜色
+      api∈[19, 21)，系统加一层tint
+    3.View.SYSTEM_UI_FLAG_LAYOUT_STABLE:
+      当system bar状态发生变化时，content view不触发重新layout操作;
+      api∈[19, ∞)
+    4.View.SYSTEM_UI_LAYOUT_HIDE_NAVIGATION:
+      仅仅是View延伸至navigation bar下方;
+      api∈[19, ∞)
+    5.View.SYSTEM_UI_LAYOUT_FULLSCREEN:
+      仅仅是View延伸至status bar下方;
+      api∈[19, ∞)
+    6.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR:
+      设置status bar文字为灰色
+      Api∈[23, ∞)
+*** fitSystemBar属性
+      1、只有设置在content布局的子布局上才有效，即我们编写的xml布局上;
+      2、设置了fitSystemBar(true)后，其他padding将失效;
+      3、谁设置fitSystemBar(true)，就改变谁的padding
+*** Service
+**** android进程等级
+     1.前台进程( FOREGROUND_APP)
+     2.可视进程(VISIBLE_APP )
+     3.次要服务进程(SECONDARY_SERVER )
+     4.后台进程 (HIDDEN_APP)
+     5.内容供应节点(CONTENT_PROVIDER)
+     6.空进程(EMPTY_APP)
+**** Android low memory killer
+     1.资源紧缺时，杀死进程的策略
+      2个因素：
+      进程优先级--->oom_adj （adb shell -> cat /proc/pid/oom_adj查看）占用内存的大小
+**** 进程保活
+     1. [http://tech.dianwoda.com/2016/10/20/androidjin-cheng-bao-huo-gong-fang/]
+     2. [http://mp.weixin.qq.com/s?__biz=MzA3ODg4MDk0Ng==&mid=403254393&idx=1&sn=8dc0e3a03031177777b5a5876cb210cc&scene=0#wechat_redirect]
+*** Dalvik vs ART
+    1. Dalvik是register-based VM，dex compiler(dx)将class文件编译为dex文件，(java byte code => dalvik byte code)压缩空间并优化
+       (如多个class中共有的字符串只会保留一份)，适合内存和处理器速度有限的系统
+    2. 大多数虚拟机包括JVM是基于堆栈的虚拟机，Dalvik是基于寄存器的虚拟机，各有优劣，一般而言，基于堆栈的虚拟机需要更多的指令，基于寄存器的虚拟机指令更长
+    3. Dalvik有自己的字节码，并非Java字节码
+    4. Zygote进程启动时创建vm
+    5. ART引入预编译AOT(Ahead of time), 代替JIT, 安装时编译DEX文件；GC方面的优化
+*** 小程序的工作原理
+*** requestLayout invalidate postInvalidate 区别
+*** 类加载机制
+*** Retrofit
+*** ButterKnife
+*** EventBus
+*** RxJava

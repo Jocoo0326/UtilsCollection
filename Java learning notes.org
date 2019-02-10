@@ -12,9 +12,30 @@
 **** Error是出现了严重的错误导致JVM处于非正常状态、不可恢复状态，常见的有OutOfMemoryError，NoClassDefFoundError等
 **** Exception分为checked Exception和unchecked Exception(RuntimeException)，可检查异常必须显示捕获处理，使程序恢复运行流程，不检查异常即运行时异常，一般有程序员错误导致
 **** try-with-resource可以用于关闭资源
-**** try-catch-finally 应该不推诿和延时异常的处理，不生吞异常，finally用于关闭资源和释放锁等，finally是一定会执行的代码块，注意和return、continue、break跳转语句的使用，finally应避免覆盖try中返回值
+**** try-catch-finally 应该不推诿和延时异常的处理，不生吞异常，finally用于关闭资源和释放锁等，finally是一定会执行的代码块，注意和return、continue、break跳转语句的使用，执行这些跳转语句之前，会先执行finally块中代码，然后再跳转， finally应避免覆盖try中返回值
+     public int test() {                     
+       try {                                 
+         tryBlock = 0;                       
+         System.out.println("try block");    
+	 return tryBlock;                    
+       } catch (Exception e) {               
+         catchBlock = 1;                     
+	 System.out.println("catch block");  
+       } finally {                           
+         finallyBlock = 2;                   
+         tryBlock++;                         
+	 System.out.println("finally block");
+       }                                     
+       methodBlock = 3;                      
+       return methodBlock;                   
+     }                                       
+     output:
+       try block
+       finally block
+       0
 *** 强引用、软引用、弱引用、幻象引用的区别
 **** 主要体现在对象的可达性(reachable)状态和对垃圾回收的影响
+     - JVM会把虚拟机栈和本地方法栈正在引用的对象、静态属性引用的对象和常量，作为GC Roots
 **** 强引用，常见的对象引用，超出了作用域或者显示赋值为null，就可以被垃圾回收了
 **** 软引用，当JVM内存不足时，会清除软引用指向的对象，常用于实现内存敏感的缓存，内存足够的时候缓存，不够的时候清除
 **** 弱引用， 当GC触发时会立即被回收，仅提供一种访问对象的途径，异步操作callback宿主类常用，防止内存泄漏，同样也是缓存的实现选择
@@ -24,7 +45,7 @@
 **** StringBuffer为了解决中间字符串的问题而生，使用append和add可以将字符串添加到已有序列的末尾或者指定位置，同时保证线程安全，通过将修改数据的方法加上synchronized实现，也会带来额外的性能开销
 **** StringBuilder功能上和StringBuffer一样，但去掉了线程安全的部分，减少了性能开销
 **** StringBuilder和StringBuffer都是继承自AbstractStringBuilder，区别就是修改数据的方法是否加了synchronized，数据是char[]，默认初始值是16，如果可以预计拼接的字符大小，应该提前指定，可以避免arraycopy
-**** 字符串通常都会占用很多内存，所以引入了字符串常量池，创建一个字符串时先判断池中是否已有相同字符串对象，有则使用池中对象，没有则创建字符串并放入池中，注意一下区别：
+**** 字符串通常都会占用很多内存，所以引入了字符串常量池，创建一个字符串时先判断池中是否已有相同字符串对象，有则使用池中对象，没有则创建字符串并放入池中，注意以下区别：
      - String str = "abc";// 通过直接量赋值方式，放入常量池
      - String str1 = "abc";
      - String str2 = new String("abc");// 通过new方式赋值，不放入常量池
@@ -40,7 +61,7 @@
      - System.out.println(str1.hashCode() == str2.hashCode());// true
 **** intern()会检查常量池中是否有equals的字符串，有则返回池中对象，没有则放入池中，并返回池中对象
 **** JDK 8中字符串拼接操作会自动被javac转换成StringBuilder操作
-     - String str = "a" + "b" + "c" + "d";
+     - String str = "a" + "b" + "c" + "d"; // 等同于 String str = "abcd";
        // 字节码: ldc #2  // string abcd
      - String a = "a"; String str = a + "b" + "c" + "d";// 字节码:
        -  0: ldc           #2              // String a
@@ -54,13 +75,17 @@
        - 16: invokespecial #5              // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
        - 19: invokespecial #7              // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
        - 22: astore_2
-**** Java中的char是两个bytes大小
+**** Java中的char是两个bytes大小, UTF-16
 *** 动态代理的原理
 **** 基于反射实现，反射是赋予程序运行时的自省能力(introspect)
      - 运行时获得一个对象的class
      - 运行时构造任意一个类的对象
      - 运行时获得一个类具有的成员和方法
      - 运行时调用一个对象的方法
+     - Method.invoke实际委派给MethodAccessor来处理, MethodAccessor有两个实现, 一个通过本地方法实现反射调用, 一个动态实现(使用委派模式), 
+       动态实现比本地实现快20倍, 因为动态实现无需Java~native层的切换, 由于生成字节码十分耗时, 仅一次调用反而比本地实现慢3~4倍, 考虑到
+       这种情况, JVM设置了一个阈值15(-Dsun.reflect.inflationThreshold=15调整), <=15本地实现(委托给NativeMethodAccessorImpl), >15动态实现(GeneratedMethodAccessor) 
+     - 变长参数方法，字节码层面最后一个参数会是Object数组
 **** 代理：将调用者与实现者解耦，对实现者透明，如日志，事物处理
 **** 动态：代理的interface(方法集)动态变化，编码时指定方法实现规则，静态代理是编码时确定了代理方法
 **** JDK proxy
@@ -68,7 +93,7 @@
      - 平滑进行JDK版本升级，而字节码类库通常需要进行更新以保证在新版Java上能够试用
      - 代码实现简单
 **** cglib
-     - 有时候代理目标不便实现额外的接口，限定调用者实现特定接口有些侵入性，cglib动态代理就没有这个限制
+     - 有时候代理目标不便实现额外的接口，限定调用者实现特定接口有些侵入性，cglib动态代理就没有这个限制(子类化方式实现)
      - 只操作我们关心的类，而不必为其他相关类增加工作量
      - 高性能
 *** Okio总结
@@ -105,12 +130,12 @@
 **** LinkedList是双向链表，不需要扩容，非线程安全
 **** Vector和ArrayList作为动态数组，内部元素以数组形式顺序存储，所以非常适合随机访问的场合，除了尾部插入和删除元素，往往性能比较差，往中间插入一个元素，需要移动后续所有元素
 **** LinkedList进行节点插入、删除却要高效的多，但是随机访问性能要比动态数组慢
-*** HashTable、HashMap、TreeMap有何区别
+*** HashTable、HashMap、TreeMap、LinkedHashMap有何区别
 **** HashTable是早期Java提供的哈希表实现，本身同步，不支持null键和值，initialCapacity=11，loadFactor=0.75，rehash之后newCapacity=(oldCapacity << 1) + 1，HashMap扩容后为原来2倍
 **** HashMap是应用更为广泛的哈希表实现，行为大致和HashTable一致，主要区别在于HashMap非同步，支持null键和值，通常情况下，HashMap进行put和get可以达到常数时间的性能，所以它是绝大部分利用键值对存储场景的首选
 **** HashMap的initialCapacity=16，loadFactor=0.75
 **** TreeMap则是基于红黑树的一种提供顺序访问的Map，和HashMap不同，它的get、put、remove之类的操作都是O(logn)的时间复杂度，具体顺序可以由指定的Comparator来决定，或者根据键的自然顺序来判断
-**** HashMap并发环境可能出现无限循环(桶内的链表变成了环形链表导致)
+**** HashMap并发环境可能出现无限循环(桶内的链表变成了环形链表导致, resize并发导致)
 **** HashMap的性能表现非常依赖于哈希码的有效性，所以hashCode和equals的一些基本约定：
      - equals相等，hashCode一定要相等
      - 重写了hashCode也要重写equals
@@ -119,15 +144,17 @@
 **** HashMap的hash(Object key):
      - int h;
      - return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16); // 将高位数据与低位数据合并，可以有效减少碰撞
+     - index = (tab.length - ) & hash;
 **** ConcurrentHashMap基于lock实现锁分段技术，首先将数据分段，为每个段分配一把锁，当一个线程占用锁访问其中一段数据时，其他段的数据也能被其他线程访问，ConcurrentHashmap不仅保证了多线程环境下的数据访问安全性，性能上也有长足的提升
 **** TODO 红黑树
+**** LinkedHashMap基于HashMap实现，提供了插入顺序和访问顺序功能，通过accessOrder设置，通过双链表自身维护了访问的顺序，提供原生LRUCache功能实现
 *** 如何保证集合是线程安全的?ConcurrentHashMap如何实现高效的线程安全?
 **** Java提供了不同层面的线程安全支持。传统集合框架内部，除了HashTable等同步容器，还提供了同步包装器(Synchronized Wrapper)，我们可以调用Collections工具类提供的包装方法，获取一个同步容器(i.e: Collections.synchronizedMap etc)，但非常粗粒度的方式(利用自身作mutex)，性能低下
 **** 并发包提供的线程安全容器类
      - 各种并发容器，ConcurrentHashMap、CopyOnWriteArrayList
      - 各种线程安全队列(Queue/Deque)，ArrayBlockingQueue、SynchronousQueue
      - 各种有序容器的线程安全版本
-**** 利用Unsafe的CAS(Compare and swap，CPU原子指令)实现无锁并发机制，线程更新时判断内存值是否与期望值一致，若是说明没有其他线程修改过，则更新新值，否则返回失败，重试进行，直至成功，最重要的是CAS是CPU原子指令，CAS操作通常配合while无限循环
+**** 利用Unsafe的CAS(Compare and swap，CPU原子指令)实现无锁并发机制(free-lock)，线程更新时判断内存值是否与期望值一致，若是说明没有其他线程修改过，则更新新值，否则返回失败，重试进行，直至成功，最重要的是CAS是CPU原子指令，CAS操作通常配合while无限循环
 *** Java提供了哪些io方式?NIO如何实现多路复用?
 **** 传统java.io基于流模型实现，提供输入输出流，读取写入字节或字符流，属于同步阻塞io，缺点是io效率和扩展性存在局限性
 **** Java1.4引入NIO框架，提供了Channel、Selector、Buffer等新的抽象，可以构建多路复用、同步非阻塞IO程序，同时提供了更接近操作系统底层的高性能数据操作方式
@@ -188,3 +215,130 @@
      每个Entry是一个WeakReference<ThreadLocal<?>>扩展类，ThreadLocal作为key，欲存储的变量作为value，通过ThreadLocal.get()/set()方法操作当前线程关联的
      map结构中对应的Entry数据键值对；
     3. 一个ThreadLocal对应一个线程局部变量，若多个线程均需此局部变量，则ThreadLocal会被多个线程引用
+*** CAS和AQS
+    1. CAS --CompareAndSwap, Unsafe提供的内部操作，基于CPU特定指令，属轻量级操作指令，实现free-lock机制的基础;
+    2. AQS --AbstractQueuedSynchronizer, 基于FIFO队列实现的同步器，ReentrantLock, CountDownLatch, ThreadPoolExecutor$Worker等都是基于AQS实现;
+    3. Free-lock高并发的基础-CAS，AQS是JAVA提供的封装CAS的实现;
+*** 类加载过程，双亲委派模型
+**** 加载(Loading):
+     将java字节码数据从不同的数据源读取到JVM中，并映射为JVM认可的数据结构(Class对象)，这里的数据源可能是各种各样的形态，如jar文件、class文件，甚至是网络数据源等；
+     如果输入数据不是ClassFile结构，会抛出ClassFormatError；
+**** 链接(Linking):
+     核心步骤，把原始类定义信息转化为JVM运行时信息
+     1. 验证(Verification), 这是虚拟机安全的重要保障，JVM需要验证字节信息是否符合JAVA虚拟机规范，否则认为VerifyError，这样防止恶意信息和
+	不合规信息危害JVM的运行，验证阶段可能出发更多class的加载;
+     2. 准备(Preparation), 创建类或者接口中的静态变量，并初始化静态变量的初始值，此处和显示初始化不同，重点在于分配内存空间，不会执行JVM指令;
+     3. 解析(Resolution), 这一步会将常量池中的符号引用(symbolic reference)替换为直接引用，以及类、接口、方法和字段的解析;
+**** 初始化(Initialization): 
+     这一步真正执行类初始化的代码逻辑，包括静态字段赋值的动作，以及执行类定义中的静态初始化块的逻辑，编译器在编译阶段将这部分逻辑准备好，
+     父类型的初始化逻辑优先于当前类型的逻辑。
+**** 双亲委派模型
+     类加载器试图加载某个类型的时候，除非父加载器找不到相应类型，否则尽量将这个任务代理给当前加载器的父加载器去做，目的是避免重复加载
+**** 两个class仅在字节码和加载器相同时才视为同一个class
+*** 运行时动态生成Java类
+    1. 字节码操纵框架： ASM、cglib、Javassist
+    2. 关键是由byte code生成class对象的过程, 考虑到类加载过程中，主要功能是defineClass方法实现了字节码数据到class对象的转换
+    3. 动态代理其实就是运行时生成class
+*** JVM内存区域划分
+    1. 程序计数器(PC, Program Counter Register). 在JVM规范中，每个线程都有它自己的程序计数器，并且任何时间一个线程只有一个方法
+       在执行，也就是所谓的当前方法，程序计数器会存储当前线程正在执行的Java方法的JVM指令地址；若是本地方法，则是undefined;
+    2. Java虚拟机栈(Java Virtual Machine Stack). 每个线程创建时都会创建一个虚拟机栈，内部是一个个栈帧(Stack Frame)，对应一次次Java
+       方法调用，栈帧中存储着局部变量表、操作数栈、动态链接、方法正常退出或异常退出的定义等;
+    3. Java堆(Heap). Java内存管理的核心区域，用来放置Java对象实例，几乎所有创建的Java对象实例都是被直接分配在堆上。堆被所有的线程
+       共享，在虚拟机启动时，我们指定的"Xmx"之类的参数就是用来指定最大堆空间，堆根据不同的垃圾收集器有更进一步的划分，最有名的是
+       新生代和老年代的划分;
+    4. 方法区(Method Area). 也是所有线程共享的区域，用来存储元数据(Meta data)，如类结构信息，以及对应的运行时常量池、字段、方法代码等,
+       早期Hotspot JVM实现，很多人习惯于将方法区称为永久代(Permanent Generation)。Oracle JDK 8中将永久代移除，同时增加了元数据区(Metaspace);
+    5. 本地方法栈(Native Method Stack). 它和Java虚拟机栈非常类似，支持对本地方法的调用，也是每个线程创建一个，在Oracle Hotspot JVM中，
+       本地方法栈和Java虚拟机栈是在同一块区域，这取决于具体实现，规范未强制。
+*** 堆内部是什么结构
+    1. 新生代
+       - 新生代是大部分对象创建和销毁的地方，在通常的Java应用中，绝大部分对象的生命周期都很短暂，其内部又分为Eden区域，作为对象初始分配
+	 的区域，两个Survivor，有时候也叫from、to区域，被用来放置从Minor GC中保留下来的对象;
+       - JVM会随意选取一个Survivor作为to区域，然后会在GC过程中进行区域间拷贝，也就是将Eden中存活下来的对象和from区域中的对象，拷贝到to区域
+	 这种设计为了防止内存的碎片化，并进一步清理无用对象;
+       - 从内存模型而不是垃圾收集的角度，对Eden区域继续划分，Hotspot JVM还有一个概念叫Thread Local Allocation Buffer(TLAB), 这是JVM为每个线程
+	 分配的私有缓存区域，否则，多线程同时分配内存时，为避免操作同意地址，可能需要使用加锁机制，进而影响分配速度，TLAB其实分配在Eden中;
+    2. 老年代
+       - 放置长生命周期的对象，通常都是从Survivor中拷贝过来的对象，通常，普通对象会被分配在TLAB上，如果对象较大，JVM会试图分配在Eden其他位
+	 置上，如果对象太大，完全无法在新生代找到足够长的连续空闲空间，JVM会直接分配到老年代;
+    3. 永久代
+       - 这部分就是早期Hotspot JVM的方法区实现，用于存储Java类元数据、常量池、Intern字符串缓存，JDK8之后就不存在永久代这块了;
+    4. 常用修改堆和内部大小的JVM参数
+       - 最大堆体积
+	 -Xmx value
+       - 初始最小堆体积
+	 -Xms value
+       - 老年代和新生代的比例
+	 -XX:NewRatio=value(默认是3，老年代是新生代的3倍大)
+       - Eden和Survivor的比例
+	 -XX:SurvivorRatio=value
+*** register-based VM and stack-based VM
+    1. 基于栈的虚拟机是操作数存储在栈上，通过pop操作数，执行指令，再push结果的虚拟机，代表有JVM、CPython、.NET CLR
+    2. 基于寄存器的虚拟机是将操作数直接存在寄存器上，执行指令，将结果写在另一个寄存器上的虚拟机，代表Lua、Dalvik
+    3. 栈虚拟机字节码占用空间较少，寄存器虚拟机执行效率较高
+    4. jvm操作数栈上long, double占8个字节, boolean byte short int float reference占4个字节(64位hotspot虚拟机)
+    5. Dalvik字节码2个字节，jvm字节码1个字节
+*** Java Virtual Machine Specification
+**** Java Type
+***** primitive type
+    1. boolean jvm中映射为int Z default false(0) {false, true} boolean f = true; => iconst_1; istore_1; boolean数组映射为byte数组，操作使用byte数组的操作指令(baload, bastore)
+    2. byte     8-bit   signed B default 0      [-2^ 7, 2^ 7 - 1]
+    3. short   16-bit   signed S default 0      [-2^15, 2^15 - 1]
+    4. char    16-bit unsigned C default \u0000 [    0,    65535] UTF-16
+    5. int     32-bit   signed I default 0      [-2^31, 2^31 - 1]
+    6. long    64-bit   signed J default 0      [-2^63, 2^63 - 1]
+    7. float   32-bit   signed F default +0.0f  ~[-3.4E38, 3.4E38]   IEEE754
+    8. double  64-bit   signed D default +0.0d  ~[-1.8E308, 1.8E308] IEEE754
+***** Reference type
+      1. class type 引用类的实例
+      2. array type 引用数组
+      3. interface type 引用实现了特定接口的类实例或数组
+**** Run-Time Data Area
+***** The pc Register
+      每个线程独有一个程序计数器(program counter), 任一时刻，每个JVM线程都在执行某个方法的代码，即当前线程的当前方法，若非native方法，
+      pc会记录当前执行指令地址，native方法则为undefined
+***** Java Virtual Machine Stack
+      每个JVM线程启动时都会创建有一个私有的JVM栈, JVM栈类似于C语言栈, 每调用一个方法就会创建一个栈帧(frames), 栈帧主要分为局部变量区、
+      操作数栈; JVM栈允许设置大小xss; 若线程需求的内存超过JVM栈允许的大小抛出StackOverflowError(方法调用栈太深，超过栈的允许范围), 若JVM栈能够动态扩展，但没有足够的内存
+      完成JVM栈的扩展，或者启动新线程时没有足够的内存初始化JVM栈, 抛出OutOfMemoryError(栈无法分配或无法扩展);
+***** Heap
+      堆由所有JVM线程共享，用于创建类实例和数组对象，堆内存的释放由gc(garbage collector)处理; JVM 允许调整堆内存大小;
+***** Method Area
+      方法区由所有JVM线程共享, 用于存储运行时常量池，静态字段、静态方法，方法代码数据; 逻辑上属于堆的一部分, 但规范不限制
+      方法区的位置以及管理方法区内存的方式; JVM允许设置方法区的大小;
+***** Run-Time Constant Pool
+      常量池是每个类或者接口常量池表在运行时的内存体现, 包含编译时就知道的字面值、运行时需要的字段引用，类似于传统语言的符号引用,
+      但比这个更为宽泛; 常量池从方法区中分配内存, 当JVM创建class或者interface时创建对应的常量池;
+      
+***** Native Method Stacks
+*** 快速平方根倒数算法
+    1. IEEE754
+       32位float格式：
+       符号 指数(8) 有效数字(23)
+       0    01111100 01000000000000000000000
+       x = (-1)^Si·(1+m)·2^(E-B)
+       Si: Sign 符号位
+        m: Mantissa 有效数字的尾数, m∈[0, 1), m = 2^(-2) = 0.250
+	E: Exponent 偏移处理后的指数, E=124
+	B: 偏移量, 为了能表示[-127, 128]的指数, B=127
+       所以x = (1+0.250)·2^(-3) = 0.15625
+    2. code:
+       float Q_rsqrt( float number )
+       {
+          long i;
+	  float x2, y;
+	  const float threehalfs = 1.5F;
+		   
+          x2 = number * 0.5F;
+	  y  = number;
+	  i  = * ( long * ) &y;                       // evil floating point bit level hacking（对浮点数的邪恶位元hack）
+	  i  = 0x5f3759df - ( i >> 1 );               // what the fuck?（这他妈的是怎么回事？）
+	  y  = * ( float * ) &i;
+	  y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration （第一次迭代）
+          //      y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed（第二次迭代，可以删除）
+	  return y;
+       }
+    3. explaination:
+       思路: 先求取近似值，然后再用牛顿迭代提高精度
+       证明:[https://zh.wikipedia.org/wiki/%E5%B9%B3%E6%96%B9%E6%A0%B9%E5%80%92%E6%95%B0%E9%80%9F%E7%AE%97%E6%B3%95]
