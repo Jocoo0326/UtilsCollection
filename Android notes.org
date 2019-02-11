@@ -148,8 +148,5 @@
     5. ART引入预编译AOT(Ahead of time), 代替JIT, 安装时编译DEX文件；GC方面的优化
 *** 小程序的工作原理
 *** requestLayout invalidate postInvalidate 区别
-*** 类加载机制
-*** Retrofit
 *** ButterKnife
 *** EventBus
-*** RxJava
