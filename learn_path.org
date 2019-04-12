@@ -1,0 +1,18 @@
+* crash
+*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获
+取进程mem reg信息，同时获取procfs信息得到thread stacktrace
+*** breakpad   ---> crashDump --> addr2line
+
+* Finalizer
+*** object.finalize() run in FinalizerDaemon thread
+*** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，
+则发出SIGQUIT signal
+*** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
+
+* RecyclerView
+*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑: 
+# 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
+# 根据type查找mAttachedScrap-->mCachedViews
+# if mViewCacheExtension != null, 通过mViewCacheExtension查找
+# mRecyclerPool中查找
+# mAdapter.createViewHolder
