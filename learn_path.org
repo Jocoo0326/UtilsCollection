@@ -9,6 +9,8 @@
 则发出SIGQUIT signal
 *** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
 
+* generate code at runtime
+*** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
 *** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑: 
 # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
@@ -16,3 +18,65 @@
 # if mViewCacheExtension != null, 通过mViewCacheExtension查找
 # mRecyclerPool中查找
 # mAdapter.createViewHolder
+
+* android gradle plugin
+*** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
+*** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、
+compileOptions etc
+*** defaultConfig是默认的productFlavor类型，包含applicationId、minSdkVersion、versionCode、versionName、
+testInstrumentationRunner、ndk etc
+*** buildType属性：applicationSuffix、debuggable、jniDebuggable、minifyEnabled、multiDexEnabled、proguardFile、shrinkResources、
+signingConfig、zipAlignEnabled
+*** variant 是productFlavors和buildTypes组合产物，variant有applicationVariants、libraryVariants、testVariants
+*** 使用exec可以执行命令行操作
+*** 可以通过环境变量System.getenv()获取签名信息，从而隐藏签名信息
+*** manifestPlaceHolders buildConfigField resValue
+* Java Thread start
+*** android-source/art/runtime/thread_state.h
+enum ThreadState {
+  //                                   Thread.State   JDWP state
+  kTerminated = 66,                 // TERMINATED     TS_ZOMBIE    Thread.run has returned, but Thread* still around
+  kRunnable,                        // RUNNABLE       TS_RUNNING   runnable
+  kTimedWaiting,                    // TIMED_WAITING  TS_WAIT      in Object.wait() with a timeout
+  kSleeping,                        // TIMED_WAITING  TS_SLEEPING  in Thread.sleep()
+  kBlocked,                         // BLOCKED        TS_MONITOR   blocked on a monitor
+  kWaiting,                         // WAITING        TS_WAIT      in Object.wait()
+  kWaitingForLockInflation,         // WAITING        TS_WAIT      blocked inflating a thin-lock
+  kWaitingForTaskProcessor,         // WAITING        TS_WAIT      blocked waiting for taskProcessor
+  kWaitingForGcToComplete,          // WAITING        TS_WAIT      blocked waiting for GC
+  kWaitingForCheckPointsToRun,      // WAITING        TS_WAIT      GC waiting for checkpoints to run
+  kWaitingPerformingGc,             // WAITING        TS_WAIT      performing GC
+  kWaitingForDebuggerSend,          // WAITING        TS_WAIT      blocked waiting for events to be sent
+  kWaitingForDebuggerToAttach,      // WAITING        TS_WAIT      blocked waiting for debugger to attach
+  kWaitingInMainDebuggerLoop,       // WAITING        TS_WAIT      blocking/reading/processing debugger events
+  kWaitingForDebuggerSuspension,    // WAITING        TS_WAIT      waiting for debugger suspend all
+  kWaitingForJniOnLoad,             // WAITING        TS_WAIT      waiting for execution of dlopen and JNI on load code
+  kWaitingForSignalCatcherOutput,   // WAITING        TS_WAIT      waiting for signal catcher IO to complete
+  kWaitingInMainSignalCatcherLoop,  // WAITING        TS_WAIT      blocking/reading/processing signals
+  kWaitingForDeoptimization,        // WAITING        TS_WAIT      waiting for deoptimization suspend all
+  kWaitingForMethodTracingStart,    // WAITING        TS_WAIT      waiting for method tracing to start
+  kWaitingForVisitObjects,          // WAITING        TS_WAIT      waiting for visiting objects
+  kWaitingForGetObjectsAllocated,   // WAITING        TS_WAIT      waiting for getting the number of allocated objects
+  kWaitingWeakGcRootRead,           // WAITING        TS_WAIT      waiting on the GC to read a weak root
+  kWaitingForGcThreadFlip,          // WAITING        TS_WAIT      waiting on the GC thread flip (CC collector) to finish
+  kStarting,                        // NEW            TS_WAIT      native thread started, not yet ready to run managed code
+  kNative,                          // RUNNABLE       TS_RUNNING   running in a JNI native method
+  kSuspended,                       // RUNNABLE       TS_RUNNING   suspended by GC or debugger
+};
+*** android-source/art/runtime/native/java_lang_Thread.cc
+Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
+*** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
+* x86_64
+*** 函数传参寄存器顺序rdi, rsi, rdx, rcx, r8, r9，超过6个则压栈
+*** callq会push %rip(return address aka.下一条指令)
+*** %rax保存返回值
+* gdb
+*** $sp $pc $fp 别名适用所有平台
+*** x/i $pc 当前指令
+*** x/32x $sp 显示stack内存信息
+*** objdump -dS elf显示汇编
+*** disas/m 反汇编code
+* PLT/GOT
+*** PLT(procedure linkage table) GOT(global offset table)
+*** example:
+callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
