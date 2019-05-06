@@ -2,6 +2,7 @@
 *** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获
 取进程mem reg信息，同时获取procfs信息得到thread stacktrace
 *** breakpad   ---> crashDump --> addr2line
+*** fork和pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
 
 * Finalizer
 *** object.finalize() run in FinalizerDaemon thread
@@ -76,7 +77,84 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** x/32x $sp 显示stack内存信息
 *** objdump -dS elf显示汇编
 *** disas/m 反汇编code
-* PLT/GOT
+* lag analyze tool
+*** TraceView
+  - Debug.startMethodTracing("sample") Debug.startMethodTracingSampling() Debug.stopMethodTracing()
+*** Systrace
+  - ./systrace.py sched freq idle am wm gfx view sync binder_driver irq workq input -b 96000
+  - java framework: Trace.traceBegin(long traceTag, String methodName) Trace.traceEnd(long traceTag)
+  - app: Trace.beginSection(String sectionName) Trace.endSection()
+  - native: ATRACE_CALL();
+*** 获取GC统计信息
+  - // GC 使用的总耗时，单位是毫秒
+    Debug.getRuntimeStat("art.gc.gc-time");
+    // 阻塞式 GC 的总耗时
+    Debug.getRuntimeStat("art.gc.blocking-gc-time");
+
+* C++ mangle/demangle tool
+*** c++filt -n _ZN7android6Tracer12sEnabledTagsE
+* Hook
+** inline hook 
+*** Substrate
+**** MSHookFunction(void *symbol, void *replace, void **result)
+ - 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
+ - 替换symbol的前几个指令，将其跳转到replace的首地址，replace中调用*result(mmap新的buffer，保存old function头部被替换的字节，尾部跳转到原函数未被替换字节的首地址)
+** PLT/GOT hook
 *** PLT(procedure linkage table) GOT(global offset table)
 *** example:
 callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
+*** dl_iterate_phdr
+walk through list of shared objects
+*** facebook profilo iqiyi xHook
+* vcpkg
+*** visual stduio管理第三方libs
+* unit test
+*** 安全的重构代码
+*** cmake && google test
+* ASM
+** event-based and tree-based api
+** Parsing Generating Transforming class
+** ClassReader ClassVisitor ClassWriter
+** ClassWriter implemented ClassVisitor
+*** visitXXX方法调用时会写入字节码数据
+*** toByteArray返回记录的字节码数据
+** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
+* clojure
+** cider
+*** M-x cider-jack-in C-c M-j
+* FPS tracer
+** Choreographer.FrameCallback
+* tracing activity startup
+** reflect android.app.ActivityThread -> sCurrentActivityThread -> mH -> mCallback(hook with new one)
+* ClassLoader
+** locate or generate data that constitutes a definition for the class
+** Class object contains a reference to the ClassLoader that defined it
+** 数组对象的Class由JVM创建，非ClassLoader，且与其元素类型Class的ClassLoader相同；基本类型数据数组的Class无ClassLoader
+** 代理加载机制，即先向父ClassLoader请求加载类，未找到则自己加载
+** defineClass 将字节数组转换成Class对象
+* gradle
+** gradle init --type java-application
+** gradle jar
+#+begin_src groovy
+  jar {
+      manifest {
+          attributes("Main-Class": "App")
+      }
+  }
+
+  task uberJar(type: Jar) {
+      classifier = "all"
+      from sourceSets.main.output
+      manifest {
+          attributes("Main-Class": "App")
+      }
+
+      dependsOn configurations.runtimeClasspath
+      from {
+          configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+      }
+
+      with jar
+  }
+#+end_src
+
