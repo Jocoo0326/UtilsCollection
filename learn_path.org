@@ -1,36 +1,36 @@
 * crash
-*** ½ø³ÌcrashÊ±»á·¢ËÍsignal£¨SIGSEGV£¬SIGART etc£©£¬ÌáÇ°×¢²ásigaction´¦ÀíÄ¿±êsignal£¬È»ºóclone½ø³Ì£¬Ê¹ÓÃptrace syscall»ñ
-È¡½ø³Ìmem regĞÅÏ¢£¬Í¬Ê±»ñÈ¡procfsĞÅÏ¢µÃµ½thread stacktrace
+*** è¿›ç¨‹crashæ—¶ä¼šå‘é€signalï¼ˆSIGSEGVï¼ŒSIGART etcï¼‰ï¼Œæå‰æ³¨å†Œsigactionå¤„ç†ç›®æ ‡signalï¼Œç„¶åcloneè¿›ç¨‹ï¼Œä½¿ç”¨ptrace syscallè·
+å–è¿›ç¨‹mem regä¿¡æ¯ï¼ŒåŒæ—¶è·å–procfsä¿¡æ¯å¾—åˆ°thread stacktrace
 *** breakpad   ---> crashDump --> addr2line
-*** forkºÍpthread_create¶¼Ê¹ÓÃclone syscallÊµÏÖ£¬¿ÉÒÔÖ¸¶¨¹²ÏíÄÄĞ©Êı¾İÇøÓò
+*** forkå’Œpthread_createéƒ½ä½¿ç”¨clone syscallå®ç°ï¼Œå¯ä»¥æŒ‡å®šå…±äº«å“ªäº›æ•°æ®åŒºåŸŸ
 
 * Finalizer
 *** object.finalize() run in FinalizerDaemon thread
-*** FinalizerWatchdogDaemon thread ¼à¿ØFinalizerDaemon threadµÄÖ´ĞĞ£¬ÈôFinalizerDaemonÖ´ĞĞÄ³¸öobjectµÄfinalize·½·¨³¬¹ı10s£¬
-Ôò·¢³öSIGQUIT signal
-*** finalize timeout ¿ÉÒÔÍ¨¹ı·´ÉäÍ£Ö¹FinalizerWatchdogDaemon£¬Android PÏŞÖÆ·´Éäµ÷ÓÃÊ§Ğ§
+*** FinalizerWatchdogDaemon thread ç›‘æ§FinalizerDaemon threadçš„æ‰§è¡Œï¼Œè‹¥FinalizerDaemonæ‰§è¡ŒæŸä¸ªobjectçš„finalizeæ–¹æ³•è¶…è¿‡10sï¼Œ
+åˆ™å‘å‡ºSIGQUIT signal
+*** finalize timeout å¯ä»¥é€šè¿‡åå°„åœæ­¢FinalizerWatchdogDaemonï¼ŒAndroid Pé™åˆ¶åå°„è°ƒç”¨å¤±æ•ˆ
 
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
-*** Recycler.tryGetViewHolderForPositionByDeadline»º´æÂß¼­: 
-# ¸ù¾İposition²éÕÒmAttachedScrap-->mHiddenViews-->mCachedViews£¬
-# ¸ù¾İtype²éÕÒmAttachedScrap-->mCachedViews
-# if mViewCacheExtension != null, Í¨¹ımViewCacheExtension²éÕÒ
-# mRecyclerPoolÖĞ²éÕÒ
+*** Recycler.tryGetViewHolderForPositionByDeadlineç¼“å­˜é€»è¾‘: 
+# æ ¹æ®positionæŸ¥æ‰¾mAttachedScrap-->mHiddenViews-->mCachedViewsï¼Œ
+# æ ¹æ®typeæŸ¥æ‰¾mAttachedScrap-->mCachedViews
+# if mViewCacheExtension != null, é€šè¿‡mViewCacheExtensionæŸ¥æ‰¾
+# mRecyclerPoolä¸­æŸ¥æ‰¾
 # mAdapter.createViewHolder
 
 * android gradle plugin
-*** ·½·¨µÄ×îºóÒ»¸ö²ÎÊıÊÇ±Õ°üÊ±¿ÉÒÔ½«{}ÒÆµ½()Íâ£¬Í¬Ê±()¿ÉÒÔÊ¡ÂÔ£¬ËùÒÔ³£¼ûµÄandroid {...}
-*** android°üº¬ÊôĞÔ£ºcompileSdkVersion¡¢buildToolsVersion¡¢defaultConfig¡¢buildTypes¡¢signingConfigs¡¢lintOptions¡¢
+*** æ–¹æ³•çš„æœ€åä¸€ä¸ªå‚æ•°æ˜¯é—­åŒ…æ—¶å¯ä»¥å°†{}ç§»åˆ°()å¤–ï¼ŒåŒæ—¶()å¯ä»¥çœç•¥ï¼Œæ‰€ä»¥å¸¸è§çš„android {...}
+*** androidåŒ…å«å±æ€§ï¼šcompileSdkVersionã€buildToolsVersionã€defaultConfigã€buildTypesã€signingConfigsã€lintOptionsã€
 compileOptions etc
-*** defaultConfigÊÇÄ¬ÈÏµÄproductFlavorÀàĞÍ£¬°üº¬applicationId¡¢minSdkVersion¡¢versionCode¡¢versionName¡¢
-testInstrumentationRunner¡¢ndk etc
-*** buildTypeÊôĞÔ£ºapplicationSuffix¡¢debuggable¡¢jniDebuggable¡¢minifyEnabled¡¢multiDexEnabled¡¢proguardFile¡¢shrinkResources¡¢
-signingConfig¡¢zipAlignEnabled
-*** variant ÊÇproductFlavorsºÍbuildTypes×éºÏ²úÎï£¬variantÓĞapplicationVariants¡¢libraryVariants¡¢testVariants
-*** Ê¹ÓÃexec¿ÉÒÔÖ´ĞĞÃüÁîĞĞ²Ù×÷
-*** ¿ÉÒÔÍ¨¹ı»·¾³±äÁ¿System.getenv()»ñÈ¡Ç©ÃûĞÅÏ¢£¬´Ó¶øÒş²ØÇ©ÃûĞÅÏ¢
+*** defaultConfigæ˜¯é»˜è®¤çš„productFlavorç±»å‹ï¼ŒåŒ…å«applicationIdã€minSdkVersionã€versionCodeã€versionNameã€
+testInstrumentationRunnerã€ndk etc
+*** buildTypeå±æ€§ï¼šapplicationSuffixã€debuggableã€jniDebuggableã€minifyEnabledã€multiDexEnabledã€proguardFileã€shrinkResourcesã€
+signingConfigã€zipAlignEnabled
+*** variant æ˜¯productFlavorså’ŒbuildTypesç»„åˆäº§ç‰©ï¼Œvariantæœ‰applicationVariantsã€libraryVariantsã€testVariants
+*** ä½¿ç”¨execå¯ä»¥æ‰§è¡Œå‘½ä»¤è¡Œæ“ä½œ
+*** å¯ä»¥é€šè¿‡ç¯å¢ƒå˜é‡System.getenv()è·å–ç­¾åä¿¡æ¯ï¼Œä»è€Œéšè—ç­¾åä¿¡æ¯
 *** manifestPlaceHolders buildConfigField resValue
 * Java Thread start
 *** android-source/art/runtime/thread_state.h
@@ -68,15 +68,15 @@ enum ThreadState {
 Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
 *** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
 * x86_64
-*** º¯Êı´«²Î¼Ä´æÆ÷Ë³Ğòrdi, rsi, rdx, rcx, r8, r9£¬³¬¹ı6¸öÔòÑ¹Õ»
-*** callq»ápush %rip(return address aka.ÏÂÒ»ÌõÖ¸Áî)
-*** %rax±£´æ·µ»ØÖµ
+*** å‡½æ•°ä¼ å‚å¯„å­˜å™¨é¡ºåºrdi, rsi, rdx, rcx, r8, r9ï¼Œè¶…è¿‡6ä¸ªåˆ™å‹æ ˆ
+*** callqä¼špush %rip(return address aka.ä¸‹ä¸€æ¡æŒ‡ä»¤)
+*** %raxä¿å­˜è¿”å›å€¼
 * gdb
-*** $sp $pc $fp ±ğÃûÊÊÓÃËùÓĞÆ½Ì¨
-*** x/i $pc µ±Ç°Ö¸Áî
-*** x/32x $sp ÏÔÊ¾stackÄÚ´æĞÅÏ¢
-*** objdump -dS elfÏÔÊ¾»ã±à
-*** disas/m ·´»ã±àcode
+*** $sp $pc $fp åˆ«åé€‚ç”¨æ‰€æœ‰å¹³å°
+*** x/i $pc å½“å‰æŒ‡ä»¤
+*** x/32x $sp æ˜¾ç¤ºstackå†…å­˜ä¿¡æ¯
+*** objdump -dS elfæ˜¾ç¤ºæ±‡ç¼–
+*** disas/m åæ±‡ç¼–code
 * lag analyze tool
 *** TraceView
   - Debug.startMethodTracing("sample") Debug.startMethodTracingSampling() Debug.stopMethodTracing()
@@ -85,10 +85,10 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
   - java framework: Trace.traceBegin(long traceTag, String methodName) Trace.traceEnd(long traceTag)
   - app: Trace.beginSection(String sectionName) Trace.endSection()
   - native: ATRACE_CALL();
-*** »ñÈ¡GCÍ³¼ÆĞÅÏ¢
-  - // GC Ê¹ÓÃµÄ×ÜºÄÊ±£¬µ¥Î»ÊÇºÁÃë
+*** è·å–GCç»Ÿè®¡ä¿¡æ¯
+  - // GC ä½¿ç”¨çš„æ€»è€—æ—¶ï¼Œå•ä½æ˜¯æ¯«ç§’
     Debug.getRuntimeStat("art.gc.gc-time");
-    // ×èÈûÊ½ GC µÄ×ÜºÄÊ±
+    // é˜»å¡å¼ GC çš„æ€»è€—æ—¶
     Debug.getRuntimeStat("art.gc.blocking-gc-time");
 
 * C++ mangle/demangle tool
@@ -97,27 +97,88 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** inline hook 
 *** Substrate
 **** MSHookFunction(void *symbol, void *replace, void **result)
- - ×÷ÓÃ£ºsymbol£ºÔ­º¯ÊıµØÖ·£¬replace£ºhookº¯ÊıµØÖ·£¬result£º·µ»Ø¶¯Ì¬Éú³ÉµÄ´úÌæÔ­º¯ÊıµÄÖ¸Õë£¬ÓÃÓÚÔÚhookº¯ÊıÖĞµ÷ÓÃÔ­À´µÄÂß¼­
- - Ìæ»»symbolµÄÇ°¼¸¸öÖ¸Áî£¬½«ÆäÌø×ªµ½replaceµÄÊ×µØÖ·£¬replaceÖĞµ÷ÓÃ*result(mmapĞÂµÄbuffer£¬±£´æold functionÍ·²¿±»Ìæ»»µÄ×Ö½Ú£¬Î²²¿Ìø×ªµ½Ô­º¯ÊıÎ´±»Ìæ»»×Ö½ÚµÄÊ×µØÖ·)
+ - ä½œç”¨ï¼šsymbolï¼šåŸå‡½æ•°åœ°å€ï¼Œreplaceï¼šhookå‡½æ•°åœ°å€ï¼Œresultï¼šè¿”å›åŠ¨æ€ç”Ÿæˆçš„ä»£æ›¿åŸå‡½æ•°çš„æŒ‡é’ˆï¼Œç”¨äºåœ¨hookå‡½æ•°ä¸­è°ƒç”¨åŸæ¥çš„é€»è¾‘
+ - æ›¿æ¢symbolçš„å‰å‡ ä¸ªæŒ‡ä»¤ï¼Œå°†å…¶è·³è½¬åˆ°replaceçš„é¦–åœ°å€ï¼Œreplaceä¸­è°ƒç”¨*result(mmapæ–°çš„bufferï¼Œä¿å­˜old functionå¤´éƒ¨è¢«æ›¿æ¢çš„å­—èŠ‚ï¼Œå°¾éƒ¨è·³è½¬åˆ°åŸå‡½æ•°æœªè¢«æ›¿æ¢å­—èŠ‚çš„é¦–åœ°å€)
 ** PLT/GOT hook
 *** PLT(procedure linkage table) GOT(global offset table)
 *** example:
-callq <printf@PLT> ²éÕÒGOTÖĞÏàÓ¦¼ÇÂ¼£¬ÈôÃ»ÓĞ¼ÓÔØprintfµØÖ·£¬¼ÓÔØso¿â£¬ĞŞ¸ÄGOTÖĞprintf¼ÇÂ¼µØÖ·ÎªÕæÊµµØÖ·£¬ºóĞøµ÷ÓÃÖ±½Óµ÷ÓÃGOTÖĞÕæÊµµØÖ·
+callq <printf@PLT> æŸ¥æ‰¾GOTä¸­ç›¸åº”è®°å½•ï¼Œè‹¥æ²¡æœ‰åŠ è½½printfåœ°å€ï¼ŒåŠ è½½soåº“ï¼Œä¿®æ”¹GOTä¸­printfè®°å½•åœ°å€ä¸ºçœŸå®åœ°å€ï¼Œåç»­è°ƒç”¨ç›´æ¥è°ƒç”¨GOTä¸­çœŸå®åœ°å€
 *** dl_iterate_phdr
 walk through list of shared objects
 *** facebook profilo iqiyi xHook
 * vcpkg
-*** visual stduio¹ÜÀíµÚÈı·½libs
+*** visual stduioç®¡ç†ç¬¬ä¸‰æ–¹libs
 * unit test
-*** °²È«µÄÖØ¹¹´úÂë
+*** å®‰å…¨çš„é‡æ„ä»£ç 
 *** cmake && google test
+*** gtest
+**** assertions
+| assertions | fatal | intercept |
+|------------+-------+-----------|
+| ASSERT_*   | YES   | YES       |
+| EXPECT_*   | NO    | NO        |
+**** fixtures
+***** Using the Same Data Configuration for Multiple Tests
+#+begin_src cpp
+  // class Queue wanted to be tested
+  template <typename E>  // E is the element type.
+  class Queue {
+   public:
+    Queue();
+    void Enqueue(const E& element);
+    E* Dequeue();  // Returns NULL if the queue is empty.
+    size_t size() const;
+    ...
+  };
+
+  // test case fixture class
+  class QueueTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+       q1_.Enqueue(1);
+       q2_.Enqueue(2);
+       q2_.Enqueue(3);
+    }
+
+    // void TearDown() override {}
+
+    Queue<int> q0_;
+    Queue<int> q1_;
+    Queue<int> q2_;
+  };
+
+  // tests
+  TEST_F(QueueTest, IsEmptyInitially) {
+    EXPECT_EQ(q0_.size(), 0);
+  }
+
+  TEST_F(QueueTest, DequeueWorks) {
+    int* n = q0_.Dequeue();
+    EXPECT_EQ(n, nullptr);
+
+    n = q1_.Dequeue();
+    ASSERT_NE(n, nullptr);
+    EXPECT_EQ(*n, 1);
+    EXPECT_EQ(q1_.size(), 0);
+    delete n;
+
+    n = q2_.Dequeue();
+    ASSERT_NE(n, nullptr);
+    EXPECT_EQ(*n, 2);
+    EXPECT_EQ(q2_.size(), 1);
+    delete n;
+  }
+#+end_src
+**** running tests
+***** TEST TEST_F éšå¼æ³¨å†Œåˆ°googletestï¼Œä¸éœ€è¦æ˜¾ç¤ºæŒ‡å®šéœ€è¦è¿è¡Œå“ªäº›æµ‹è¯•
+***** RUN_ALL_TESTS()
 * ASM
 ** event-based and tree-based api
 ** Parsing Generating Transforming class
 ** ClassReader ClassVisitor ClassWriter
 ** ClassWriter implemented ClassVisitor
-*** visitXXX·½·¨µ÷ÓÃÊ±»áĞ´Èë×Ö½ÚÂëÊı¾İ
-*** toByteArray·µ»Ø¼ÇÂ¼µÄ×Ö½ÚÂëÊı¾İ
+*** visitXXXæ–¹æ³•è°ƒç”¨æ—¶ä¼šå†™å…¥å­—èŠ‚ç æ•°æ®
+*** toByteArrayè¿”å›è®°å½•çš„å­—èŠ‚ç æ•°æ®
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
 * clojure
 ** cider
@@ -129,9 +190,9 @@ walk through list of shared objects
 * ClassLoader
 ** locate or generate data that constitutes a definition for the class
 ** Class object contains a reference to the ClassLoader that defined it
-** Êı×é¶ÔÏóµÄClassÓÉJVM´´½¨£¬·ÇClassLoader£¬ÇÒÓëÆäÔªËØÀàĞÍClassµÄClassLoaderÏàÍ¬£»»ù±¾ÀàĞÍÊı¾İÊı×éµÄClassÎŞClassLoader
-** ´úÀí¼ÓÔØ»úÖÆ£¬¼´ÏÈÏò¸¸ClassLoaderÇëÇó¼ÓÔØÀà£¬Î´ÕÒµ½Ôò×Ô¼º¼ÓÔØ
-** defineClass ½«×Ö½ÚÊı×é×ª»»³ÉClass¶ÔÏó
+** æ•°ç»„å¯¹è±¡çš„Classç”±JVMåˆ›å»ºï¼ŒéClassLoaderï¼Œä¸”ä¸å…¶å…ƒç´ ç±»å‹Classçš„ClassLoaderç›¸åŒï¼›åŸºæœ¬ç±»å‹æ•°æ®æ•°ç»„çš„Classæ— ClassLoader
+** ä»£ç†åŠ è½½æœºåˆ¶ï¼Œå³å…ˆå‘çˆ¶ClassLoaderè¯·æ±‚åŠ è½½ç±»ï¼Œæœªæ‰¾åˆ°åˆ™è‡ªå·±åŠ è½½
+** defineClass å°†å­—èŠ‚æ•°ç»„è½¬æ¢æˆClasså¯¹è±¡
 * gradle
 ** gradle init --type java-application
 ** gradle jar
@@ -158,3 +219,6 @@ walk through list of shared objects
   }
 #+end_src
 
+* git submodule
+** git submodule add ${url}
+** git clone -> git submodule init -> git submodule update
