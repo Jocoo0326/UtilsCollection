@@ -1,7 +1,8 @@
 * crash
-*** ½ø³ÌcrashÊ±»á·¢ËÍsignal£¨SIGSEGV£¬SIGART etc£©£¬ÌáÇ°×¢²ásigaction´¦ÀíÄ¿±êsignal£¬È»ºóclone½ø³Ì£¬Ê¹ÓÃptrace syscall»ñ È¡½ø³Ìmem regÐÅÏ¢£¬Í¬Ê±»ñÈ¡procfsÐÅÏ¢µÃµ½thread stacktrace
+*** è¿›ç¨‹crashæ—¶ä¼šå‘é€signalï¼ˆSIGSEGVï¼ŒSIGART etcï¼‰ï¼Œæå‰æ³¨å†Œsigactionå¤„ç†ç›®æ ‡signalï¼Œç„¶åŽcloneè¿›ç¨‹ï¼Œä½¿ç”¨ptrace syscallèŽ·
+å–è¿›ç¨‹mem regä¿¡æ¯ï¼ŒåŒæ—¶èŽ·å–procfsä¿¡æ¯å¾—åˆ°thread stacktrace
 *** breakpad   ---> crashDump --> addr2line
-*** forkºÍpthread_create¶¼Ê¹ÓÃclone syscallÊµÏÖ£¬¿ÉÒÔÖ¸¶¨¹²ÏíÄÄÐ©Êý¾ÝÇøÓò
+*** forkå’Œpthread_createéƒ½ä½¿ç”¨clone syscallå®žçŽ°ï¼Œå¯ä»¥æŒ‡å®šå…±äº«å“ªäº›æ•°æ®åŒºåŸŸ
 *** core dump file
 **** with systemd systems cat /proc/sys/kernel/core_pattern -> |/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %e
 **** core dump files stored in directory /var/lib/systemd/coredump
@@ -10,22 +11,10 @@
 **** extract core dump file: coredumpctl dump ${pid} -o core
 * Finalizer
 *** object.finalize() run in FinalizerDaemon thread
-*** FinalizerWatchdogDaemon thread ¼à¿ØFinalizerDaemon threadµÄÖ´ÐÐ£¬ÈôFinalizerDaemonÖ´ÐÐÄ³¸öobjectµÄfinalize·½·¨³¬¹ý10s£¬
-Ôò·¢³öSIGQUIT signal
-*** finalize timeout ¿ÉÒÔÍ¨¹ý·´ÉäÍ£Ö¹FinalizerWatchdogDaemon£¬Android PÏÞÖÆ·´Éäµ÷ÓÃÊ§Ð§
-=======
-*** è¿›ç¨‹crashæ—¶ä¼šå‘é€signalï¼ˆSIGSEGVï¼ŒSIGART etcï¼‰ï¼Œæå‰æ³¨å†Œsigactionå¤„ç†ç›®æ ‡signalï¼Œç„¶åŽcloneè¿›ç¨‹ï¼Œä½¿ç”¨ptrace syscallèŽ·
-å–è¿›ç¨‹mem regä¿¡æ¯ï¼ŒåŒæ—¶èŽ·å–procfsä¿¡æ¯å¾—åˆ°thread stacktrace
-*** breakpad   ---> crashDump --> addr2line
-*** forkå’Œpthread_createéƒ½ä½¿ç”¨clone syscallå®žçŽ°ï¼Œå¯ä»¥æŒ‡å®šå…±äº«å“ªäº›æ•°æ®åŒºåŸŸ
-
-* Finalizer
-*** object.finalize() run in FinalizerDaemon thread
 *** FinalizerWatchdogDaemon thread ç›‘æŽ§FinalizerDaemon threadçš„æ‰§è¡Œï¼Œè‹¥FinalizerDaemonæ‰§è¡ŒæŸä¸ªobjectçš„finalizeæ–¹æ³•è¶…è¿‡10sï¼Œ
 åˆ™å‘å‡ºSIGQUIT signal
 *** finalize timeout å¯ä»¥é€šè¿‡åå°„åœæ­¢FinalizerWatchdogDaemonï¼ŒAndroid Pé™åˆ¶åå°„è°ƒç”¨å¤±æ•ˆ
 
->>>>>>> e80601e80df28628831ae79051adec54334840ee
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
@@ -196,8 +185,6 @@ walk through list of shared objects
 *** visitXXXæ–¹æ³•è°ƒç”¨æ—¶ä¼šå†™å…¥å­—èŠ‚ç æ•°æ®
 *** toByteArrayè¿”å›žè®°å½•çš„å­—èŠ‚ç æ•°æ®
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
-*** download asm-all-5.2.jar with all utils
-*** java -classpath asm-all-5.2.jar org.objectweb.asm.util.ASMifier (${class file} | ${java.lang.Void})
 * clojure
 ** cider
 *** M-x cider-jack-in C-c M-j
@@ -236,29 +223,30 @@ walk through list of shared objects
       with jar
   }
 #+end_src
+
 * PhontomReference
-** ±ØÐëÓëÒýÓÃ¶ÓÁÐÒ»ÆðÊ¹ÓÃ£¬Ìá¹©ÔÚfinalizeÖ´ÐÐÖ®ºóµÃµ½Í¨ÖªµÄ»ú»á£¬±ÈÈçÖ´ÐÐpost-mortemÇåÀí»úÖÆ
+** å¿…é¡»ä¸Žå¼•ç”¨é˜Ÿåˆ—ä¸€èµ·ä½¿ç”¨ï¼Œæä¾›åœ¨finalizeæ‰§è¡Œä¹‹åŽå¾—åˆ°é€šçŸ¥çš„æœºä¼šï¼Œæ¯”å¦‚æ‰§è¡Œpost-mortemæ¸…ç†æœºåˆ¶
 * line-oriented search tools
 ** the silver searcher
 ** git grep
 ** ripgrep
 * linux process group and session group
 ** process group
-*** Ò»×é½ø³Ì£¬¾ßÓÐÏàÍ¬µÄ½ø³Ì×éid£¬ÓÃÓÚÏòÕâ¸ö½ø³Ì×é·¢ËÍÐÅºÅ£¬fork pipe´´½¨µÄ½ø³ÌÊôÓÚÒ»¸ö½ø³Ì×é
+*** ä¸€ç»„è¿›ç¨‹ï¼Œå…·æœ‰ç›¸åŒçš„è¿›ç¨‹ç»„idï¼Œç”¨äºŽå‘è¿™ä¸ªè¿›ç¨‹ç»„å‘é€ä¿¡å·ï¼Œfork pipeåˆ›å»ºçš„è¿›ç¨‹å±žäºŽä¸€ä¸ªè¿›ç¨‹ç»„
 ** session group
-*** ¶à¸ö½ø³Ì×é×é³É»á»°
-*** Ò»¸ö½ø³Ì×é²»ÄÜ´ÓÒ»¸ö»á»°Ç¨ÒÆµ½ÁíÍâÒ»¸ö»á»°
-*** Ò»¸ö½ø³Ì×éÖ»ÄÜÊôÓÚÒ»¸ö»á»°
-*** Ò»¸ö½ø³Ì²»ÄÜ´´½¨ÊôÓÚÆäËû»á»°µÄ½ø³Ì×é
+*** å¤šä¸ªè¿›ç¨‹ç»„ç»„æˆä¼šè¯
+*** ä¸€ä¸ªè¿›ç¨‹ç»„ä¸èƒ½ä»Žä¸€ä¸ªä¼šè¯è¿ç§»åˆ°å¦å¤–ä¸€ä¸ªä¼šè¯
+*** ä¸€ä¸ªè¿›ç¨‹ç»„åªèƒ½å±žäºŽä¸€ä¸ªä¼šè¯
+*** ä¸€ä¸ªè¿›ç¨‹ä¸èƒ½åˆ›å»ºå±žäºŽå…¶ä»–ä¼šè¯çš„è¿›ç¨‹ç»„
 * daemon process
 ** fork()
-*** ×Ó½ø³Ì²»ÊÇÒ»¸ö½ø³Ì×éµÄ×é³¤½ø³Ì,ÕâÎªÏÂÃæÖ´ÐÐsetsid´´½¨ÐÂ»á»°´´½¨Ìõ¼þ
+*** å­è¿›ç¨‹ä¸æ˜¯ä¸€ä¸ªè¿›ç¨‹ç»„çš„ç»„é•¿è¿›ç¨‹,è¿™ä¸ºä¸‹é¢æ‰§è¡Œsetsidåˆ›å»ºæ–°ä¼šè¯åˆ›å»ºæ¡ä»¶
 ** setsid()
-*** ³ÉÎªÐÂ»á»°µÄÊ×½ø³Ì
-*** ³ÉÎªÐÂ½ø³Ì×éµÄ×é³¤½ø³Ì
-*** Ã»ÓÐ¿ØÖÆÖÕ¶ËÓëÖ®ÏàÁ¬
+*** æˆä¸ºæ–°ä¼šè¯çš„é¦–è¿›ç¨‹
+*** æˆä¸ºæ–°è¿›ç¨‹ç»„çš„ç»„é•¿è¿›ç¨‹
+*** æ²¡æœ‰æŽ§åˆ¶ç»ˆç«¯ä¸Žä¹‹ç›¸è¿ž
 ** umask(0)
-*** ·ÀÖ¹¼Ì³ÐµÃÀ´µÄÎÄ¼þÄ£Ê½´´½¨ÆÁ±Î×ÖÔÚ´´½¨ÎÄ¼þÊ±»á¾Ü¾øÉèÖÃÄ³Ð©È¨ÏÞ
+*** é˜²æ­¢ç»§æ‰¿å¾—æ¥çš„æ–‡ä»¶æ¨¡å¼åˆ›å»ºå±è”½å­—åœ¨åˆ›å»ºæ–‡ä»¶æ—¶ä¼šæ‹’ç»è®¾ç½®æŸäº›æƒé™
 ** close fds: STDIN_FILENO STDOUT_FILENO STDERR_FILENO
 #+begin_src c
   int fd = open("/dev/null", O_RDWR);
@@ -267,36 +255,34 @@ walk through list of shared objects
 #+end_src
 
 * UI
-** smallestWidthÊÊÅä
+** smallestWidthé€‚é…
 *** [https://mp.weixin.qq.com/s?__biz=MzAxMTI4MTkwNQ==&mid=2650826034&idx=1&sn=5e86768d7abc1850b057941cdd003927&chksm=80b7b1acb7c038ba8912b9a09f7e0d41eef13ec0cea19462e47c4e4fe6a08ab760fec864c777&scene=21#wechat_redirect]
 *** dp = px / density density = DPI/160
-** ½ñÈÕÍ·Ìõ¼ÆËãdensity
+** ä»Šæ—¥å¤´æ¡è®¡ç®—density
 * APK size
 ** proguard
-*** Shrink¡¢Optimize ºÍ Obfuscate£¬Ò²¾ÍÊÇ²Ã¼ô¡¢ÓÅ»¯¡¢»ìÏý
+*** Shrinkã€Optimize å’Œ Obfuscateï¼Œä¹Ÿå°±æ˜¯è£å‰ªã€ä¼˜åŒ–ã€æ··æ·†
 ** dex
 *** facebook redex byte code optimizer
 *** so file 7-zip XZ
 ** shrinkresources
-*** Lint ÌáÊ¾ÎÞÓÃµÄ×ÊÔ´
+*** Lint æç¤ºæ— ç”¨çš„èµ„æº
 *** shrinkResources true in gradle
-**** Ã»ÓÐ´¦Àíresources.arscÎÄ¼þ
-**** Ã»ÓÐÉ¾³ý×ÊÔ´ÎÄ¼þ
-**** R.javaÎÄ¼þÐèÒªÌáÇ°×¼±¸ºÃ£¬ËùÓÐ×ÊÔ´¶¼·ÖÅäÁËÒ»¸ö³£Á¿ID£¬±àÒëJava´úÂë¹ý³Ì£¬½«´úÂëÖÐµÄ×ÊÔ´ÒýÓÃÌæ»»³É³£Á¿
+**** æ²¡æœ‰å¤„ç†resources.arscæ–‡ä»¶
+**** æ²¡æœ‰åˆ é™¤èµ„æºæ–‡ä»¶
+**** R.javaæ–‡ä»¶éœ€è¦æå‰å‡†å¤‡å¥½ï¼Œæ‰€æœ‰èµ„æºéƒ½åˆ†é…äº†ä¸€ä¸ªå¸¸é‡IDï¼Œç¼–è¯‘Javaä»£ç è¿‡ç¨‹ï¼Œå°†ä»£ç ä¸­çš„èµ„æºå¼•ç”¨æ›¿æ¢æˆå¸¸é‡
 * find duplicated number in array
 ** [http://keithschwarz.com/interesting/code/?dir=find-duplicate]
-** ´ËÎÊÌâµÈ¼ÛÓÚÁ´±íÕÒ»·ÎÊÌâ
+** æ­¤é—®é¢˜ç­‰ä»·äºŽé“¾è¡¨æ‰¾çŽ¯é—®é¢˜
 * linked list cycle
-** ÅÐ¶ÏÊÇ·ñÓÐ»·
-*** h tÁ½¸öÖ¸Õë´ÓÆðµãS³ö·¢£¬tÃ¿Ç°½ø1²½£¬hÇ°½ø2²½£¬Ö»Òª¶þÕß¶¼¿ÉÒÔÇ°½ø¶øÇÒÃ»ÓÐÏàÓö£¬¾Í±£³Ö¶þÕßÍÆ½ø¡£
-*** µ±hÎÞ·¨Ç°½ø£¬¼´µ½´ïÄ³¸öÃ»ÓÐºó¼Ì½ÚµãÊ±£¬¿ÉÒÔÈ·¶¨´ÓS³ö·¢Ã»ÓÐ»·£¬·´Ö®µ±tºÍhÔÙ´ÎÏàÓöÊ±£¬¾Í¿ÉÒÔÈ·¶¨´ÓS³ö·¢Ò»¶¨»á½øÈëÄ³¸ö»·£¬ÉèÆäÎª»·C
-** »·µÄ³¤¶È
-*** ÅÐ¶Ï³ö´æÔÚ»·CÊ±£¬tºÍhÎ»ÓÚÍ¬Ò»µã£¬ÉèÆäÎª½ÚµãM¡£ÏÔÈ»£¬½öÐèÁîh²»¶¯£¬¶øt²»¶ÏÍÆ½ø£¬×îÖÕÓÖ»á»Øµ½½ÚµãM£¬Í³¼ÆÕâÒ»´ÎtÍÆ½øµÄ²½Êý£¬¼´µÃµ½»·µÄ³¤¶È
-** »·µÄÆðµã
-*** t´ÓÆðµãSµ½ÏàÓöµãM×ß¹ýµÄ¾àÀëÊÇ»·C³¤¶ÈµÄÕûÊý±¶£¬ÒòÎªh×ß¹ýµÄ¾àÀë±Èt×ß¹ýµÄ¾àÀë¶à»·³¤¶ÈµÄÕûÊý±¶£¬¶øhµÄËÙ¶ÈÊÇtµÄ2±¶
-*** Áît»Øµ½ÆðµãS£¬Í¬Ê±ÈÃh´Ó½ÚµãM¹²Í¬ÍÆ½ø£¬hºÍt¶¼Ò»´ÎÇ°½øÒ»²½£¬µ±hºÍtÔÙ´ÎÏàÓöÊ±£¬Éè´Ë´ÎÏàÓöÊ±Î»ÓÚÍ¬Ò»½ÚµãP£¬ÔòP¼´Îª´ÓÆðµãS³ö·¢Ëùµ½´ï»·CµÄµÚÒ»¸ö½Úµã
-=======
+** åˆ¤æ–­æ˜¯å¦æœ‰çŽ¯
+*** h tä¸¤ä¸ªæŒ‡é’ˆä»Žèµ·ç‚¹Så‡ºå‘ï¼Œtæ¯å‰è¿›1æ­¥ï¼Œhå‰è¿›2æ­¥ï¼Œåªè¦äºŒè€…éƒ½å¯ä»¥å‰è¿›è€Œä¸”æ²¡æœ‰ç›¸é‡ï¼Œå°±ä¿æŒäºŒè€…æŽ¨è¿›ã€‚
+*** å½“hæ— æ³•å‰è¿›ï¼Œå³åˆ°è¾¾æŸä¸ªæ²¡æœ‰åŽç»§èŠ‚ç‚¹æ—¶ï¼Œå¯ä»¥ç¡®å®šä»ŽSå‡ºå‘æ²¡æœ‰çŽ¯ï¼Œåä¹‹å½“tå’Œhå†æ¬¡ç›¸é‡æ—¶ï¼Œå°±å¯ä»¥ç¡®å®šä»ŽSå‡ºå‘ä¸€å®šä¼šè¿›å…¥æŸä¸ªçŽ¯ï¼Œè®¾å…¶ä¸ºçŽ¯C
+** çŽ¯çš„é•¿åº¦
+*** åˆ¤æ–­å‡ºå­˜åœ¨çŽ¯Cæ—¶ï¼Œtå’Œhä½äºŽåŒä¸€ç‚¹ï¼Œè®¾å…¶ä¸ºèŠ‚ç‚¹Mã€‚æ˜¾ç„¶ï¼Œä»…éœ€ä»¤hä¸åŠ¨ï¼Œè€Œtä¸æ–­æŽ¨è¿›ï¼Œæœ€ç»ˆåˆä¼šå›žåˆ°èŠ‚ç‚¹Mï¼Œç»Ÿè®¡è¿™ä¸€æ¬¡tæŽ¨è¿›çš„æ­¥æ•°ï¼Œå³å¾—åˆ°çŽ¯çš„é•¿åº¦
+** çŽ¯çš„èµ·ç‚¹
+*** tä»Žèµ·ç‚¹Såˆ°ç›¸é‡ç‚¹Mèµ°è¿‡çš„è·ç¦»æ˜¯çŽ¯Cé•¿åº¦çš„æ•´æ•°å€ï¼Œå› ä¸ºhèµ°è¿‡çš„è·ç¦»æ¯”tèµ°è¿‡çš„è·ç¦»å¤šçŽ¯é•¿åº¦çš„æ•´æ•°å€ï¼Œè€Œhçš„é€Ÿåº¦æ˜¯tçš„2å€
+*** ä»¤tå›žåˆ°èµ·ç‚¹Sï¼ŒåŒæ—¶è®©hä»ŽèŠ‚ç‚¹Må…±åŒæŽ¨è¿›ï¼Œhå’Œtéƒ½ä¸€æ¬¡å‰è¿›ä¸€æ­¥ï¼Œå½“hå’Œtå†æ¬¡ç›¸é‡æ—¶ï¼Œè®¾æ­¤æ¬¡ç›¸é‡æ—¶ä½äºŽåŒä¸€èŠ‚ç‚¹Pï¼Œåˆ™På³ä¸ºä»Žèµ·ç‚¹Så‡ºå‘æ‰€åˆ°è¾¾çŽ¯Cçš„ç¬¬ä¸€ä¸ªèŠ‚ç‚¹
 * git submodule
 ** git submodule add ${url}
 ** git clone -> git submodule init -> git submodule update
->>>>>>> e80601e80df28628831ae79051adec54334840ee
