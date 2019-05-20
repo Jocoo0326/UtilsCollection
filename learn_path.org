@@ -1,15 +1,18 @@
 * crash
-*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获
-取进程mem reg信息，同时获取procfs信息得到thread stacktrace
+*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获 取进程mem reg信息，同时获取procfs信息得到thread stacktrace
 *** breakpad   ---> crashDump --> addr2line
 *** fork和pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
-
+*** core dump file
+**** with systemd systems cat /proc/sys/kernel/core_pattern -> |/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %e
+**** core dump files stored in directory /var/lib/systemd/coredump
+**** core dump file managed by coredumpctl
+**** list all core dump files: coredumpctl list | tail -5
+**** extract core dump file: coredumpctl dump ${pid} -o core
 * Finalizer
 *** object.finalize() run in FinalizerDaemon thread
 *** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，
 则发出SIGQUIT signal
 *** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
-
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
@@ -119,6 +122,8 @@ walk through list of shared objects
 *** visitXXX方法调用时会写入字节码数据
 *** toByteArray返回记录的字节码数据
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
+*** download asm-all-5.2.jar with all utils
+*** java -classpath asm-all-5.2.jar org.objectweb.asm.util.ASMifier (${class file} | ${java.lang.Void})
 * clojure
 ** cider
 *** M-x cider-jack-in C-c M-j
@@ -158,3 +163,62 @@ walk through list of shared objects
   }
 #+end_src
 
+* PhontomReference
+** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
+* line-oriented search tools
+** the silver searcher
+** git grep
+** ripgrep
+* linux process group and session group
+** process group
+*** 一组进程，具有相同的进程组id，用于向这个进程组发送信号，fork pipe创建的进程属于一个进程组
+** session group
+*** 多个进程组组成会话
+*** 一个进程组不能从一个会话迁移到另外一个会话
+*** 一个进程组只能属于一个会话
+*** 一个进程不能创建属于其他会话的进程组
+* daemon process
+** fork()
+*** 子进程不是一个进程组的组长进程,这为下面执行setsid创建新会话创建条件
+** setsid()
+*** 成为新会话的首进程
+*** 成为新进程组的组长进程
+*** 没有控制终端与之相连
+** umask(0)
+*** 防止继承得来的文件模式创建屏蔽字在创建文件时会拒绝设置某些权限
+** close fds: STDIN_FILENO STDOUT_FILENO STDERR_FILENO
+#+begin_src c
+  int fd = open("/dev/null", O_RDWR);
+  dup2(fd, STDIN_FILENO);
+  dup2(fd, STDOUT_FILENO);
+#+end_src
+
+* UI
+** smallestWidth适配
+*** [https://mp.weixin.qq.com/s?__biz=MzAxMTI4MTkwNQ==&mid=2650826034&idx=1&sn=5e86768d7abc1850b057941cdd003927&chksm=80b7b1acb7c038ba8912b9a09f7e0d41eef13ec0cea19462e47c4e4fe6a08ab760fec864c777&scene=21#wechat_redirect]
+*** dp = px / density density = DPI/160
+** 今日头条计算density
+* APK size
+** proguard
+*** Shrink、Optimize 和 Obfuscate，也就是裁剪、优化、混淆
+** dex
+*** facebook redex byte code optimizer
+*** so file 7-zip XZ
+** shrinkresources
+*** Lint 提示无用的资源
+*** shrinkResources true in gradle
+**** 没有处理resources.arsc文件
+**** 没有删除资源文件
+**** R.java文件需要提前准备好，所有资源都分配了一个常量ID，编译Java代码过程，将代码中的资源引用替换成常量
+* find duplicated number in array
+** [http://keithschwarz.com/interesting/code/?dir=find-duplicate]
+** 此问题等价于链表找环问题
+* linked list cycle
+** 判断是否有环
+*** h t两个指针从起点S出发，t每前进1步，h前进2步，只要二者都可以前进而且没有相遇，就保持二者推进。
+*** 当h无法前进，即到达某个没有后继节点时，可以确定从S出发没有环，反之当t和h再次相遇时，就可以确定从S出发一定会进入某个环，设其为环C
+** 环的长度
+*** 判断出存在环C时，t和h位于同一点，设其为节点M。显然，仅需令h不动，而t不断推进，最终又会回到节点M，统计这一次t推进的步数，即得到环的长度
+** 环的起点
+*** t从起点S到相遇点M走过的距离是环C长度的整数倍，因为h走过的距离比t走过的距离多环长度的整数倍，而h的速度是t的2倍
+*** 令t回到起点S，同时让h从节点M共同推进，h和t都一次前进一步，当h和t再次相遇时，设此次相遇时位于同一节点P，则P即为从起点S出发所到达环C的第一个节点

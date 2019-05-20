@@ -1,0 +1,118 @@
+* dotnet core
+* github xitonguanli
+* vuejs
+* demo
+* test
+* SPA
+* centos7
+** dotnet core sdk
+#+begin_src sh
+  sudo rpm -Uvh https://packages.microsoft.com/config/rhel/7/packages-microsoft-prod.rpm
+  sudo yum update
+  sudo yum install dotnet-sdk-2.2
+#+end_src
+** nginx
+#+begin_src sh
+  sudo yum install epel-release
+  sudo yum install nginx
+  sudo systemctl start nginx
+#+end_src
+#+begin_src text
+  #save as file: /etc/nginx/conf.d/domain.conf
+  server {
+          client_max_body_size 40M;
+          listen 443 ssl;
+          server_name www.domain.com domain.com;	#change to your domain name
+          ssl          on;
+          ssl_certificate /etc/ssl/cacert.pem;	#this needs to be the path to your certificate information
+          ssl_certificate_key /etc/ssl/privkey.pem;	#this needs to be the path to your certificate information
+
+          location / {
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header Host $http_host;
+                  proxy_set_header X-NginX-Proxy true;
+                  proxy_pass https://10.0.0.2:443;	#change to your internal server IP
+                  proxy_redirect off;
+          }
+  }
+  server {
+          client_max_body_size 40M;
+          listen 80;
+          server_name www.domain.com domain.com;	#change to your domain name
+
+          location / {
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header Host $http_host;
+                  proxy_set_header X-NginX-Proxy true;
+                  proxy_pass http://10.0.0.2:80;	#change to your internal server IP
+                  proxy_redirect off;
+          }
+  }
+#+end_src
+
+** firewall
+#+begin_src sh
+  sudo firewall-cmd --permanent --zone=public --add-service=http 
+  sudo firewall-cmd --permanent --zone=public --add-service=https
+  sudo firewall-cmd --reload
+
+  // open 80 port
+  firewall-cmd --zone=public --add-port=80/tcp --permanent
+  systemctl restart firewalld
+#+end_src
+** selinux
+#+begin_src sh
+  // You can see what is current allowed like this
+  semanage port -l | egrep '(^http_port_t)'
+  // modify port
+  semanage port -m -t http_port_t -p tcp 4567
+  // add port
+  semanage port -a -t http_port_t -p tcp 8040
+#+end_src
+** supervisor
+** [https://www.cnblogs.com/gdsblog/p/8795871.html]
+* visual studio
+** vsvim
+** Edit.RemoveAndSort -> Ctrl+Alt+O
+* 异步代码
+** async
+*** 为方法主体的各部分生成回调
+*** 自动创建返回的 Task 对象
+** Task
+*** 隐式返回类型 Task 表示正在进行的工作
+** await
+***  关键字让编译器将该方法拆分为两个部分。 第一部分是以异步方式结束已启动的操作。 第二部分是当操作完成时注入调用回调方法的地方。
+* 依赖注入
+* Razor
+** @page Razor 指令将文件转换为一个 MVC 操作，这意味着它可以处理请求。 @page 必须是页面上的第一个 Razor 指令。
+*** @page "{id:int}" route template
+** @**@ comment
+** ViewData dic property of PageModel
+** asp-page="/Index"
+** _ViewStart.cshtml 针对所有 Razor 文件设置布局文件
+** IActionResult
+*** Page() -> PageResult object
+*** RedirectToPage()
+** asp-validation-for
+* config
+** [https://docs.microsoft.com/zh-cn/aspnet/core/fundamentals/configuration/index?view=aspnetcore-2.2]
+* BindProperty
+** bind form data
+** SupportsGet = true -> GET method param
+* validate
+** datatype annotation
+** Range Required StringLength
+* MVC
+** /[Controller]/[ActionName]/[Parameters]
+** HtmlEncoder.Default.Encode 防止恶意输入（即 JavaScript）损害应用
+* cshtml运行时解析 cs文件编译成dll
+* Layout
+** Layout = null; 不使用母版页
+* PageModel
+** handle request 原始
+* MySql
+* @model
+** @model MvcMovie.Models.Movie
+** @model IEnumerable<MvcMovie.Models.Movie>
