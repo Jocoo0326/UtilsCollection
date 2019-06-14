@@ -1,0 +1,91 @@
+* html
+** hover changing img
+#+begin_src html
+  <div class="board-view-header">
+    <div class="header-btn date-backward">
+      <img src="img/right.png">
+      <img class="top" src="img/right-blue.png">
+    </div>
+    <div class="header-btn date-forward">
+      <img src="img/left.png">
+      <img class="top" src="img/left-blue.png">
+    </div>
+  </div>
+#+end_src
+#+begin_src css
+  .board-view-header .header-btn {
+    width: 50px;
+    height: 32px;
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+  .board-view-header .header-btn img {
+    height: 32px;
+  }
+  .board-view-header .date-backward .top, .board-view-header .date-forward .top {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 99;
+  }
+  .board-view-header .date-backward:hover .top, .board-view-header .date-forward:hover .top {
+    display: inline;
+  }
+#+end_src
+
+* css
+** box model
+*** block element has width height
+*** inline element
+**** can't set width height
+**** dont wrap in line
+*** inline-block
+**** inline element can set width height
+**** exp: navi menu
+**** when elements height defers; they align with base-line
+** span
+*** inline element
+** div
+*** block element
+** drag and drop
+*** drag
+**** config style then setTimeout(()=>this.className="invisible")
+*** dragstart -> dragenter -> dragover(many times) -> [ drop | dragleave] -> dragend
+** flex
+*** display: flex
+**** flex-basis elm basic size
+**** flex-grow elm grow factor
+**** flex-shrink elm shrink factor
+* js
+** arguments
+*** function always has, like but not Array(it has .length property and can index arguments.[0] [1])
+** void 0 -> undefined
+** Array
+*** slice -> light copy elms from original array
+**** reference copy or value copy
+** call apply bind
+*** call apply
+**** change this context
+**** difference
+***** func.call(this, param1, param2)
+***** func.apply(this, [param1, param2])
+**** just call some function
+#+begin_src javascript
+  function demo(v) {
+      console.log(v + " " + this.name)
+  }
+
+  var o = {name: 'jocoo'}
+  demo.call(o, 'hello') ==> 'hello jocoo'
+#+end_src
+*** bind
+**** renturn a function of call or apply
+** falsy
+*** false, 0, "", null, undefined, and NaN
+** arrow function
+*** dont rebind 'this'
+*** dont bind 'Arguments'
+*** call and apply ignore first argument
+

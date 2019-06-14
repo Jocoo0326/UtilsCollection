@@ -18,7 +18,7 @@
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
-*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑: 
+*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
 # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
 # 根据type查找mAttachedScrap-->mCachedViews
 # if mViewCacheExtension != null, 通过mViewCacheExtension查找
@@ -99,7 +99,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 * C++ mangle/demangle tool
 *** c++filt -n _ZN7android6Tracer12sEnabledTagsE
 * Hook
-** inline hook 
+** inline hook
 *** Substrate
 **** MSHookFunction(void *symbol, void *replace, void **result)
  - 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
@@ -185,6 +185,7 @@ walk through list of shared objects
 *** visitXXX方法调用时会写入字节码数据
 *** toByteArray返回记录的字节码数据
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
+
 * clojure
 ** cider
 *** M-x cider-jack-in C-c M-j
@@ -286,3 +287,34 @@ walk through list of shared objects
 * git submodule
 ** git submodule add ${url}
 ** git clone -> git submodule init -> git submodule update
+* bookmark optimization
+** #+DESCRIPTION: emacs lisp multibyte string
+   #+BEGIN_SRC emacs-lisp
+     (defun compare (string-a string-b)
+       (cl-loop for a being the elements of string-a
+                for b being the elements of string-b
+                unless (eql a b)
+                return (cons a b)))
+
+     (benchmark-run
+         (let ((a (make-string 100000 0))
+               (b (make-string 100000 0)))
+           (compare a b)))
+     ;; => (0.012568031 0 0.0)
+
+     (benchmark-run
+         (let ((a (make-string 100000 0))
+               (b (make-string 100000 0)))
+           (setf (aref a (1- (length a))) 256)
+           (compare a b)))
+     ;; => (0.012680513 0 0.0)
+
+     (benchmark-run
+         (let ((a (make-string 100000 0))
+               (b (make-string 100000 0)))
+           (setf (aref a (1- (length a))) 256
+                 (aref b (1- (length b))) 256)
+           (compare a b)))
+     ;; => (2.327959762 0 0.0)
+   #+END_SRC
+** To avoid the O(n) cost on this common indexing operating, Emacs keeps a “bookmark” for the last indexing location into a multibyte string. If the next access is nearby, it can starting looking from this bookmark, forwards or backwards.

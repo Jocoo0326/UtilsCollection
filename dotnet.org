@@ -52,6 +52,8 @@
   }
 #+end_src
 
+** ssl
+*** [https://www.jianshu.com/p/02c25d0dd451]
 ** firewall
 #+begin_src sh
   sudo firewall-cmd --permanent --zone=public --add-service=http 
@@ -70,6 +72,9 @@
   semanage port -m -t http_port_t -p tcp 4567
   // add port
   semanage port -a -t http_port_t -p tcp 8040
+  // 403 error
+  semanage fcontext -a -t httpd_sys_content_t "/wwwroot(/.*)?"
+  restorecon -Rv /wwwroot
 #+end_src
 ** supervisor
 ** [https://www.cnblogs.com/gdsblog/p/8795871.html]
@@ -104,6 +109,9 @@
 * validate
 ** datatype annotation
 ** Range Required StringLength
+** 无论是控制器还是 Create 视图模板都不知道强制实施的实际验证规则或显示的特定错误消息。
+** 仅可在 Movie 类中指定验证规则和错误字符串。
+** 这些相同的验证规则自动应用于 Edit 视图和可能创建用于编辑模型的任何其他视图模板。
 * MVC
 ** /[Controller]/[ActionName]/[Parameters]
 ** HtmlEncoder.Default.Encode 防止恶意输入（即 JavaScript）损害应用
@@ -116,3 +124,13 @@
 * @model
 ** @model MvcMovie.Models.Movie
 ** @model IEnumerable<MvcMovie.Models.Movie>
+* SignalR(websocket)
+* page
+** [https://docs.microsoft.com/zh-cn/aspnet/core/data/ef-rp/sort-filter-page?view=aspnetcore-2.2#add-paging-functionality-to-the-students-index-page]
+** 
+* Startup
+** ConfigureServices
+*** register IOC services
+** Configure
+*** build http pipeline
+*** Run - short-circuit

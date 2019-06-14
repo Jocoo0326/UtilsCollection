@@ -1,0 +1,38 @@
+* Leiningen
+* Syntax and sematic
+** map
+*** #+begin_src clojure
+(map #(+ 1 %) (range 3))
+; => (1 2 3)
+#+end_src
+** reduce
+*** #+begin_src clojure
+(reduce (fn [new-map [key val]]
+          (if (> val 4)
+            (assoc new-map key val)
+            new-map))
+        {}
+        {:human 4.1
+         :critter 3.9})
+; => {:human 4.1}
+#+end_src
+** take drop take-while drop-while
+** filter some
+** sort sort-by
+** concat
+** lazy-seqs
+** apply
+*** #+begin_src clojure
+(apply max (range 4))
+; => 3
+#+end_src
+** partial
+#+begin_src clojure
+((partial + 3) 10)
+; => 13
+#+end_src
+** complement
+#+begin_src clojure
+(complement zero?)
+#+end_src
+** 
