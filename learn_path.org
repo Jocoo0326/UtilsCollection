@@ -185,6 +185,9 @@ walk through list of shared objects
 *** visitXXX方法调用时会写入字节码数据
 *** toByteArray返回记录的字节码数据
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
+** visitor pattern
+*** the visitor design pattern is a way of separating an algorithm from an object structure on which it operates
+*** [[ https://en.wikipedia.org/wiki/Visitor_pattern ][wiki]
 
 * clojure
 ** cider
