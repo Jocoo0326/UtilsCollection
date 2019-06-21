@@ -77,9 +77,12 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** callq会push %rip(return address aka.下一条指令)
 *** %rax保存返回值
 * gdb
+*** p foo print foo
+*** set foo = 123 set variable foo = 123
 *** $sp $pc $fp 别名适用所有平台
 *** x/i $pc 当前指令
 *** x/32x $sp 显示stack内存信息
+*** x/32x addr 显示addr开始的32个dword
 *** objdump -dS elf显示汇编
 *** disas/m 反汇编code
 * lag analyze tool
@@ -321,3 +324,33 @@ walk through list of shared objects
      ;; => (2.327959762 0 0.0)
    #+END_SRC
 ** To avoid the O(n) cost on this common indexing operating, Emacs keeps a “bookmark” for the last indexing location into a multibyte string. If the next access is nearby, it can starting looking from this bookmark, forwards or backwards.
+* application binary interface
+** an interface between two binary program modules, often, one of these modules is a library or operating system facility, and the other is a program that is being run by a user.
+** a common aspect of an ABI is the calling convention
+** X86 calling convention
+*** The order in which atomic parameters, or individual parts of a complex parameter, are allocated
+*** How parameters are passed (pushed on the stack, placed in registers, or a mix of both)
+*** Which rigisters the called function must preserve for the caller
+*** How the task of preparing the stack for, and restoring after, a function call is divided between the caller and the callee
+* sqlite3
+** shell
+*** dot command
+**** .help
+**** .width
+**** .mode
+**** .echo
+**** .headers
+**** .open
+**** .cd
+*** sql statement
+**** Think of each SQL statement as a separate computer program.  The
+**** original SQL text is source code.  A prepared statement object
+**** is the compiled object code.  All SQL must be converted into a
+**** prepared statement before it can be run.
+*** The life-cycle of a prepared statement object usually goes like this:
+**** 1. Create the prepared statement object using [sqlite3_prepare_v2()].
+**** 2. Bind values to [parameters] using the sqlite3_bind_*() interfaces.
+**** 3. Run the SQL by calling [sqlite3_step()] one or more times.
+**** 4. Reset the prepared statement using [sqlite3_reset()] then go back
+**** 5. to step 2.  Do this zero or more times.
+**** 6. Destroy the object using [sqlite3_finalize()].
