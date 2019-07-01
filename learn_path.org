@@ -354,3 +354,32 @@ walk through list of shared objects
 **** 4. Reset the prepared statement using [sqlite3_reset()] then go back
 **** 5. to step 2.  Do this zero or more times.
 **** 6. Destroy the object using [sqlite3_finalize()].
+*** Hash table
+**** code snippet
+      #+begin_src c
+	struct Hash {
+	  unsigned int htsize;      /* Number of buckets in the hash table */
+	  unsigned int count;       /* Number of entries in this table */
+	  HashElem *first;          /* The first element of the array */
+	  struct _ht {              /* the hash table */
+	    int count;                 /* Number of entries with this hash */
+	    HashElem *chain;           /* Pointer to first entry with this hash */
+	  } *ht;
+	};
+
+	struct HashElem {
+	  HashElem *next, *prev;       /* Next and previous elements in the table */
+	  void *data;                  /* Data associated with this element */
+	  const char *pKey;            /* Key associated with this element */
+	};
+     #+end_src
+**** All elements of the hash table are on a single doubly-linked list.
+**** Hash.first points to the head of this list.
+**** There are Hash.htsize buckets.  Each bucket points to a spot in
+**** the global doubly-linked list.  The contents of the bucket are the
+**** element pointed to plus the next _ht.count-1 elements in the list.
+**** Hash.htsize and Hash.ht may be zero.  In that case lookup is done
+**** by a linear search of the global list.  For small tables, the 
+**** Hash.ht table is never allocated because if there are few elements
+**** in the table, it is faster to do a linear search than to manage
+**** the hash table.
