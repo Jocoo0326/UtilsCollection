@@ -383,3 +383,41 @@ walk through list of shared objects
 **** Hash.ht table is never allocated because if there are few elements
 **** in the table, it is faster to do a linear search than to manage
 **** the hash table.
+** lemon parser
+*** similar to bison yacc
+*** grammr file parse.y
+*** token(sqlte3GetToken()) -> parse(sqlite3Parser()) -> prepared Vdbe(in Parse context)
+*** sqlite3_stmt == Vdbe
+** sql tips
+*** a single column with type (integer primary key) is an alias for rowid(all rows within SQLite tables have a 64-bit signed integer key that identifies the row within its table)
+* c tips
+** assert(argv[argc] == null)
+** -DNDEBUG disable assert
+** oop in c
+*** define a strcut of class which contains constructor, destructor, etc, describing the class infomation 
+*** a object is void *obj which is created using constructor in struct class
+*** object has a pointer points to the struct class
+*** analogy to Java
+*** code snippets
+    #+begin_src c
+    void * new (const void * _class, ...)
+    { 
+      const struct Class * class = _class;
+      void * p = calloc(1, class —> size);
+      assert(p);
+      *(const struct Class **) p = class;
+      if (class —> ctor)
+      { 
+	va_list ap;
+	va_start(ap, _class);
+	p = class —> ctor(p, & ap);
+	va_end(ap);
+      }
+      return p;
+    }
+    #+end_src
+** we need to pass size param to malloc, then why not to call free?
+*** malloc allocate a bit more memory than you asked for, this extra memory is used to store information such as the size of the allocated block
+*** and a link to the next free block in a chain of blocks
+*** and sometimes the "guard data" that helps the system to detect if you past the end of the allocated block
+*** usually, most allocators will round up the size and/or the start of the block to a multiple of bytes such as 64bit in a 64-bit system
