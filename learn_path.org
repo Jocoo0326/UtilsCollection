@@ -354,42 +354,50 @@ walk through list of shared objects
 **** 4. Reset the prepared statement using [sqlite3_reset()] then go back
 **** 5. to step 2.  Do this zero or more times.
 **** 6. Destroy the object using [sqlite3_finalize()].
-*** Hash table
-**** code snippet
-      #+begin_src c
-	struct Hash {
-	  unsigned int htsize;      /* Number of buckets in the hash table */
-	  unsigned int count;       /* Number of entries in this table */
-	  HashElem *first;          /* The first element of the array */
-	  struct _ht {              /* the hash table */
-	    int count;                 /* Number of entries with this hash */
-	    HashElem *chain;           /* Pointer to first entry with this hash */
-	  } *ht;
-	};
+** Hash table
+*** code snippet
+     #+begin_src c
+       struct Hash {
+	 unsigned int htsize;      /* Number of buckets in the hash table */
+	 unsigned int count;       /* Number of entries in this table */
+	 HashElem *first;          /* The first element of the array */
+	 struct _ht {              /* the hash table */
+	   int count;                 /* Number of entries with this hash */
+	   HashElem *chain;           /* Pointer to first entry with this hash */
+	 } *ht;
+       };
 
-	struct HashElem {
-	  HashElem *next, *prev;       /* Next and previous elements in the table */
-	  void *data;                  /* Data associated with this element */
-	  const char *pKey;            /* Key associated with this element */
-	};
-     #+end_src
-**** All elements of the hash table are on a single doubly-linked list.
-**** Hash.first points to the head of this list.
-**** There are Hash.htsize buckets.  Each bucket points to a spot in
-**** the global doubly-linked list.  The contents of the bucket are the
-**** element pointed to plus the next _ht.count-1 elements in the list.
-**** Hash.htsize and Hash.ht may be zero.  In that case lookup is done
-**** by a linear search of the global list.  For small tables, the 
-**** Hash.ht table is never allocated because if there are few elements
-**** in the table, it is faster to do a linear search than to manage
-**** the hash table.
+       struct HashElem {
+	 HashElem *next, *prev;       /* Next and previous elements in the table */
+	 void *data;                  /* Data associated with this element */
+	 const char *pKey;            /* Key associated with this element */
+       };
+    #+end_src
+*** All elements of the hash table are on a single doubly-linked list.
+*** Hash.first points to the head of this list.
+*** There are Hash.htsize buckets.  Each bucket points to a spot in the global doubly-linked list.
+*** The contents of the bucket are the element pointed to plus the next _ht.count-1 elements in the list.
+*** Hash.htsize and Hash.ht may be zero.  In that case lookup is done by a linear search of the global list. 
+*** For small tables, the Hash.ht table is never allocated because if there are few elements in the table, it is faster to do a linear search than to manage the hash table.
 ** lemon parser
 *** similar to bison yacc
 *** grammr file parse.y
 *** token(sqlte3GetToken()) -> parse(sqlite3Parser()) -> prepared Vdbe(in Parse context)
 *** sqlite3_stmt == Vdbe
 ** sql tips
-*** a single column with type (integer primary key) is an alias for rowid(all rows within SQLite tables have a 64-bit signed integer key that identifies the row within its table)
+*** a single column with type (INTEGER PRIMARY KEY) is an alias for rowid(all rows within SQLite tables have a 64-bit signed integer key that identifies the row within its table)
+*** column with INTEGER PRIMARY KEY is used as the rowid, and Table.iPKey is set to be the index of the column, -1 by default
+*** if the key is not an INTEGER PRIMARY KEY, then create a UNIQUE index for the key, No index is created for INTEGER PRIMARY KEYs 
+*** foreign key requires parent key columns must be subject to a UNIQUE constraint or have a UNIQUE index
+*** An index should be created on the child key columns of each foreign key constraint, because each time an application deletes a row from the parent table, it performs a searching for referencing rows in the child table
+*** ON UPDATE CASCADE or ON DELETE CASCADE means doing the same action on child key columns which is similar to trigger
+*** any column in an SQLite3 database, except an INTEGER PRIMARY KEY column, may be used to store a value of any storage class, it is just that some columns, given a choice, will prefer to use one storage over another(aka. type affinity) 
+*** INSERT OR IGNORE == INSERT ON CONFICT IGNORE
+*** COLLATE NOCASE means ignore case when used in select or where statements
+*** a default value of a column may be CURRENT_TIME, CURRENT_DATE, CURRENT_TIMESTAMP
+** misc
+*** db at index 0 is "main", db at index 1 is "temp"
+*** column count limit in a table is 2000 by default
 * c tips
 ** assert(argv[argc] == null)
 ** -DNDEBUG disable assert
@@ -421,3 +429,8 @@ walk through list of shared objects
 *** and a link to the next free block in a chain of blocks
 *** and sometimes the "guard data" that helps the system to detect if you past the end of the allocated block
 *** usually, most allocators will round up the size and/or the start of the block to a multiple of bytes such as 64bit in a 64-bit system
+** c struct alignment rules
+*** address of each member = 0 (mod sizeof(each member))
+*** sizeof(struct) = 0 (mod sizeof(largest member))
+*** char and char[] have no padding between them
+** LD_PRELOAD environment variable could load your library before any other ones aka. program -> your library -> destination library
