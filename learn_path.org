@@ -482,3 +482,4 @@ walk through list of shared objects
 *** sizeof(struct) = 0 (mod sizeof(largest member))
 *** char and char[] have no padding between them
 ** LD_PRELOAD environment variable could load your library before any other ones aka. program -> your library -> destination library
+** Explicitly call the 64-bit version of lseek() on Android. Otherwise, lseek() is the 32-bit version, even if _FILE_OFFSET_BITS=64 is defined.
