@@ -395,43 +395,54 @@ walk through list of shared objects
 *** -> sqlite3VdbeExec
 **** big switch( pOp->opcode )
 ** atomic commit
-*** single file commit
-**** acquiring a shared lock
-***** allows two or more database connections read at the same time, prevent another connection from writing while we are reading it
-**** reading information out of the database
-***** reading from mass storage into os cache, then transferred from os cache into user space
-**** obtaining a reserved lock
-***** allows to read, but there can only be a single reserved lock on the database file
-***** it signals that a process intends to modify the database file in the near future but has not yet started to make the modifications
-**** creating a rollback journal file
-***** write the original content of the database pages that are to altered into a rollback journal file
-***** it contains all the information needed to restore the database back to its original state before the transaction
-**** changing database pages in user space
-***** each connection has its own private copy of user space, so the changes are only visible to the database connection that is making the changes
-**** flushing the rollback journal file to mass storage
-***** this is a critical step in ensuring that the database can survive an unexpected power loss
-**** obtaining an exclusive lock
-***** first obtains a pending lock, then it escalates the pending lock to an exclusive lock
-***** a pending lock allows other processes that already have a shared lock to continue reading the database file, but it prevents new share lock from being established
-***** the idea behind the pending lock is to prevent writer starvation caused by a large pool of readers
-***** evetually all shared locks will be clear and the pending lock will then be able to escalate into an exclusive lock
-**** writing changes to database file
-***** changes only go as far as the system cache
-**** flushing changes to mass storage
-**** deleting the rollback journal file
-***** SQLite gives the apprearance of having made no changes to the database file or having made the complete set of changes to the database file depending on whether or not the rollback journal file exists
-**** releasing the lock
-*** rollback
-**** hot rollback journals
-***** The rollback journal exists.
-***** The rollback journal is not an empty file.
-***** There is no reserved lock on the main database file.
-***** The header of the rollback journal is well-formed and in particular has not been zeroed out.
-***** The rollback journal does not contain the name of a master journal file (see section 5.5 below) or if does contain the name of a master journal, then that master journal file exists.
-**** obtaining an exlusive lock
-**** rolling back incomplete changes
-**** deleting the hot journal
-**** continue as if the uncompleted writes has never happened 
+*** rollback journal file
+**** single file commit
+***** acquiring a shared lock
+****** allows two or more database connections read at the same time, prevent another connection from writing while we are reading it
+***** reading information out of the database
+****** reading from mass storage into os cache, then transferred from os cache into user space
+***** obtaining a reserved lock
+****** allows to read, but there can only be a single reserved lock on the database file
+****** it signals that a process intends to modify the database file in the near future but has not yet started to make the modifications
+***** creating a rollback journal file
+****** write the original content of the database pages that are to altered into a rollback journal file
+****** it contains all the information needed to restore the database back to its original state before the transaction
+***** changing database pages in user space
+****** each connection has its own private copy of user space, so the changes are only visible to the database connection that is making the changes
+***** flushing the rollback journal file to mass storage
+****** this is a critical step in ensuring that the database can survive an unexpected power loss
+***** obtaining an exclusive lock
+****** first obtains a pending lock, then it escalates the pending lock to an exclusive lock
+****** a pending lock allows other processes that already have a shared lock to continue reading the database file, but it prevents new share lock from being established
+****** the idea behind the pending lock is to prevent writer starvation caused by a large pool of readers
+****** evetually all shared locks will be clear and the pending lock will then be able to escalate into an exclusive lock
+***** writing changes to database file
+****** changes only go as far as the system cache
+***** flushing changes to mass storage
+***** deleting the rollback journal file
+****** SQLite gives the apprearance of having made no changes to the database file or having made the complete set of changes to the database file depending on whether or not the rollback journal file exists
+***** releasing the lock
+**** rollback
+***** hot rollback journals
+****** The rollback journal exists.
+****** The rollback journal is not an empty file.
+****** There is no reserved lock on the main database file.
+****** The header of the rollback journal is well-formed and in particular has not been zeroed out.
+****** The rollback journal does not contain the name of a master journal file (see section 5.5 below) or if does contain the name of a master journal, then that master journal file exists.
+***** obtaining an exlusive lock
+***** rolling back incomplete changes
+***** deleting the hot journal
+***** continue as if the uncompleted writes has never happened 
+*** write-ahead logging(wal) mode
+**** journal approach
+***** The traditional rollback journal works by writing a copy of the original database content into a separate rollback journal file and then writing
+***** changes directly into the original database file. In the event of a crash or ROLLBACK, the original content contained in the rollback journal is
+***** played back into the database file to revert the database file to its original state. The COMMIT occurs when the rollback journal is deleted. 
+**** journal approach
+***** The WAL approach inverts this. The original content is preserved in the database file and the changes are appended into a separate WAL file. A 
+***** COMMIT occurs when a special record indicating a commit is appended to the WAL. Thus a COMMIT can happen without ever writing to the original database
+***** file, which allows readers to continue operating from the original unaltered database while changes are simultaneously being committed into the WAL.
+***** Multiple transactions can be appened to the end of a single WAL file.
 ** sql tips
 *** a single column with type (INTEGER PRIMARY KEY) is an alias for rowid(all rows within SQLite tables have a 64-bit signed integer key that identifies the row within its table)
 *** column with INTEGER PRIMARY KEY is used as the rowid, and Table.iPKey is set to be the index of the column, -1 by default
@@ -483,3 +494,20 @@ walk through list of shared objects
 *** char and char[] have no padding between them
 ** LD_PRELOAD environment variable could load your library before any other ones aka. program -> your library -> destination library
 ** Explicitly call the 64-bit version of lseek() on Android. Otherwise, lseek() is the 32-bit version, even if _FILE_OFFSET_BITS=64 is defined.
+** fstat obtain information about an open file, such as owner, permission, size, file type symbolic directory socket character etc
+** fork vs clone
+*** fork create a new child process with 'copy-on-write' machanism, which executes in the child process from the point of the fork call
+*** clone allows the child process to share parts of its execution context with the calling process, such as the virtual address space, the table of file descriptors, and the table of signal handlers
+** /dev/random /dev/urandom are character files provide interface to system random generator
+* http protocal
+** cookie
+*** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
+*** syntax
+**** set-cookie-header = Set-Cookie: name=value(; cookie-av)*
+**** cookie-av = expires-av / max-age-av / domain-av / path-av / secure-av / httponly-av / extension-av
+*** Max-Age prior to Expires
+*** Domain
+**** The user agent will reject cookies unless the Domain attribute specifies a scope for the cookie that would include the origin server.
+**** For example, the user agent will accept a cookie with a Domain attribute of "example.com" or of "foo.example.com" from foo.example.com,
+**** but the user agent will not accept a cookie with a Domain attribute of "bar.example.com" or of "baz.foo.example.com".
+
