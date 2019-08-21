@@ -190,8 +190,7 @@ walk through list of shared objects
 ** ASMifier class -> java (generating class bytecode with ASM ClassWriter)
 ** visitor pattern
 *** the visitor design pattern is a way of separating an algorithm from an object structure on which it operates
-*** [[ https://en.wikipedia.org/wiki/Visitor_pattern ][wiki]
-
+*** [[https://en.wikipedia.org/wiki/Visitor_pattern][wiki]]
 * clojure
 ** cider
 *** M-x cider-jack-in C-c M-j
@@ -499,6 +498,9 @@ walk through list of shared objects
 *** fork create a new child process with 'copy-on-write' machanism, which executes in the child process from the point of the fork call
 *** clone allows the child process to share parts of its execution context with the calling process, such as the virtual address space, the table of file descriptors, and the table of signal handlers
 ** /dev/random /dev/urandom are character files provide interface to system random generator
+** memory barrier
+*** asm volatile("" ::: "memory") compile-time memory barrier
+*** __sync_synchronize runtime(HW) memory barrier
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
@@ -510,4 +512,6 @@ walk through list of shared objects
 **** The user agent will reject cookies unless the Domain attribute specifies a scope for the cookie that would include the origin server.
 **** For example, the user agent will accept a cookie with a Domain attribute of "example.com" or of "foo.example.com" from foo.example.com,
 **** but the user agent will not accept a cookie with a Domain attribute of "bar.example.com" or of "baz.foo.example.com".
-
+* java lambda vs inner class
+** inner class create an instance if the inner class
+** lambda invoke the lambda function through INVOKEDYNAMIC instruction and MethodLookup MethodHandle
