@@ -623,3 +623,25 @@ walk through list of shared objects
     #+begin_src java
     int i = (table.lenght - 1) & hash(key);
     #+end_src
+* get generic type in java at runtime
+** anonymous inner class
+*** code
+    #+begin_src kotlin
+      open class GenericsToken<T> {
+	  var type: Type = Any::class.java
+
+	  init {
+	      val superClass = this.javaClass.genericSuperclass
+	      type = (superClass as ParameterizedType).actualTypeArguments[0]
+	  }
+      }
+      val gt = object : GenericsToken<List<String>>(){}
+      println(gt.type)
+    #+end_src
+** kotlin reified inline function
+*** code
+    #+begin_src kotlin
+       inline fun <reified T: Any> Gson.fromJson(json: String) : T {
+	   return Gson().fromJson<T>(json, T::class.java)
+       }
+    #+end_src
