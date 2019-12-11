@@ -19,11 +19,11 @@
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
 * RecyclerView
 *** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
-# 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
-# 根据type查找mAttachedScrap-->mCachedViews
-# if mViewCacheExtension != null, 通过mViewCacheExtension查找
-# mRecyclerPool中查找
-# mAdapter.createViewHolder
+    # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
+    # 根据type查找mAttachedScrap-->mCachedViews
+    # if mViewCacheExtension != null, 通过mViewCacheExtension查找
+    # mRecyclerPool中查找
+    # mAdapter.createViewHolder
 
 * android gradle plugin
 *** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
@@ -38,6 +38,74 @@ signingConfig、zipAlignEnabled
 *** 可以通过环境变量System.getenv()获取签名信息，从而隐藏签名信息
 *** manifestPlaceHolders buildConfigField resValue
 * Java Thread start
+*** State
+    #+begin_src java
+        public enum State {
+        /**
+         * Thread state for a thread which has not yet started.
+         */
+        NEW,
+
+        /**
+         * Thread state for a runnable thread.  A thread in the runnable
+         * state is executing in the Java virtual machine but it may
+         * be waiting for other resources from the operating system
+         * such as processor.
+         */
+        RUNNABLE,
+
+        /**
+         * Thread state for a thread blocked waiting for a monitor lock.
+         * A thread in the blocked state is waiting for a monitor lock
+         * to enter a synchronized block/method or
+         * reenter a synchronized block/method after calling
+         * {@link Object#wait() Object.wait}.
+         */
+        BLOCKED,
+
+        /**
+         * Thread state for a waiting thread.
+         * A thread is in the waiting state due to calling one of the
+         * following methods:
+         * <ul>
+         *   <li>{@link Object#wait() Object.wait} with no timeout</li>
+         *   <li>{@link #join() Thread.join} with no timeout</li>
+         *   <li>{@link LockSupport#park() LockSupport.park}</li>
+         * </ul>
+         *
+         * <p>A thread in the waiting state is waiting for another thread to
+         * perform a particular action.
+         *
+         * For example, a thread that has called <tt>Object.wait()</tt>
+         * on an object is waiting for another thread to call
+         * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
+         * that object. A thread that has called <tt>Thread.join()</tt>
+         * is waiting for a specified thread to terminate.
+         */
+        WAITING,
+
+        /**
+         * Thread state for a waiting thread with a specified waiting time.
+         * A thread is in the timed waiting state due to calling one of
+         * the following methods with a specified positive waiting time:
+         * <ul>
+         *   <li>{@link #sleep Thread.sleep}</li>
+         *   <li>{@link Object#wait(long) Object.wait} with timeout</li>
+         *   <li>{@link #join(long) Thread.join} with timeout</li>
+         *   <li>{@link LockSupport#parkNanos LockSupport.parkNanos}</li>
+         *   <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
+         * </ul>
+         */
+        TIMED_WAITING,
+
+        /**
+         * Thread state for a terminated thread.
+         * The thread has completed execution.
+         */
+        TERMINATED;
+    }
+    #+end_src
+
 *** android-source/art/runtime/thread_state.h
 enum ThreadState {
   //                                   Thread.State   JDWP state
@@ -517,6 +585,16 @@ walk through list of shared objects
 ** memory barrier
 *** asm volatile("" ::: "memory") compile-time memory barrier
 *** __sync_synchronize runtime(HW) memory barrier
+** new operator and operator new
+*** operator new can be called explicitly as a regular function, but in C++, new is an operator with a very specific behavior: An expression with the new operator, first calls function operator new (i.e., this function) with the size of its type specifier as first argument, and if this is successful, it then automatically initializes or constructs the object (if needed). Finally, the expression evaluates as a pointer to the appropriate type.
+*** placement new is construct new object in a known address
+** valgrind
+*** leak checks benchmarks
+** readelf and objdump
+*** objdump -dC main.out
+** smart pointer
+*** unique_ptr create a object which take over the destruction of the other object
+** delete is null-pointer safe
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
@@ -531,3 +609,17 @@ walk through list of shared objects
 * java lambda vs inner class
 ** inner class create an instance if the inner class
 ** lambda invoke the lambda function through INVOKEDYNAMIC instruction and MethodLookup MethodHandle
+* data structure
+** HashMap
+*** key is nullable
+*** hash()
+    #+begin_src java
+    static final int hash(Object key) {
+      int h;
+      return (key == null) ? 0 : (h = key.hashCode()) ^ (h >> 16);
+    }
+    #+end_src
+*** index of key
+    #+begin_src java
+    int i = (table.lenght - 1) & hash(key);
+    #+end_src
