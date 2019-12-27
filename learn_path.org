@@ -595,6 +595,208 @@ walk through list of shared objects
 ** smart pointer
 *** unique_ptr create a object which take over the destruction of the other object
 ** delete is null-pointer safe
+** malloc
+*** block = mem_control_block + data
+*** sbrk to expand head space
+*** code
+    #+begin_src c
+    /**
+  * @brief Dynamic distribute memory function
+  * @param numbytes: what size you need   
+  * @retval a void pointer to the distribute first address
+  */ 
+void * malloc(unsigned int numbytes)
+{
+    unsigned int current_location,otherbck_location;
+    /* This is the same as current_location, but cast to a memory_control_block */
+    mem_control_block * current_location_mcb = NULL,* other_location_mcb = NULL;
+    /* varialbe for saving return value and be set to 0 until we find something suitable */
+    void * memory_location = NULL;
+    /* current dividing block size */
+    unsigned int process_blocksize;
+    
+    /* Initialize if we haven't already done so */
+    if(! has_initialized) {
+        malloc_init();
+    }
+    
+    /* Begin searching at the start of managed memory */
+    current_location = managed_memory_start;
+    /* Keep going until we have searched all allocated space */
+    while(current_location != managed_memory_end){
+        /* current_location and current_location_mcb point to the same address.  However, 
+         * current_location_mcb is of the correct type, so we can use it as a struct. current_location 
+         * is a void pointer so we can use it to calculate addresses.
+         */
+        current_location_mcb = (mem_control_block *)current_location;
+        /* judge whether current block is avaiable */
+        if(current_location_mcb->is_available){
+            /* judge whether current block size exactly fit for the need */
+            if((current_location_mcb->current_blocksize == numbytes)){
+                /* It is no longer available */ 
+                current_location_mcb->is_available = 0;            
+                /* We own it */
+                memory_location = (void *)(current_location + sizeof(mem_control_block));
+                /* Leave the loop */
+                break;
+            /* judge whether current block size is enough for dividing a new block */
+            }else if(current_location_mcb->current_blocksize >= numbytes + sizeof(mem_control_block)){
+                /* It is no longer available */ 
+                current_location_mcb->is_available = 0;
+                /* because we will divide current blcok,before we changed current block size,we should
+                 * save the integral size.
+                 */
+                process_blocksize = current_location_mcb->current_blocksize;
+                /* Now blcok size could be changed */
+                current_location_mcb->current_blocksize = numbytes;
+                
+                /* find the memory_control_block's head of remaining block and set parameter,block of no
+                 * parameter can't be managed. 
+                 */
+                other_location_mcb = (mem_control_block *)(current_location + numbytes \
+                                                + sizeof(mem_control_block));
+                /* the remaining block is still avaiable */
+                other_location_mcb->is_available = 1;
+                /* of course,its prior block size is numbytes */
+                other_location_mcb->prior_blocksize = numbytes;
+                /* its size should get small */
+                other_location_mcb->current_blocksize = process_blocksize - numbytes \
+                                                - sizeof(mem_control_block);
+                
+                /* find the memory_control_block's head of block after current block and \
+                 * set parameter--prior_blocksize. 
+                 */
+                otherbck_location = current_location + process_blocksize \
+                                            + sizeof(mem_control_block);                
+                /* We need check wehter this block is on the edge of managed memeory! */
+                if(otherbck_location != managed_memory_end){
+                    other_location_mcb = (mem_control_block *)(otherbck_location);
+                    /*  its prior block size has changed! */
+                    other_location_mcb->prior_blocksize = process_blocksize\
+                        - numbytes - sizeof(mem_control_block);
+                }
+                /*We own the occupied block ,not remaining block */ 
+                memory_location = (void *)(current_location + sizeof(mem_control_block));
+                /* Leave the loop */
+                break;
+            } 
+        }
+        /* current block is unavaiable or block size is too small and move to next block*/
+        current_location += current_location_mcb->current_blocksize \
+                                    + sizeof(mem_control_block);
+    }
+    /* if we still don't have a valid location,we'll have to return NULL */
+    if(memory_location == NULL)    {
+        return NULL;
+    }
+    /* return the pointer */
+    return memory_location;    
+}
+
+/**
+  * @brief  free your unused block 
+  * @param  firstbyte: a pointer to first address of your unused block
+  * @retval None
+  */ 
+void free(void *firstbyte) 
+{
+    unsigned int current_location,otherbck_location;
+    mem_control_block * current_mcb = NULL,* next_mcb = NULL,* prior_mcb \
+                                = NULL,* other_mcb = NULL;
+    /* Backup from the given pointer to find the current block */
+    current_location = (unsigned int)firstbyte - sizeof(mem_control_block);
+    current_mcb = (mem_control_block *)current_location;
+    /* Mark the block as being avaiable */
+    current_mcb->is_available = 1;
+    
+    /* find next block location */
+    otherbck_location = current_location + sizeof(mem_control_block) \
+                                    + current_mcb->current_blocksize;
+    /* We need check wehter this block is on the edge of managed memeory! */
+    if(otherbck_location != managed_memory_end){
+        /* point to next block */
+        next_mcb = (mem_control_block *)otherbck_location;
+        /* We need check whether its next block is avaiable */ 
+        if(next_mcb->is_available){
+            /* Because its next block is also avaiable,we should merge blocks */
+            current_mcb->current_blocksize = current_mcb->current_blocksize \
+                + sizeof(mem_control_block) + next_mcb->current_blocksize;
+            
+            /* We have merge two blocks,so we need change prior_blocksize of
+             * block after the two blocks,just find next block location. 
+             */
+            otherbck_location = current_location + sizeof(mem_control_block) \
+                                    + current_mcb->current_blocksize;
+            /* We need check wehter this block is on the edge of managed memeory! */
+            if(otherbck_location != managed_memory_end){
+                other_mcb = (mem_control_block *)otherbck_location;
+                /*  its prior block size has changed! */
+                other_mcb->prior_blocksize = current_mcb->current_blocksize;
+            }
+        }
+    }
+    
+    /* We need check wehter this block is on the edge of managed memeory! */
+    if(current_location != managed_memory_start){
+        /* point to prior block */
+        prior_mcb = (mem_control_block *)(current_location - sizeof(mem_control_block)\
+                                            - current_mcb->prior_blocksize);
+        /* We need check whether its prior block is avaiable */ 
+        if(prior_mcb->is_available){
+            /* Because its prior block is also avaiable,we should merge blocks */
+            prior_mcb->current_blocksize = prior_mcb->current_blocksize \
+                + sizeof(mem_control_block) + current_mcb->current_blocksize;
+            
+            /* We have merge two blocks,so we need change prior_blocksize of
+             * block after the two blocks,just find next block location. 
+             */
+            otherbck_location = current_location + sizeof(mem_control_block) \
+                                    + current_mcb->current_blocksize;
+            /* We need check wehter this block is on the edge of managed memeory! */
+            if(otherbck_location != managed_memory_end){
+                other_mcb = (mem_control_block *)otherbck_location;
+                /*  its prior block size has changed! */
+                other_mcb->prior_blocksize = prior_mcb->current_blocksize;
+            }
+        }
+    }
+}
+    #+end_src
+** task_struct
+*** process kernel stack
+    #+begin_src c
+    // include/linux/sched.h
+    union thread_union {
+#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK
+	struct task_struct task;
+#endif
+#ifndef CONFIG_THREAD_INFO_IN_TASK
+	struct thread_info thread_info;
+#endif
+	unsigned long stack[THREAD_SIZE/sizeof(long)];
+};
+    #+end_src
+*** mm_struct
+**** vm_area_struct
+***** vm_start vm_end
+**** count
+***** count > 0 means lightweight process
+** wait_queue
+*** schedule make process hang
+*** wake_up_process
+*** sleep_on interruptible_sleep_on
+*** wake_up wake_up_interruptible
+** memeory management
+*** buddy
+**** __get_free_pages
+*** slab
+**** kmem_cache_alloc
+**** high speed cache
+***** kmem_cache
+**** cache -> slab -> object
+**** task_struct filp
+**** /proc/slabinfo
+*** do_page_fault
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
@@ -645,3 +847,160 @@ walk through list of shared objects
 	   return Gson().fromJson<T>(json, T::class.java)
        }
     #+end_src
+* java generics
+** generic types in Java are invariant
+   #+begin_src java
+   // Java
+   List<String> strs = new ArrayList<String>();
+   List<Object> objs = strs; // !!! The cause of the upcoming problem sits here. Java prohibits this!
+   objs.add(1); // Here we put an Integer into a list of Strings
+   String s = strs.get(0); // !!! ClassCastException: Cannot cast Integer to String
+   #+end_src
+** covariant
+*** Collection<String> is a subtype of Collection<? extends Object>.
+*** In "clever words", the wildcard with an extends-bound (upper bound) makes the type covariant.
+** contravariance
+*** in Java we have List<? super String> a supertype of List<Object>
+** mnemonic
+*** PECS stands for Producer-Extends, Consumer-Super.
+** kotlin Declaration-site variance
+*** in
+    #+begin_src kotlin
+    interface Source<out T> {
+      fun nextT(): T
+    }
+
+    fun demo(strs: Source<String>) {
+      val objects: Source<Any> = strs // This is OK, since T is an out-parameter
+      // ...
+    }
+    #+end_src
+*** out
+    #+begin_src kotlin
+    interface Comparable<in T> {
+      operator fun compareTo(other: T): Int
+    }
+
+    fun demo(x: Comparable<Number>) {
+      x.compareTo(1.0) // 1.0 has type Double, which is a subtype of Number
+      // Thus, we can assign x to a variable of type Comparable<Double>
+      val y: Comparable<Double> = x // OK!
+    }
+    #+end_src
+** notes
+*** if you use a producer-object, say, List<? extends Foo>, you are not allowed to call add() or set() on this object, but this does not mean that this object is immutable: for example, nothing prevents you from calling clear() to remove all items from the list, since clear() does not take any parameters at all. The only thing guaranteed by wildcards (or other types of variance) is type safety. Immutability is a completely different story.
+
+* PriorityQueue
+** offer
+   #+begin_src java
+    public boolean offer(E e) {
+        if (e == null)
+            throw new NullPointerException();
+        modCount++;
+        int i = size;
+        if (i >= queue.length)
+            grow(i + 1);
+        size = i + 1;
+        if (i == 0)
+            queue[0] = e;
+        else
+            siftUp(i, e);
+        return true;
+    }
+
+    private void siftUp(int k, E x) {
+        if (comparator != null)
+            siftUpUsingComparator(k, x);
+        else
+            siftUpComparable(k, x);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void siftUpComparable(int k, E x) {
+        Comparable<? super E> key = (Comparable<? super E>) x;
+        while (k > 0) {
+            int parent = (k - 1) >>> 1;
+            Object e = queue[parent];
+            if (key.compareTo((E) e) >= 0)
+                break;
+            queue[k] = e;
+            k = parent;
+        }
+        queue[k] = key;
+    }
+   #+end_src
+** poll
+   #+begin_src java
+    public E poll() {
+        if (size == 0)
+            return null;
+        int s = --size;
+        modCount++;
+        E result = (E) queue[0];
+        E x = (E) queue[s];
+        queue[s] = null;
+        if (s != 0)
+            siftDown(0, x);
+        return result;
+    }
+
+    private void siftDown(int k, E x) {
+        if (comparator != null)
+            siftDownUsingComparator(k, x);
+        else
+            siftDownComparable(k, x);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void siftDownComparable(int k, E x) {
+        Comparable<? super E> key = (Comparable<? super E>)x;
+        int half = size >>> 1;        // loop while a non-leaf
+        while (k < half) {
+            int child = (k << 1) + 1; // assume left child is least
+            Object c = queue[child];
+            int right = child + 1;
+            if (right < size &&
+                ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0)
+                c = queue[child = right];
+            if (key.compareTo((E) c) <= 0)
+                break;
+            queue[k] = c;
+            k = child;
+        }
+        queue[k] = key;
+    }
+   #+end_src
+* epoll
+** interest list and ready list
+*** epoll_create
+*** epoll_ctl
+*** epoll_wait
+** multiplex io should use nonblocking fd
+** edge-triggered
+*** notify when state changes
+** level-triggered
+*** notify each state
+* dynamic programming
+** child problem with overlapping
+*** divide-and-conquer without overlapping
+** top to bottom
+*** memorizing result of child problem
+*** handling child-problem in depth-first search
+** bottom up
+*** handling child problem in reverse topological sort
+* catlan number
+** h(n) = h(0)*h(n-1) + h(1)*h(n-2) + ... + h(n-1)*h(0), h(0)=h(1)=1
+** h(n) = C(2n,n)/(n+1)
+** h(n) = C(2n,n) - C(2n,n-1)
+** parens inserting
+** binary search tree enuming
+** solution: reflection
+*** S - push, X - pop
+*** find first position of Count(X) - Count(S) = 1 in sequence (S of n, X of n, C(2n,n) )
+*** S: s t (sum n)
+*** X: s+1 t-1 (sum n)
+*** reflect left partition-> S: s+1+t=n+1 X: s+t-1=n-1
+*** find first position of Count(S) - Count(X) = 1 in sequence(S of n+1, X of n-1, C(2n,n-1))
+*** S: s t (sum n+1)
+*** X: s-1 t-1(sum n-1)
+*** reflect left partition -> S: s-1+t=n X: s+t-1=n
