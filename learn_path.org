@@ -763,6 +763,24 @@ void free(void *firstbyte)
 }
     #+end_src
 ** task_struct
+*** current pointer in kernel code
+**** points to the current process which invokes the system call
+**** /home/jocoo/d/linux-5.4/include/asm-generic/current.h
+     #+begin_src c
+     #define get_current() (current_thread_info()->task)
+     #define current get_current()
+     #+end_src
+**** /home/jocoo/d/linux-5.4/arch/arm/include/asm/thread_info.h
+     #+begin_src c
+     static inline struct thread_info *current_thread_info(void) __attribute_const__;
+
+     static inline struct thread_info *current_thread_info(void)
+     {
+        return (struct thread_info *)
+           (current_stack_pointer & ~(THREAD_SIZE - 1));
+     }
+     #+end_src
+
 *** process kernel stack
     #+begin_src c
     // include/linux/sched.h
@@ -797,6 +815,48 @@ void free(void *firstbyte)
 **** task_struct filp
 **** /proc/slabinfo
 *** do_page_fault
+** fd -> file
+*** struct file
+    #+begin_src c
+    // in struct task_struct
+    ..
+    /* Open file information: */
+    struct files_struct		*files;
+
+    /*
+     * Open file table structure
+     */
+    struct files_struct {
+      /*
+       * read mostly part
+       */
+	    atomic_t count;
+	    bool resize_in_progress;
+	    wait_queue_head_t resize_wait;
+
+	    struct fdtable __rcu *fdt;
+	    struct fdtable fdtab;
+      /*
+       * written part on a separate cache line in SMP
+       */
+	    spinlock_t file_lock ____cacheline_aligned_in_smp;
+	    unsigned int next_fd;
+	    unsigned long close_on_exec_init[1];
+	    unsigned long open_fds_init[1];
+	    unsigned long full_fds_bits_init[1];
+	    struct file __rcu * fd_array[NR_OPEN_DEFAULT];
+    };
+
+    struct fdtable {
+	unsigned int max_fds;
+	struct file __rcu **fd;      /* current fd array */ // fd is index in the fd array
+	unsigned long *close_on_exec;
+	unsigned long *open_fds;
+	unsigned long *full_fds_bits;
+	struct rcu_head rcu;
+    };
+    #+end_src
+
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
@@ -1004,3 +1064,9 @@ void free(void *firstbyte)
 *** S: s t (sum n+1)
 *** X: s-1 t-1(sum n-1)
 *** reflect left partition -> S: s-1+t=n X: s+t-1=n
+* ViewGroup
+** isMotionEventSplittingEnabled
+*** when true(default), ACTION_POINTER_DOWN will be split
+*** case two buttons in a viewgroup, press down two buttons at the same time, two click will invoked
+**** viewgroup: ACTION_DOWN -> ACTION_POINTER_DOWN -> ACTION_POINTER_UP -> ACTION_UP
+**** both buttons: ACTION_DOWN -> ACTION_UP
