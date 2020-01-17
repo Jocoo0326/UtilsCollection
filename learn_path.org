@@ -1235,3 +1235,24 @@ static void __sched notrace __schedule(bool preempt)
 *** case two buttons in a viewgroup, press down two buttons at the same time, two click will invoked
 **** viewgroup: ACTION_DOWN -> ACTION_POINTER_DOWN -> ACTION_POINTER_UP -> ACTION_UP
 **** both buttons: ACTION_DOWN -> ACTION_UP
+* socket
+** unix domain socket vs IP socket
+*** unix domain socket
+**** fast (no need protocol layer encode-decode)
+***** send data -> kernel buffer -> TCP -> IP -> LINK -> ... LINK -> IP -> TCP -> kernel buffer -> recv data
+**** bind file path while ip socket bind ip address and port
+** int socket(int domain, int type, int protocol);
+*** domain - address family
+**** AF_UNIX
+**** AF_INET
+*** type
+**** SOCK_STREAM
+**** SOCK_DGRAM
+*** protocol
+** int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+*** bind a name to socket
+** int listen(int sockfd, int backlog);
+*** The backlog argument defines the maximum length to which the queue of pending connections for sockfd may grow.  If a connection request  arrives  when  the queue  is  full, the client may receive an error with an indication of ECONNREFUSED or, if the underlying protocol supports retransmission, the request may be ignored so that a later reattempt at connection succeeds.
+** int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+*** may block for incomming connection in runtime
+*** The  accept()  system call is used with connection-based socket types (SOCK_STREAM, SOCK_SEQPACKET).  It extracts the first connection request on the queue of pending connections for the listening socket, sockfd, creates a new connected socket, and returns a new file descriptor referring to that  socket. The newly created socket is not in the listening state.  The original socket sockfd is unaffected by this call.
