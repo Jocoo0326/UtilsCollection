@@ -1256,3 +1256,13 @@ static void __sched notrace __schedule(bool preempt)
 ** int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 *** may block for incomming connection in runtime
 *** The  accept()  system call is used with connection-based socket types (SOCK_STREAM, SOCK_SEQPACKET).  It extracts the first connection request on the queue of pending connections for the listening socket, sockfd, creates a new connected socket, and returns a new file descriptor referring to that  socket. The newly created socket is not in the listening state.  The original socket sockfd is unaffected by this call.
+* android view drawing process
+** Measuring layouting drawing
+** custom view
+** MeasureSpec
+** ?attr
+** overloads
+** dispatchTouchEvent
+** window
+** nested scrolling
+
