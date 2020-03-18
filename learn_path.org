@@ -1311,3 +1311,12 @@ static void __sched notrace __schedule(bool preempt)
 **** -> parent coroutine -> context[CoroutineExceptionHandler] -> Global CoroutineExceptionHandler with ServiceLoader -> Thread.uncaughtExceptionHandler
 *** a continuation parameter(as callback, which is outer scope coroutine) added to suspending function by compiler
 **** receive with `suspendCoroutineUninterceptedOrReturn` function
+* android view drawing process
+** Measuring layouting drawing
+** custom view
+** MeasureSpec
+** ?attr
+** overloads
+** dispatchTouchEvent
+** window
+** nested scrolling
