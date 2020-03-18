@@ -540,7 +540,7 @@ walk through list of shared objects
 ** misc
 *** db at index 0 is "main", db at index 1 is "temp"
 *** column count limit in a table is 2000 by default
-* c tips
+* c/c++ tips
 ** assert(argv[argc] == null)
 ** -DNDEBUG disable assert
 ** oop in c
@@ -1017,6 +1017,18 @@ static void __sched notrace __schedule(bool preempt)
 
 ** fork
 *** ref[https://blog.csdn.net/liushengxi_root/article/details/81332740]
+** c++ four kinds of explicit type conversion
+*** static_cast
+**** 
+*** dynamic_cast
+**** ensuring safe downcast
+***** If the cast is successful, dynamic_cast returns a value of type new_type.
+***** If the cast fails and new_type is a pointer type, it returns a null pointer of that type.
+***** If the cast fails and new_type is a reference type, it throws an exception that matches a handler of type std::bad_cast
+*** reinterpret_cast
+**** long -> pointer or pointer -> long
+*** const_cast
+**** remove or add `const` `volatile` attributes
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
@@ -1256,3 +1268,46 @@ static void __sched notrace __schedule(bool preempt)
 ** int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 *** may block for incomming connection in runtime
 *** The  accept()  system call is used with connection-based socket types (SOCK_STREAM, SOCK_SEQPACKET).  It extracts the first connection request on the queue of pending connections for the listening socket, sockfd, creates a new connected socket, and returns a new file descriptor referring to that  socket. The newly created socket is not in the listening state.  The original socket sockfd is unaffected by this call.
+* kotlin coroutine
+** kotlin compiler
+*** suspend lambda compiled into a class extends `SuspendLambda` class and implementing `Function2` interface
+*** `SuspendLambda` super class is BaseContinuationImpl which is `Continuation`
+*** user defined code is compiled into `invokeSuspend` member function with a Result object parameter
+*** member integer variable `label` is a black magic which acks like `swich-case` thus the `Continuation` can resume with result returned from the suspend point
+** kotlinx.coroutines SDK
+*** Dispatchers
+**** Default
+***** DefaultScheduler
+**** Main
+***** UI operations
+**** Unconfined
+**** IO
+***** share threads with `Default` dispatcher
+*** CoroutineContext
+**** an indexed set of `Element` instances
+**** plus operator
+***** contextA + contextB
+****** Returns a context containing elements from contextA and elements from contextB. The elements from contextA with the same key as in contextB is dropped.
+*** common behavior
+**** launch
+***** append `Dispatchers.Default` when `CoroutineInterceptor` is empty
+***** Create `StandaloneCoroutine`
+***** start coroutine
+****** create
+****** intercepted
+******* interceptContinuation
+******** Returns a continuation that wraps the provided continuation, thus intercepting all resumptions.
+******** create a `DispatchedContinuation` which dispatches a task wrapping continuation resumption to dispatches worker thread.
+****** resumeWith
+******* can be dispatched to Dispatchers's thread
+***** return coroutine
+**** delay
+***** create `CancellableContinuationImpl`
+***** `DefaultDelay` (alias of `DefaultExecutor` which extends `EventLoopImplBase`) `scheduleResumeAfterDelay` continuation created above
+****** create `DelayResumeTask` and `schedule`
+****** if `schedule` successfully then call `unpark` of `EventLoopImplPlatform` within which a worker thread was created and unparked
+***** when delay time is reached the `continuation` is resumed
+*** exceptions
+**** -> parent coroutine -> context[CoroutineExceptionHandler] -> Global CoroutineExceptionHandler with ServiceLoader -> Thread.uncaughtExceptionHandler
+*** a continuation parameter(as callback, which is outer scope coroutine) added to suspending function by compiler
+**** receive with `suspendCoroutineUninterceptedOrReturn` function
