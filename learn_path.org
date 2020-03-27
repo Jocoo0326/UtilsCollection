@@ -22,7 +22,7 @@
     # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
     # 根据type查找mAttachedScrap-->mCachedViews
     # if mViewCacheExtension != null, 通过mViewCacheExtension查找
-    # mRecyclerPool中查找
+    # mRecyclerPool.mScrap中查找
     # mAdapter.createViewHolder
 
 * android gradle plugin
@@ -1317,6 +1317,71 @@ static void __sched notrace __schedule(bool preempt)
 ** MeasureSpec
 ** ?attr
 ** overloads
+*** onSizeChanged
+*** onFinishInflate
 ** dispatchTouchEvent
 ** window
 ** nested scrolling
+* RxJava
+** CacheObservable and NetworkObservable case
+*** requires
+**** CacheObservable return first then NetworkObservable, take Cache then Network
+**** NetworkObservable return first then CacheObservable, take Network only
+*** operators
+**** publish(optional) + merge + takeUtil
+**** publish
+***** Returns an observable that emits the results of invoking a specified selector on items emitted by a ConnectableObservable that shares a single subscription to the underlying sequence.
+***** upstream -> SourceObserver -> PublishSubject -> applying selector function -> new Observable -> downstream
+**** merge
+***** delegated to flatMap with non-action(Functions.identity()) mapper function
+**** flatMap
+***** Returns an Observable that emits items based on applying a function that you supply to each item emitted by the source ObservableSource, where that function returns an ObservableSource, and then merging those resulting ObservableSources and emitting the results of this merger, while limiting the maximum number of concurrent subscriptions to these ObservableSources.
+***** upstream -> MergeObserver -> mapper function -> new Observable -> InnerObserver -> dispatch to downstream or cache data in queue of InnerObserver
+**** takeUtil
+***** Returns an observable that emits the items emitted by the source observable until a second observable emits an item.
+**** code
+     #+begin_src java
+     networkObservable.publish(new Function<Observable<LocalLifeModel>, ObservableSource<LocalLifeModel>>() {
+       @Override
+       public ObservableSource<LocalLifeModel> apply(@io.reactivex.annotations.NonNull Observable<LocalLifeModel> localLifeModelObservable) throws Exception {
+         return Observable.merge(localLifeModelObservable, cacheObservable.takeUntil(localLifeModelObservable));
+       }
+   })
+     #+end_src
+** PublishSubject
+*** A Subject that emits(multicasts) items to currently subscribed Observers and terminal events to current or late Observers
+*** as a Observable and a Observer, thus Connectable Observable
+** Disposable$dispose
+*** cancelling the connection with parent(upstream) which is passed to `onSubscribe` when calling `subscribe`
+** comprehensible diagram
+*** Observable S -> operator A -> operator B -> operator C -> Observable D
+**** conceptually, D = ObservableWrapperC( ObservableWrapperB( ObservableWrapperA( S ) ) ), which is wrapped in operator function
+*** Observable D subscribes Observer O
+**** conceptually, FinalObserver FO = ObserverWrapperA( ObserverWrapperB( ObserverWrapperC( O ) ) ), which is wrapped in `subscribeActual` function generally
+**** thus the data flow is: Observable S -> ObserverWrapperA -> ObserverWrapperB -> ObserverWrapperC -> Observer O
+** fusion
+*** BasicFuseableObserver
+*** wip(work-in-process) counter/indicator
+** error handling
+*** after disposing
+**** exception -> RxJavaPlugins.errorHandler -> Thread.getUncaughtExceptionHandler()(defaultUncaughtExceptionHandler -> thread group)
+*** before disposing
+**** onErrorResumeNext
+* android input system
+** diagram
+*** user touch -> driver -> /dev/input/event* (EventHub via epoll(polling new events) and inotify(adding or removing devices)) -> InputReader enqueue EventEntry to mInboundQueue(property of InputDispatcher) -> InputDispatcher dequeue DispatchEntry to outboundQueue(property of Connection), InputManagerService created a pair socket(socketpair) with UI thread of currently focused window, thus InputDispatcher send input data to UI thread via Connection -> Looper.loop -> MessageQueue.next -> MessageQueue.nativePollOnce -> InputEventReceiver.dispatchInputEvent -> call ViewRootImpl$WindowInputEventReceiver.onInputEvent -> mView.dispatchPointerEvent -> windowCallback.dispatchTouchEvent(Activity or Dialog) -> PhoneWindow.dispatchTouchEvent -> view.dispatchTouchEvent
+*** ref[https://wanandroid.com/wenda/show/12119]
+*** InputManagerService
+**** InputChannel client end: ViewRootImpl.mInputChannel, epoll-controlled by Looper of UI thread
+**** InputChannel server end: WindowState.mInputChannel, epoll-controlled by Looper of InputDispatcher
+**** diagram
+***** ViewRootImpl$setView -> mWindowSession.addToDisplay(...mInputChannel) --binder-> Session$addToDisplay(outInputChannel) -> WMS$addWindow() -> win = new WindowState() -> win.openInputChannel() -> InputChannel$openInputChannelPair() --jni-> socketpair() -> mClientChannel.transferTo(outInputChannel) -> mService.mInputManager.registerInputChannel() -> mInputManager->getDispatcher()->registerInputChannel -> new Connection and mLooper.addFd(fd, 0, ALOOPER_EVENT_INPUT, handleReceiveCallback, this)
+***** ViewRootImpl$setView -> new WindowInputReceiver(mInputChannel, Looper.myLooper()) -> InputEventReceiver.nativeInit --jni-> receiver = new NativeInputReceiver -> receiver.initialize() -> setFdEvents(ALOOPER_EVENT_INPUT) -> mMessageQueue->getLooper()->addFd(fd, 0, events, this/*callback*/, NULL)
+* android smart pointer
+** RefBase
+*** wrapping the strong reference count and weak reference count, for auto deallocate objects which usually extends from `RefBase` class, when decStrong() encounts 0
+** sp template class
+*** wrapping RefBase objects, implementing object copy constructing, copy assignment, move constructing, move assignment and deallocating, increasing or decreasing strong references of delegated RefBase objects
+* android Watchdog
+** monitoring deadlock of targets
+** started as a thread in SystemServer
