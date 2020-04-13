@@ -540,6 +540,11 @@ walk through list of shared objects
 ** misc
 *** db at index 0 is "main", db at index 1 is "temp"
 *** column count limit in a table is 2000 by default
+** Robson proof
+*** N	The amount of raw memory needed by the memory allocation system in order to guarantee that no memory allocation will ever fail.
+*** M	The maximum amount of memory that the application ever has checked out at any point in time.
+*** n	The ratio of the largest memory allocation to the smallest. We assume that every memory allocation size is an integer multiple of the smallest memory allocation size.
+*** N = M*(1 + (log2 n)/2) - n + 1
 * c/c++ tips
 ** assert(argv[argc] == null)
 ** -DNDEBUG disable assert
@@ -1320,6 +1325,17 @@ static void __sched notrace __schedule(bool preempt)
 *** onSizeChanged
 *** onFinishInflate
 ** dispatchTouchEvent
+*** TouchTarget aka mFirstTouchTarget
+**** TouchTarget is a view with pointers touched to it
+**** TouchTargets connected as a linked list
+*** when (event is not canceled or intercepted) and (action is ACTION_DOWN or ACTION_POINTER_DOWN), find if a child would to consume the event, if so create a touch target as the head of mFirstTouchTarget(linked list)
+**** special case
+***** when an event with ACTION_POINTER_DOWN can't find a consumer, it will add the associated pointer id to the TouchTarget  created by the early ACTION_DOWN event
+*** other events with pointer_up action_up will delivered to mFirstTouchTarget
+*** if no child would to consume the event, the viewgroup it self will try it
+** click listener
+*** performed when view is clickable or longclickable
+*** performed between action_down and action_up event(not the others, eg. action_pointer_down or action_pointer_up)
 ** window
 ** nested scrolling
 * RxJava
@@ -1385,3 +1401,16 @@ static void __sched notrace __schedule(bool preempt)
 * android Watchdog
 ** monitoring deadlock of targets
 ** started as a thread in SystemServer
+* binder
+** binder driver
+*** binder_init
+**** create debugfs
+**** register misc device, install file_operations struct
+*** binder_open
+**** create binder_proc struct which is added to global `binder_procs` list
+**** filep.private_data = proc, store binder_proc data to file private_data for later use
+*** binder_mmap
+**** 
+* todo
+** binder in c implementation on android device
+** open device /dev/rtc
