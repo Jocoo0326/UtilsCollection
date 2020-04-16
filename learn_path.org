@@ -767,43 +767,6 @@ void free(void *firstbyte)
     }
 }
     #+end_src
-** task_struct
-*** current pointer in kernel code
-**** points to the current process which invokes the system call
-**** /home/jocoo/d/linux-5.4/include/asm-generic/current.h
-     #+begin_src c
-     #define get_current() (current_thread_info()->task)
-     #define current get_current()
-     #+end_src
-**** /home/jocoo/d/linux-5.4/arch/arm/include/asm/thread_info.h
-     #+begin_src c
-     static inline struct thread_info *current_thread_info(void) __attribute_const__;
-
-     static inline struct thread_info *current_thread_info(void)
-     {
-        return (struct thread_info *)
-           (current_stack_pointer & ~(THREAD_SIZE - 1));
-     }
-     #+end_src
-
-*** process kernel stack
-    #+begin_src c
-    // include/linux/sched.h
-    union thread_union {
-#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK
-	struct task_struct task;
-#endif
-#ifndef CONFIG_THREAD_INFO_IN_TASK
-	struct thread_info thread_info;
-#endif
-	unsigned long stack[THREAD_SIZE/sizeof(long)];
-};
-    #+end_src
-*** mm_struct
-**** vm_area_struct
-***** vm_start vm_end
-**** count
-***** count > 0 means lightweight process
 ** wait_queue
 *** schedule make process hang
 **** important step 1: pick_next_task pick from sched_class
@@ -1034,6 +997,361 @@ static void __sched notrace __schedule(bool preempt)
 **** long -> pointer or pointer -> long
 *** const_cast
 **** remove or add `const` `volatile` attributes
+* linux kernel
+** start_kernel
+*** trap_init
+**** idt_setup_traps
+***** register IDT(interrupt description table)
+      #+begin_src c
+      static const __initconst struct idt_data def_idts[] = {
+	INTG(X86_TRAP_DE,		divide_error),
+	INTG(X86_TRAP_NMI,		nmi),
+	INTG(X86_TRAP_BR,		bounds),
+	INTG(X86_TRAP_UD,		invalid_op),
+	INTG(X86_TRAP_NM,		device_not_available),
+	INTG(X86_TRAP_OLD_MF,		coprocessor_segment_overrun),
+	INTG(X86_TRAP_TS,		invalid_TSS),
+	INTG(X86_TRAP_NP,		segment_not_present),
+	INTG(X86_TRAP_SS,		stack_segment),
+	INTG(X86_TRAP_GP,		general_protection),
+	INTG(X86_TRAP_SPURIOUS,		spurious_interrupt_bug),
+	INTG(X86_TRAP_MF,		coprocessor_error),
+	INTG(X86_TRAP_AC,		alignment_check),
+	INTG(X86_TRAP_XF,		simd_coprocessor_error),
+
+#ifdef CONFIG_X86_32
+	TSKG(X86_TRAP_DF,		GDT_ENTRY_DOUBLEFAULT_TSS),
+#else
+	INTG(X86_TRAP_DF,		double_fault),
+#endif
+	INTG(X86_TRAP_DB,		debug),
+
+#ifdef CONFIG_X86_MCE
+	INTG(X86_TRAP_MC,		&machine_check),
+#endif
+
+	SYSG(X86_TRAP_OF,		overflow),
+#if defined(CONFIG_IA32_EMULATION)
+	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_compat),
+#elif defined(CONFIG_X86_32)
+	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),
+#endif
+};
+      #+end_src
+***** interrupt handler of syscall: entry_INT80_32
+****** save context registers to pt_regs struct
+****** code
+#+begin_src c
+       #ifdef __i386__
+       struct pt_regs {
+	 unsigned long bx;
+	 unsigned long cx;
+	 unsigned long dx;
+	 unsigned long si;
+	 unsigned long di;
+	 unsigned long bp;
+	 unsigned long ax;
+	 unsigned long ds;
+	 unsigned long es;
+	 unsigned long fs;
+	 unsigned long gs;
+	 unsigned long orig_ax;
+	 unsigned long ip;
+	 unsigned long cs;
+	 unsigned long flags;
+	 unsigned long sp;
+	 unsigned long ss;
+       };
+       #else 
+       struct pt_regs {
+	 unsigned long r15;
+	 unsigned long r14;
+	 unsigned long r13;
+	 unsigned long r12;
+	 unsigned long bp;
+	 unsigned long bx;
+	 unsigned long r11;
+	 unsigned long r10;
+	 unsigned long r9;
+	 unsigned long r8;
+	 unsigned long ax;
+	 unsigned long cx;
+	 unsigned long dx;
+	 unsigned long si;
+	 unsigned long di;
+	 unsigned long orig_ax;
+	 unsigned long ip;
+	 unsigned long cs;
+	 unsigned long flags;
+	 unsigned long sp;
+	 unsigned long ss;
+       /* top of stack page */
+       };
+       #endif
+       #+end_src
+
+** syscall
+*** `int 0x80` or `syscall` instruction
+*** entry_INT80_32 or entry_SYSCALL_64
+**** save user space regs to pt_regs
+**** do_syscall_64 -> x32_sys_call_table[nr](regs);
+*** open
+**** 
+
+** task_struct
+*** categories
+**** id
+     #+begin_src c
+     pid_t pid;
+     pid_t tgid; // pid of thread group leader
+     struct task_struct *group_leader;
+     #+end_src
+**** status
+     #+begin_src c
+     volatile long state; // TASK_RUNNING, TASK_INTERRUPTIBLE, TASK_UNINTERUPTIBLE
+     int exit_state;
+     unsigned int flags;
+
+     /* Used in tsk->state: */
+     #define TASK_RUNNING			0x0000
+     #define TASK_INTERRUPTIBLE		        0x0001
+     #define TASK_UNINTERRUPTIBLE		0x0002
+     #define __TASK_STOPPED			0x0004
+     #define __TASK_TRACED			0x0008
+     /* Used in tsk->exit_state: */
+     #define EXIT_DEAD			        0x0010
+     #define EXIT_ZOMBIE			0x0020
+     #define EXIT_TRACE			(EXIT_ZOMBIE | EXIT_DEAD)
+     /* Used in tsk->state again: */
+     #define TASK_PARKED			0x0040
+     #define TASK_DEAD			        0x0080
+     #define TASK_WAKEKILL			0x0100
+     #define TASK_WAKING			0x0200
+     #define TASK_NOLOAD			0x0400
+     #define TASK_NEW			        0x0800
+     #define TASK_STATE_MAX			0x1000
+
+     /* Convenience macros for the sake of set_current_state: */
+     #define TASK_KILLABLE			(TASK_WAKEKILL | TASK_UNINTERRUPTIBLE)
+     #define TASK_STOPPED			(TASK_WAKEKILL | __TASK_STOPPED)
+     #define TASK_TRACED			(TASK_WAKEKILL | __TASK_TRACED)
+
+     #define TASK_IDLE			        (TASK_UNINTERRUPTIBLE | TASK_NOLOAD)
+
+     /* Convenience macros for the sake of wake_up(): */
+     #define TASK_NORMAL			(TASK_INTERRUPTIBLE | TASK_UNINTERRUPTIBLE)
+
+     /* get_task_state(): */
+     #define TASK_REPORT			(TASK_RUNNING | TASK_INTERRUPTIBLE | \
+					      TASK_UNINTERRUPTIBLE | __TASK_STOPPED | \
+					      __TASK_TRACED | EXIT_DEAD | EXIT_ZOMBIE | \
+					      TASK_PARKED)
+	    #+end_src
+**** schedule
+     #+begin_src c
+     //是否在运行队列上
+     int on_rq;
+     //优先级
+     int prio;
+     int static_prio;
+     int normal_prio;
+     unsigned int rt_priority;
+     //调度器类
+     const struct sched_class *sched_class;
+     //调度实体
+     struct sched_entity se;
+     struct sched_rt_entity rt;
+     struct sched_dl_entity dl;
+     //调度策略
+     unsigned int policy;
+     //可以使用哪些CPU
+     int nr_cpus_allowed;
+     cpumask_t cpus_allowed;
+     
+     struct sched_info sched_info;
+     
+     #+end_src
+**** signal
+     #+begin_src c
+     /* Signal handlers: */
+     struct signal_struct *signal; // signal->shared_pending is process signal set
+     struct sighand_struct *sighand;
+     sigset_t blocked;
+     sigset_t real_blocked;
+     sigset_t saved_sigmask;
+     struct sigpending pending; // signal set of current thread
+     unsigned long sas_ss_sp;
+     size_t sas_ss_size;
+     unsigned int sas_ss_flags;    
+     #+end_src
+
+**** running statistics
+     #+begin_src c
+     u64        utime;//用户态消耗的CPU时间
+     u64        stime;//内核态消耗的CPU时间
+     unsigned long      nvcsw;//自愿(voluntary)上下文切换计数
+     unsigned long      nivcsw;//非自愿(involuntary)上下文切换计数
+     u64        start_time;//进程启动时间，不包含睡眠时间
+     u64        real_start_time;//进程启动时间，包含睡眠时间
+     #+end_src
+**** process affinity
+     #+begin_src c     
+     struct task_struct __rcu *real_parent; /* real parent process */
+     struct task_struct __rcu *parent; /* recipient of SIGCHLD, wait4() reports */
+     struct list_head children;      /* list of my children */
+     struct list_head sibling;       /* linkage in my parent's children list */
+     #+end_src
+**** credential
+     #+begin_src c
+     /* Objective and real subjective task credentials (COW): */
+     const struct cred __rcu         *real_cred;
+     /* Effective (overridable) subjective task credentials (COW): */
+     const struct cred __rcu         *cred;
+     
+     struct cred {
+	atomic_t	usage;
+#ifdef CONFIG_DEBUG_CREDENTIALS
+	atomic_t	subscribers;	/* number of processes subscribed */
+	void		*put_addr;
+	unsigned	magic;
+#define CRED_MAGIC	0x43736564
+#define CRED_MAGIC_DEAD	0x44656144
+#endif
+	kuid_t		uid;		/* real UID of the task */
+	kgid_t		gid;		/* real GID of the task */
+	kuid_t		suid;		/* saved UID of the task */
+	kgid_t		sgid;		/* saved GID of the task */
+	kuid_t		euid;		/* effective UID of the task */
+	kgid_t		egid;		/* effective GID of the task */
+	kuid_t		fsuid;		/* UID for VFS ops */
+	kgid_t		fsgid;		/* GID for VFS ops */
+	unsigned	securebits;	/* SUID-less security management */
+	kernel_cap_t	cap_inheritable; /* caps our children can inherit */
+	kernel_cap_t	cap_permitted;	/* caps we're permitted */
+	kernel_cap_t	cap_effective;	/* caps we can actually use */
+	kernel_cap_t	cap_bset;	/* capability bounding set */
+	kernel_cap_t	cap_ambient;	/* Ambient capability set */
+#ifdef CONFIG_KEYS
+	unsigned char	jit_keyring;	/* default keyring to attach requested
+					 * keys to */
+	struct key	*session_keyring; /* keyring inherited over fork */
+	struct key	*process_keyring; /* keyring private to this process */
+	struct key	*thread_keyring; /* keyring private to this thread */
+	struct key	*request_key_auth; /* assumed request_key authority */
+#endif
+#ifdef CONFIG_SECURITY
+	void		*security;	/* subjective LSM security */
+#endif
+	struct user_struct *user;	/* real user ID subscription */
+	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
+	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
+	/* RCU deletion */
+	union {
+		int non_rcu;			/* Can we skip RCU deletion? */
+		struct rcu_head	rcu;		/* RCU deletion hook */
+	};
+} __randomize_layout;
+     #+end_src
+**** memory management
+     #+begin_src c
+     struct mm_struct                *mm;
+     struct mm_struct                *active_mm;
+     #+end_src
+**** file system and opened files
+     #+begin_src c
+     /* Filesystem information: */
+     struct fs_struct                *fs;
+     /* Open file information: */
+     struct files_struct             *files;
+     #+end_src
+*** current pointer in kernel code
+**** points to the current task which invokes the system call
+**** /home/jocoo/d/linux-5.4/include/asm-generic/current.h
+     #+begin_src c
+     #define get_current() (current_thread_info()->task)
+     #define current get_current()
+     #+end_src
+**** /home/jocoo/d/linux-5.4/arch/arm/include/asm/thread_info.h
+     #+begin_src c
+     static inline struct thread_info *current_thread_info(void) __attribute_const__;
+
+     static inline struct thread_info *current_thread_info(void)
+     {
+        return (struct thread_info *)
+           (current_stack_pointer & ~(THREAD_SIZE - 1));
+     }
+     #+end_src
+*** task switch
+**** schedule()
+**** __switch_to(struct task_srtuct *prev_p, struct task_struct *next_p)
+***** read current task pointer from PerCPU variable 
+      #+begin_src c
+      __visible __notrace_funcgraph struct task_struct *
+      __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+      {
+      //......
+      this_cpu_write(current_task, next_p);
+      //......
+      return prev_p;
+      }
+
+      DECLARE_PER_CPU(struct task_struct *, current_task);
+      #define this_cpu_read_stable(var)       percpu_stable_op("mov", var)
+      
+      static __always_inline struct task_struct *get_current(void){ 
+        return this_cpu_read_stable(current_task);
+      }
+      #+end_src
+*** task kernel stack
+    #+begin_src c
+    // include/linux/sched.h
+    union thread_union {
+#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK
+	struct task_struct task;
+#endif
+#ifndef CONFIG_THREAD_INFO_IN_TASK
+	struct thread_info thread_info;
+#endif
+	unsigned long stack[THREAD_SIZE/sizeof(long)];
+};
+    #+end_src
+*** mm_struct
+**** vm_area_struct
+***** vm_start vm_end
+**** count
+***** count > 0 means lightweight process
+** scheduler
+*** category
+**** stop_sched_class
+**** dl_sched_class
+**** rt_sched_class
+**** fair_sched_class
+**** idle_sched_class
+*** diagram
+   +--------------------+        +---------------------------------+
+   |struct rq {         |        |struct cfs_rq {                  |                         +-------+
+   |  struct cfs_rq cfs;+------->+  strcut rb_root tasks_timesline;+------------------------>+rb_node|
+   |  struct rt_rq rt;  |        |  struct rb_node *rb_leftmost;   +----------+             X+-------+X
+   |  struct dl_rq dl;  |        |}                                |          |            X           X
+   |}                   |        +---------------------------------+          |           X             X
+   +--------------------+                                                     |      +-------+        +-------+
+									      |      |rb_node|        |rb_node|
+									      |     X+------X+        +---X--- X
+									      |    X        X             X     X
+									      v   X         X             X      X
+									   +--+----+     +-------+    +-------+   +-------+
+									   |rb_node|     |rb_node|    |rb_node|   |rb_node|
+									   +-------+     +-------+    +-------+   +-+-----+
+														    ^
+														    |
+														    |
+														    |
+				   +-----------------------------+               +--------------------------+       |
+				   |struct task_struct {         |               |struct sched_entity {     |       |
+				   |  struct sched_entity se;    +-------------->+  struct rb_node run_node;+-------+
+				   |  struct sched_rt_entity rt; |               |  u64 vruntime;           |
+				   |}                            |               |}                         |
+				   +-----------------------------+               +--------------------------+
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
