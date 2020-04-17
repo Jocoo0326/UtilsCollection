@@ -1,8 +1,8 @@
 * crash
-*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获
-取进程mem reg信息，同时获取procfs信息得到thread stacktrace
+*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获取进程mem reg信息，同时获取procfs信息得到thread stacktrace
 *** breakpad   ---> crashDump --> addr2line
-*** fork和pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
+*** fork使用fork syscall实现, pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
+*** thread specific stack is on heap(mmap) with guard page of guardsize protected by mprotect
 *** core dump file
 **** with systemd systems cat /proc/sys/kernel/core_pattern -> |/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %e
 **** core dump files stored in directory /var/lib/systemd/coredump
@@ -1097,7 +1097,8 @@ static void __sched notrace __schedule(bool preempt)
 **** do_syscall_64 -> x32_sys_call_table[nr](regs);
 *** open
 **** 
-
+*** exit_to_usermode_loop()
+**** _TIF_NEED_RESCHED -> schedule()
 ** task_struct
 *** categories
 **** id
@@ -1329,7 +1330,7 @@ static void __sched notrace __schedule(bool preempt)
 **** idle_sched_class
 *** diagram
    +--------------------+        +---------------------------------+
-   |struct rq {         |        |struct cfs_rq {                  |                         +-------+
+   |struct rq {//perCPU |        |struct cfs_rq {                  |                         +-------+
    |  struct cfs_rq cfs;+------->+  strcut rb_root tasks_timesline;+------------------------>+rb_node|
    |  struct rt_rq rt;  |        |  struct rb_node *rb_leftmost;   +----------+             X+-------+X
    |  struct dl_rq dl;  |        |}                                |          |            X           X
@@ -1352,6 +1353,92 @@ static void __sched notrace __schedule(bool preempt)
 				   |  struct sched_rt_entity rt; |               |  u64 vruntime;           |
 				   |}                            |               |}                         |
 				   +-----------------------------+               +--------------------------+
+*** schedule()
+**** pick_next_task(rq, prev, &rf)
+**** context_switch()
+***** switch mm_struct
+***** switch_to()
+****** save %esp to TASK_threadsp(prev), restore %esp from TASK_threadsp(next)
+****** __switch_to_asm()->__switch_to()
+******* this_cpu_write(current_task, next_p)
+******* load_sp0(tss, next) //restore to TSS
+***** finish_task_switch(prev)
+*** preempt
+**** set flag TIF_NEED_RESCHED
+***** scheduler_tick
+***** try_to_wake_up
+**** schedule time
+***** exit from syscall to userspace; syscall_return_slowpath -> exit_to_usermode_loop() -> schedule()
+***** exit from interrupt to userspace; do_IRQ() -> retint_user -> schedule()
+***** exit from interrupt to kernel space; do_IRQ() -> retint_kernel -> schedule()
+***** kernel space enable preempt; preempt_enable() -> schedule()
+**** code
+     #+begin_src c
+     static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+     {
+	     /*
+	      * In order to return to user mode, we need to have IRQs off with
+	      * none of EXIT_TO_USERMODE_LOOP_FLAGS set.  Several of these flags
+	      * can be set at any time on preemptible kernels if we have IRQs on,
+	      * so we need to loop.  Disabling preemption wouldn't help: doing the
+	      * work to clear some of the flags can sleep.
+	      */
+	     while (true) {
+		     /* We have work to do. */
+		     local_irq_enable();
+
+		     if (cached_flags & _TIF_NEED_RESCHED)
+			     schedule();
+
+		     if (cached_flags & _TIF_UPROBE)
+			     uprobe_notify_resume(regs);
+
+		     if (cached_flags & _TIF_PATCH_PENDING)
+			     klp_update_patch_state(current);
+
+		     /* deal with pending signal delivery */
+		     if (cached_flags & _TIF_SIGPENDING)
+			     do_signal(regs);
+
+		     if (cached_flags & _TIF_NOTIFY_RESUME) {
+			     clear_thread_flag(TIF_NOTIFY_RESUME);
+			     tracehook_notify_resume(regs);
+			     rseq_handle_notify_resume(NULL, regs);
+		     }
+
+		     if (cached_flags & _TIF_USER_RETURN_NOTIFY)
+			     fire_user_return_notifiers();
+
+		     /* Disable IRQs and retry */
+		     local_irq_disable();
+
+		     cached_flags = READ_ONCE(current_thread_info()->flags);
+
+		     if (!(cached_flags & EXIT_TO_USERMODE_LOOP_FLAGS))
+			     break;
+	     }
+     }
+     #+end_src
+** fork
+*** copy_process
+**** dup_task_struct
+**** copy_files copy_fs copy_sighand copy_signal copy_mm
+*** wake_up_new_task
+**** set TIF_NEED_RESCHED
+**** exit_to_usermode_loop() -> schedule()
+** pthread_create
+*** create pthread stack in heap(with mmap) of userspace with pthread and tls and guard-space configed
+*** clone syscall
+*** copy_process
+**** dup_task_struct
+*** call `start_thread` as a trampoline to call `start_routine` of thread with user-defined arg
+** signal
+*** kill -> process
+**** task_struct -> signal_struct -> shared_pending shared by all threads in the process
+*** tgkill -> thread
+**** task_struct -> sigpending stores signal data for thread
+*** exit_to_usermode_loop() check and handle signal
+*** creating frame in userspace stack for sigaction then return to kernel space with sigreturn syscall which is on sigframe
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
