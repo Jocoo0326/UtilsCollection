@@ -1439,6 +1439,22 @@ static void __sched notrace __schedule(bool preempt)
 **** task_struct -> sigpending stores signal data for thread
 *** exit_to_usermode_loop() check and handle signal
 *** creating frame in userspace stack for sigaction then return to kernel space with sigreturn syscall which is on sigframe
+** fs
+*** struct file - opened file
+**** get_unused_fd_flags
+***** fdtable->open_fds->find_next_fd->find_next_zero_bit->__ffs->__buildin_ctzl(count trailing zero bits long)
+*** strcut mount - mount info
+*** struct files_struct - opened files list
+*** struct path - mount info and dentry
+**** code
+     #+begin_src c
+     struct path {
+       struct vfsmount *mnt;
+       struct dentry *dentry;
+     } __randomize_layout;
+     #+end_src
+
+*** struct dentry - dir name, file name, associated inode
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
