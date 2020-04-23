@@ -1099,6 +1099,12 @@ static void __sched notrace __schedule(bool preempt)
 **** 
 *** exit_to_usermode_loop()
 **** _TIF_NEED_RESCHED -> schedule()
+** interrupt
+*** per_cpu idt_table
+**** 0-31 system intr and 0x80 syscall intr
+**** others are device intr
+*** device interrupt
+**** irq_entries_table -> common_interrupt -> do_IRQ -> ret_from_intr
 ** task_struct
 *** categories
 **** id
@@ -1433,16 +1439,35 @@ static void __sched notrace __schedule(bool preempt)
 **** dup_task_struct
 *** call `start_thread` as a trampoline to call `start_routine` of thread with user-defined arg
 ** signal
+*** [1,31] non-rt signal [32, x] real-time signal
 *** kill -> process
-**** task_struct -> signal_struct -> shared_pending shared by all threads in the process
+**** task_struct -> signal_struct -> struct sigpending `shared_pending` shared by all threads in the process
 *** tgkill -> thread
-**** task_struct -> sigpending stores signal data for thread
+**** task_struct -> `sigpending` stores signal data for thread
 *** exit_to_usermode_loop() check and handle signal
 *** creating frame in userspace stack for sigaction then return to kernel space with sigreturn syscall which is on sigframe
+*** sigaction
+**** SA_ONESHOT - called once then restored to default handler
+**** rt_sigaction
+**** do_sigaction
+***** task_struct->sighand_struct->struct k_sigaction action[_NSIG]
+***** signum to k_sigaction(associated user sigaction)
 ** fs
-*** struct file - opened file
+*** open syscall
 **** get_unused_fd_flags
-***** fdtable->open_fds->find_next_fd->find_next_zero_bit->__ffs->__buildin_ctzl(count trailing zero bits long)
+***** fdtable->open_fds(bitmap)->find_next_fd->find_next_zero_bit->__ffs->__buildin_ctzl(count trailing zero bits long)
+**** do_filp_open
+***** path_openat
+****** do_last
+******* lookup_fast(search in dcache)
+******* vfs_open
+******** open(inode, file) - assigned as inode->i_fop->open
+*** read syscall
+**** find_get_page
+**** page_cache_sync_readahead
+**** copy_page_to_iter
+*** struct file - opened file
+**** file_operations -> filesystem operations, eg ext4_file_operations
 *** strcut mount - mount info
 *** struct files_struct - opened files list
 *** struct path - mount info and dentry
@@ -1455,6 +1480,81 @@ static void __sched notrace __schedule(bool preempt)
      #+end_src
 
 *** struct dentry - dir name, file name, associated inode
+*** struct address_space - contents of mappable or cacheable objects, eg, mmap, memory cache for open read syscall
+*** kmap_atomic(page) - map page to a kernel vm address
+*** register_filesystem
+**** just add a struct file_system_type to global file_systems linked list
+*** block device
+**** bdev pseudo filesystem
+**** bdev_map
+***** dev_t to gendisk
+** cdev
+*** insmod
+**** module_init
+***** install pair of dev_t and struct cdev into cdev_map
+***** struct cdev - {dev_t, struct file_operations}
+*** mknod /dev/{name}
+**** do_mknodat
+***** inode->i_fop = &def_chr_fops
+***** def_chr_fops = {.open = chrdev_open}
+*** open
+**** call chrdev_open
+***** replace_fops(filp, fops) - f
+** radix tree
+*** a compressed trie
+*** associated array
+*** echo node represents a fragment of key,and points to child fragments
+*** linux 4bit per node, nginx 2bit per node
+*** shift is high to low from top to bottom
+*** graph
+               +--------+
+               |  0100  |
+               +---+----+
+                   |
+                   |
+     +----------------------------+
+     |             |              |
+     |             |              |
+     v             v              v
++----+---+    +----+---+     +----+---+
+|  0000  |    |  0001  |     |  0010  |  ....
++--------+    +--------+     +--------+
+
+
+
+                 ...
+
+
+
+ +--------+       +--------+     +--------+
+ |  0010  |       |  0011  |     |  0100  |
+ +---+----+       +----+---+     +----+---+
+     |                 |              |
+     |                 |              |
+     v                 v              v
+ +---+----+       +----+---+     +----+---+
+ |  value |       |  value |     |  value |
+ +--------+       +--------+     +--------+
+** ipc
+*** cmd
+**** ipcmk
+**** ipcs - inspect
+**** ipcrm
+*** pipe
+**** mkfifo
+*** msgqueue
+**** msgget
+**** msgsnd
+**** msgrcv
+*** shmem
+**** shmget
+**** shmat - attach
+**** shmdt - detach
+**** shmctl
+*** semaphore
+**** semget
+**** semctl
+**** semop
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
