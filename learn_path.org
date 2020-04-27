@@ -997,6 +997,13 @@ static void __sched notrace __schedule(bool preempt)
 **** long -> pointer or pointer -> long
 *** const_cast
 **** remove or add `const` `volatile` attributes
+** calc number of args with macro in glibc
+*** INLINE_SYSCALL
+*** code
+    #+begin_src c
+    #define __nargs(a,b,c,d,e,f,g,h,n) n
+    #define nargs(...) __nargs(VARGS, 7, 6, 5, 4, 3, 2, 1)
+    #+end_src
 * linux kernel
 ** start_kernel
 *** trap_init
@@ -1484,14 +1491,17 @@ static void __sched notrace __schedule(bool preempt)
 *** kmap_atomic(page) - map page to a kernel vm address
 *** register_filesystem
 **** just add a struct file_system_type to global file_systems linked list
+*** super_block do management of inode(create, write, destroy)
+**** struct super_block->s_op(struct super_operations)
 *** block device
+*** 
 **** bdev pseudo filesystem
 **** bdev_map
 ***** dev_t to gendisk
 ** cdev
 *** insmod
 **** module_init
-***** install pair of dev_t and struct cdev into cdev_map
+***** install pair of dev_t and `struct cdev` into cdev_map
 ***** struct cdev - {dev_t, struct file_operations}
 *** mknod /dev/{name}
 **** do_mknodat
@@ -1542,12 +1552,19 @@ static void __sched notrace __schedule(bool preempt)
 **** ipcrm
 *** pipe
 **** mkfifo
+**** pipe2 syscall
+***** do_pipe2 -> __do_pipe_flags -> copy_to_user -> fd_install
+***** __do_pipe_flags -> create_pipe_files -> get_pipe_inode -> new_inode_pseudo(pipefs)
+****** pipe_mnt->mnt_sb -> alloc_inode
+***** struct file -> private_data = pipe_inode_info(has a member: struct pipe_buffer *bufs)
+***** f_op = pipefifo_fops
 *** msgqueue
 **** msgget
 **** msgsnd
 **** msgrcv
 *** shmem
 **** shmget
+***** create a file on shmem filesystem
 **** shmat - attach
 **** shmdt - detach
 **** shmctl
