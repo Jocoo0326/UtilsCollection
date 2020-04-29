@@ -1572,6 +1572,43 @@ static void __sched notrace __schedule(bool preempt)
 **** semget
 **** semctl
 **** semop
+** socket
+*** socket(int domain, int type, int protocol)
+**** args
+***** domain - AF_UNIX, AF_INET
+***** type - SOCK_STREAM, SOCK_DGRAM, SOCK_RAW
+***** protocol - IPPROTO_TCP, IPPROTO_UDP, IPPROTO_ICMP, 0(inferred) or specified
+**** syscall
+***** __sys_socket => sock_create -> sock_map_fd
+***** sock_create(aka. __sock_create) => sock_alloc -> pf->create()
+****** sock_alloc
+******* new_pseudo_inode(sock_mnt->mnt_sb) -> alloc_inode -> sock_alloc_inode
+******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount
+****** pf = rcu_dereference(net_families[family])
+******* af_net.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
+****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc ->
+******* lookup -> answer{.prot = &tcp_prot, .ops = &inet_stream_ops} for instance
+******* sk_alloc
+******** sock_common <- sock <- inet_sock <- inet_connection_sock <- tcp_sock (sock class hierachy)
+******** sock_common <- sock <- inet_sock <- udp_sock
+******** sock_common <- sock <- inet_sock (for ping sock)
+******** sock_common <- sock <- raw_sock
+****** sock_map_fd => get_unused_fd_flags -> sock_alloc_file
+******* sock_alloc_file
+******** file = alloc_file_pseudo(..., &socket_file_ops)
+******** sock->file = file;
+******** file->private_data = sock;
+*** bind(int fd, struct sockaddr* addr, int addrlen)
+**** sockfd_lookup_light => sock_from_file
+**** move_addr_to_kernel
+**** sock->ops->bind() -> inet_bind -> __inet_bind
+***** sk->sk_prot->get_port() -> inet_csk_get_port()
+*** listen(int fd, int backlog)
+**** sockfd_lookup_light => sock_from_file
+**** sock->ops->listen() -> inet_listen -> inet_csk_listen_start()
+**** inet_csk_listen_start
+***** init accept queue - reqsk_queue_alloc(&icsk->icsk_accept_queue);
+***** set listen state - inet_sk_state_store(sk, TCP_LISTEN);
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
