@@ -1601,14 +1601,44 @@ static void __sched notrace __schedule(bool preempt)
 *** bind(int fd, struct sockaddr* addr, int addrlen)
 **** sockfd_lookup_light => sock_from_file
 **** move_addr_to_kernel
-**** sock->ops->bind() -> inet_bind -> __inet_bind
-***** sk->sk_prot->get_port() -> inet_csk_get_port()
+**** sock->ops->bind() -> inet_bind(of inet_stream_ops) -> __inet_bind
+***** sk->sk_prot->get_port()(of tcp_prot) -> inet_csk_get_port()
 *** listen(int fd, int backlog)
 **** sockfd_lookup_light => sock_from_file
-**** sock->ops->listen() -> inet_listen -> inet_csk_listen_start()
+**** sock->ops->listen() -> inet_listen(of inet_stream_ops) -> inet_csk_listen_start()
 **** inet_csk_listen_start
 ***** init accept queue - reqsk_queue_alloc(&icsk->icsk_accept_queue);
 ***** set listen state - inet_sk_state_store(sk, TCP_LISTEN);
+*** accept(int fd, struct sockaddr *addr, socklen_t *addrlen)
+**** sockfd_lookup_light => sock_from_file
+**** move_addr_to_kernel()
+**** get_unused_fd_flags(flags) sock_alloc_file()
+**** sock->ops->accept() => inet_accept(of inet_stream_ops) -> inet_csk_accept(of tcp_prot)
+**** inet_csk_accept
+***** inet_csk_wait_for_connect
+***** req = reqsk_queue_remove(queue, sk); newsk = req->sk;
+*** connect(int fd, const struct sockaddr *addr, socklen_t addrlen)
+**** sockfd_lookup_light => sock_from_file
+**** sock->ops->connect() => inet_stream_connect(of inet_stream_ops) -> __inet_stream_connect -> sk->sk_prot->connect -> tcp_v4_connect(of tcp_prot)
+**** tcp_v4_connect
+***** ip_route_connect
+***** tcp_set_state(sk, TCP_SYN_SENT)
+***** tcp_connect(sk) - Build a SYN and send it off.
+*** write
+**** fop = socket_file_ops
+**** sock_write_iter -> sock_sendmsg -> sock_sendmsg_nosec
+**** sock->ops->sendmsg => inet_sendmsg -> sk->sk_prot->sendmsg => tcp_sendmsg -> tcp_sendmsg_locked
+**** tcp_sendmsg_locked
+***** tcp_write_queue_tail
+***** tcp_send_mss
+****** APP - data TCP - segment IP - packet MAC - frame
+****** MTU (Maximum Transmission Unit) 1500 byte
+****** TSO (TCP Segment Offload)
+****** MSS (Maximum segmentation size)
+****** cwnd - congestion window
+***** sk_stream_alloc_skb
+***** skb_add_data_nocache or skb_copy_to_page_nocache
+***** __tcp_push_pending_frames or tcp_push_one -> tcp_write_xmit
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
