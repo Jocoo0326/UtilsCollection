@@ -1579,11 +1579,12 @@ static void __sched notrace __schedule(bool preempt)
 ***** type - SOCK_STREAM, SOCK_DGRAM, SOCK_RAW
 ***** protocol - IPPROTO_TCP, IPPROTO_UDP, IPPROTO_ICMP, 0(inferred) or specified
 **** syscall
+***** fd -> file -> struct socket(inet_stream_ops) -> struct sock(tcp_prot)
 ***** __sys_socket => sock_create -> sock_map_fd
 ***** sock_create(aka. __sock_create) => sock_alloc -> pf->create()
 ****** sock_alloc
 ******* new_pseudo_inode(sock_mnt->mnt_sb) -> alloc_inode -> sock_alloc_inode
-******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount
+******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount(socket.c)
 ****** pf = rcu_dereference(net_families[family])
 ******* af_net.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
 ****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc ->
@@ -1599,10 +1600,10 @@ static void __sched notrace __schedule(bool preempt)
 ******** sock->file = file;
 ******** file->private_data = sock;
 *** bind(int fd, struct sockaddr* addr, int addrlen)
-**** sockfd_lookup_light => sock_from_file
+**** sockfd_lookup_light => sock_from_file(via file->private_data)
 **** move_addr_to_kernel
 **** sock->ops->bind() -> inet_bind(of inet_stream_ops) -> __inet_bind
-***** sk->sk_prot->get_port()(of tcp_prot) -> inet_csk_get_port()
+***** sk->sk_prot->get_port()(of tcp_prot) -> inet_csk_get_port()('csk' stands for connection socket)
 *** listen(int fd, int backlog)
 **** sockfd_lookup_light => sock_from_file
 **** sock->ops->listen() -> inet_listen(of inet_stream_ops) -> inet_csk_listen_start()
@@ -1629,16 +1630,30 @@ static void __sched notrace __schedule(bool preempt)
 **** sock_write_iter -> sock_sendmsg -> sock_sendmsg_nosec
 **** sock->ops->sendmsg => inet_sendmsg -> sk->sk_prot->sendmsg => tcp_sendmsg -> tcp_sendmsg_locked
 **** tcp_sendmsg_locked
-***** tcp_write_queue_tail
+***** tcp_write_queue_tail - get sk_buff
 ***** tcp_send_mss
-****** APP - data TCP - segment IP - packet MAC - frame
+****** APP - data, TCP - segment, IP - packet, MAC - frame
 ****** MTU (Maximum Transmission Unit) 1500 byte
-****** TSO (TCP Segment Offload)
+****** TSO (TCP Segment Offload) segmented by network interface
 ****** MSS (Maximum segmentation size)
 ****** cwnd - congestion window
 ***** sk_stream_alloc_skb
 ***** skb_add_data_nocache or skb_copy_to_page_nocache
 ***** __tcp_push_pending_frames or tcp_push_one -> tcp_write_xmit
+***** ip_queue_xmit -> ip_route_output_ports
+***** ip_finish_output -> __neigh_lookup_noref -> neigh_probe
+***** dev_queue_xmit
+***** raise_softirq_irqoff(NET_TX_SOFTIRQ) -> net_tx_action -> ixgb_xmit_frame
+*** read
+**** incoming data -> ring buffer
+**** ixgb_intr -> __raise_softirq_irqoff(NET_RX_SOFTIRQ)
+**** net_rx_action -> napi_poll -> ixgb_clean_rx_irq
+**** net_receive_skb -> ip_rcv
+**** iptables
+**** ip_local_deliver
+**** tcp_v4_rcv -> tcp_v4_do_rcv
+***** tcp_rcv_established
+***** tcp_rcv_state_process
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
