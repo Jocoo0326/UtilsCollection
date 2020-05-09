@@ -1498,6 +1498,17 @@ static void __sched notrace __schedule(bool preempt)
 **** bdev pseudo filesystem
 **** bdev_map
 ***** dev_t to gendisk
+** mm
+*** physical mm
+**** numa(non uniform memory access) -> struct pglist_data
+**** zone
+**** buddy -> struct free_area
+**** slab -> struct page
+*** virtual mem
+**** PGD (page global directory)
+**** PUD (page upper directory)
+**** PMD (page middle directory)
+**** PTE (page table entry)
 ** cdev
 *** insmod
 **** module_init
@@ -1654,6 +1665,23 @@ static void __sched notrace __schedule(bool preempt)
 **** tcp_v4_rcv -> tcp_v4_do_rcv
 ***** tcp_rcv_established
 ***** tcp_rcv_state_process
+*** Qdisc -> driver queue (ring buffer)
+*** [[https://zhensheng.im/2017/08/11/%e7%bf%bb%e8%af%91linux%e7%bd%91%e7%bb%9c%e6%a0%88%e4%b9%8b%e9%98%9f%e5%88%97.meow.html][ref]]
+*** net device init
+**** net_dev_init
+** container
+*** namespace
+**** uts pid ipc net user mnt
+**** nsenter
+**** unshare
+*** cgroup
+**** /sys/fs/cgroup
+***** cpu,cpuacct
+***** cpuset
+***** memory
+***** blkio
+***** devices
+***** net_cls,net_prio
 * http protocal
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
