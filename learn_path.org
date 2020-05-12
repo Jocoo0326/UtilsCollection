@@ -11,8 +11,7 @@
 **** extract core dump file: coredumpctl dump ${pid} -o core
 * Finalizer
 *** object.finalize() run in FinalizerDaemon thread
-*** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，
-则发出SIGQUIT signal
+*** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，则发出SIGQUIT signal
 *** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
 
 * generate code at runtime
@@ -27,12 +26,9 @@
 
 * android gradle plugin
 *** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
-*** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、
-compileOptions etc
-*** defaultConfig是默认的productFlavor类型，包含applicationId、minSdkVersion、versionCode、versionName、
-testInstrumentationRunner、ndk etc
-*** buildType属性：applicationSuffix、debuggable、jniDebuggable、minifyEnabled、multiDexEnabled、proguardFile、shrinkResources、
-signingConfig、zipAlignEnabled
+*** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、compileOptions etc
+*** defaultConfig是默认的productFlavor类型，包含applicationId、minSdkVersion、versionCode、versionName、testInstrumentationRunner、ndk etc
+*** buildType属性：applicationSuffix、debuggable、jniDebuggable、minifyEnabled、multiDexEnabled、proguardFile、shrinkResources、signingConfig、zipAlignEnabled
 *** variant 是productFlavors和buildTypes组合产物，variant有applicationVariants、libraryVariants、testVariants
 *** 使用exec可以执行命令行操作
 *** 可以通过环境变量System.getenv()获取签名信息，从而隐藏签名信息
@@ -153,6 +149,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** x/32x addr 显示addr开始的32个dword
 *** objdump -dS elf显示汇编
 *** disas/m 反汇编code
+*** tui enable -- enable TUI display mode
 * lag analyze tool
 *** TraceView
   - Debug.startMethodTracing("sample") Debug.startMethodTracingSampling() Debug.stopMethodTracing()
@@ -162,10 +159,10 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
   - app: Trace.beginSection(String sectionName) Trace.endSection()
   - native: ATRACE_CALL();
 *** 获取GC统计信息
-  - // GC 使用的总耗时，单位是毫秒
-    Debug.getRuntimeStat("art.gc.gc-time");
-    // 阻塞式 GC 的总耗时
-    Debug.getRuntimeStat("art.gc.blocking-gc-time");
+**** - // GC 使用的总耗时，单位是毫秒
+**** Debug.getRuntimeStat("art.gc.gc-time");
+**** // 阻塞式 GC 的总耗时
+**** Debug.getRuntimeStat("art.gc.blocking-gc-time");
 
 * C++ mangle/demangle tool
 *** c++filt -n _ZN7android6Tracer12sEnabledTagsE
@@ -173,14 +170,15 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** inline hook
 *** Substrate
 **** MSHookFunction(void *symbol, void *replace, void **result)
- - 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
- - 替换symbol的前几个指令，将其跳转到replace的首地址，replace中调用*result(mmap新的buffer，保存old function头部被替换的字节，尾部跳转到原函数未被替换字节的首地址)
+- 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
+- 替换symbol的前几个指令，将其跳转到replace的首地址，replace中调用*result(mmap新的buffer，保存old function头部被替换的字节，尾部跳转到原函数未被替换字节的首地址)
 ** PLT/GOT hook
 *** PLT(procedure linkage table) GOT(global offset table)
 *** example:
-callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
+- callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
+- trampoline code
 *** dl_iterate_phdr
-walk through list of shared objects
+- walk through list of shared objects
 *** facebook profilo iqiyi xHook
 * vcpkg
 *** visual stduio管理第三方libs
@@ -2062,3 +2060,14 @@ static void __sched notrace __schedule(bool preempt)
 * todo
 ** binder in c implementation on android device
 ** open device /dev/rtc
+* android
+** init process
+*** parse init.rc file
+*** start servicemanager
+*** start zygote service /system/bin/app_process (app_main.cpp)
+**** start zygote (com.android.internal.os.ZygoteInit)
+***** start system_server
+****** start services
+******* AMS
+******* PMS
+***** runSelectLoop waiting for process-forking connection
