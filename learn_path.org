@@ -1430,6 +1430,8 @@ static void __sched notrace __schedule(bool preempt)
 	     }
      }
      #+end_src
+*** update_curr
+**** update current task vruntime
 ** fork
 *** copy_process
 **** dup_task_struct
