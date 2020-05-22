@@ -601,6 +601,9 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** malloc
 *** block = mem_control_block + data
 *** sbrk to expand head space
+*** jemalloc in bionic
+**** arena
+**** thread cache
 *** code
     #+begin_src c
     /**
@@ -1500,15 +1503,374 @@ static void __sched notrace __schedule(bool preempt)
 ***** dev_t to gendisk
 ** mm
 *** physical mm
-**** numa(non uniform memory access) -> struct pglist_data
-**** zone
+**** memory model
+***** FLATMEM
+***** DISCONTIGMEM
+***** SPARSEMEM
+**** NUMA node (non uniform memory access) -> typedef struct pglist_data {} pg_data_t
+***** store in global node_data[]
+***** struct zone node_zones[MAX_NR_ZONES]
+***** struct page *node_mem_map - mem_map manage all page frames of the NUMA node
+***** zone
+****** lowmem - ZONE_DMA, ZONE_NORMAL
+****** highmem - ZONE_HIGHMEM
+****** struct free_area	free_area[MAX_ORDER]; #define MAX_ORDER 11
+******* struct list_head free_list[MIGRATE_TYPES]
+**** page
+***** struct list_head lru - node in active_list or inactive_list
+***** struct address_space mapping - page cache
+***** pgoff_t index - offset within mapping
 **** buddy -> struct free_area
 **** slab -> struct page
 *** virtual mem
-**** PGD (page global directory)
-**** PUD (page upper directory)
-**** PMD (page middle directory)
-**** PTE (page table entry)
+**** user space
+***** TEXT
+***** DATA
+***** BSS
+***** HEAP
+***** MMAP
+***** STACK
+***** args and envs
+**** vm_area_struct - fragment of user space virtual space
+***** vm_file - mapped file
+***** vm_pgoff - offset within vm_file
+***** vm_flags - protect flags, eg. VM_READ, VM_WRITE, VM_EXEC
+**** kernel space
+***** direct mapping region(896MB)
+***** vmalloc
+***** PKmap
+***** FixedMap
+**** kmalloc
+***** mapping page to DIRECT region
+**** vmalloc
+***** mapping page to VMALLOC region
+***** vm_struct - similar to vm_area_struct
+***** vmap
+****** mapping page to VMALLOC region
+***** page management
+****** hash table
+****** code
+#+begin_src c
+#define LAST_PKMAP 1024
+/*
+ * Describes one page->virtual association
+ */
+struct page_address_map {
+	struct page *page;
+	void *virtual;
+	struct list_head list;
+};
+
+static struct page_address_map page_address_maps[LAST_PKMAP];
+
+/*
+ * Hash table bucket
+ */
+static struct page_address_slot {
+	struct list_head lh;			/* List of page_address_maps */
+	spinlock_t lock;			/* Protect this bucket's list */
+} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
+
+static struct page_address_slot *page_slot(const struct page *page)
+{
+	return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
+}
+#+end_src
+
+**** alloc_pages
+***** alloc phisical pages
+***** from freelist of NUMA zone
+***** code
+#+begin_src c
+/*
+ * This is the 'heart' of the zoned buddy allocator.
+ */
+struct page *
+__alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
+							nodemask_t *nodemask)
+{
+	struct page *page;
+	unsigned int alloc_flags = ALLOC_WMARK_LOW;
+	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
+	struct alloc_context ac = { };
+
+	/*
+	 * There are several places where we assume that the order value is sane
+	 * so bail out early if the request is out of bound.
+	 */
+	if (unlikely(order >= MAX_ORDER)) {
+		WARN_ON_ONCE(!(gfp_mask & __GFP_NOWARN));
+		return NULL;
+	}
+
+	gfp_mask &= gfp_allowed_mask;
+	alloc_mask = gfp_mask;
+	if (!prepare_alloc_pages(gfp_mask, order, preferred_nid, nodemask, &ac, &alloc_mask, &alloc_flags))
+		return NULL;
+
+	finalise_ac(gfp_mask, &ac);
+
+	/*
+	 * Forbid the first pass from falling back to types that fragment
+	 * memory until all local zones are considered.
+	 */
+	alloc_flags |= alloc_flags_nofragment(ac.preferred_zoneref->zone, gfp_mask);
+
+	/* First allocation attempt */
+	page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
+	if (likely(page))
+		goto out;
+
+	/*
+	 * Apply scoped allocation constraints. This is mainly about GFP_NOFS
+	 * resp. GFP_NOIO which has to be inherited for all allocation requests
+	 * from a particular context which has been marked by
+	 * memalloc_no{fs,io}_{save,restore}.
+	 */
+	alloc_mask = current_gfp_context(gfp_mask);
+	ac.spread_dirty_pages = false;
+
+	/*
+	 * Restore the original nodemask if it was potentially replaced with
+	 * &cpuset_current_mems_allowed to optimize the fast-path attempt.
+	 */
+	if (unlikely(ac.nodemask != nodemask))
+		ac.nodemask = nodemask;
+
+	page = __alloc_pages_slowpath(alloc_mask, order, &ac);
+
+out:
+	if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&
+	    unlikely(__memcg_kmem_charge(page, gfp_mask, order) != 0)) {
+		__free_pages(page, order);
+		page = NULL;
+	}
+
+	trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
+
+	return page;
+}
+
+/*
+ * get_page_from_freelist goes through the zonelist trying to allocate
+ * a page.
+ */
+static struct page *
+get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
+						const struct alloc_context *ac)
+{
+	struct zoneref *z;
+	struct zone *zone;
+	struct pglist_data *last_pgdat_dirty_limit = NULL;
+	bool no_fallback;
+
+retry:
+	/*
+	 * Scan zonelist, looking for a zone with enough free.
+	 * See also __cpuset_node_allowed() comment in kernel/cpuset.c.
+	 */
+	no_fallback = alloc_flags & ALLOC_NOFRAGMENT;
+	z = ac->preferred_zoneref;
+	for_next_zone_zonelist_nodemask(zone, z, ac->zonelist, ac->high_zoneidx,
+								ac->nodemask) {
+		struct page *page;
+		unsigned long mark;
+
+		if (cpusets_enabled() &&
+			(alloc_flags & ALLOC_CPUSET) &&
+			!__cpuset_zone_allowed(zone, gfp_mask))
+				continue;
+		/*
+		 * When allocating a page cache page for writing, we
+		 * want to get it from a node that is within its dirty
+		 * limit, such that no single node holds more than its
+		 * proportional share of globally allowed dirty pages.
+		 * The dirty limits take into account the node's
+		 * lowmem reserves and high watermark so that kswapd
+		 * should be able to balance it without having to
+		 * write pages from its LRU list.
+		 *
+		 * XXX: For now, allow allocations to potentially
+		 * exceed the per-node dirty limit in the slowpath
+		 * (spread_dirty_pages unset) before going into reclaim,
+		 * which is important when on a NUMA setup the allowed
+		 * nodes are together not big enough to reach the
+		 * global limit.  The proper fix for these situations
+		 * will require awareness of nodes in the
+		 * dirty-throttling and the flusher threads.
+		 */
+		if (ac->spread_dirty_pages) {
+			if (last_pgdat_dirty_limit == zone->zone_pgdat)
+				continue;
+
+			if (!node_dirty_ok(zone->zone_pgdat)) {
+				last_pgdat_dirty_limit = zone->zone_pgdat;
+				continue;
+			}
+		}
+
+		if (no_fallback && nr_online_nodes > 1 &&
+		    zone != ac->preferred_zoneref->zone) {
+			int local_nid;
+
+			/*
+			 * If moving to a remote node, retry but allow
+			 * fragmenting fallbacks. Locality is more important
+			 * than fragmentation avoidance.
+			 */
+			local_nid = zone_to_nid(ac->preferred_zoneref->zone);
+			if (zone_to_nid(zone) != local_nid) {
+				alloc_flags &= ~ALLOC_NOFRAGMENT;
+				goto retry;
+			}
+		}
+
+		mark = wmark_pages(zone, alloc_flags & ALLOC_WMARK_MASK);
+		if (!zone_watermark_fast(zone, order, mark,
+				       ac_classzone_idx(ac), alloc_flags)) {
+			int ret;
+
+#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
+			/*
+			 * Watermark failed for this zone, but see if we can
+			 * grow this zone if it contains deferred pages.
+			 */
+			if (static_branch_unlikely(&deferred_pages)) {
+				if (_deferred_grow_zone(zone, order))
+					goto try_this_zone;
+			}
+#endif
+			/* Checked here to keep the fast path fast */
+			BUILD_BUG_ON(ALLOC_NO_WATERMARKS < NR_WMARK);
+			if (alloc_flags & ALLOC_NO_WATERMARKS)
+				goto try_this_zone;
+
+			if (node_reclaim_mode == 0 ||
+			    !zone_allows_reclaim(ac->preferred_zoneref->zone, zone))
+				continue;
+
+			ret = node_reclaim(zone->zone_pgdat, gfp_mask, order);
+			switch (ret) {
+			case NODE_RECLAIM_NOSCAN:
+				/* did not scan */
+				continue;
+			case NODE_RECLAIM_FULL:
+				/* scanned but unreclaimable */
+				continue;
+			default:
+				/* did we reclaim enough */
+				if (zone_watermark_ok(zone, order, mark,
+						ac_classzone_idx(ac), alloc_flags))
+					goto try_this_zone;
+
+				continue;
+			}
+		}
+
+try_this_zone:
+		page = rmqueue(ac->preferred_zoneref->zone, zone, order,
+				gfp_mask, alloc_flags, ac->migratetype);
+		if (page) {
+			prep_new_page(page, order, gfp_mask, alloc_flags);
+
+			/*
+			 * If this is a high-order atomic allocation then check
+			 * if the pageblock should be reserved for the future
+			 */
+			if (unlikely(order && (alloc_flags & ALLOC_HARDER)))
+				reserve_highatomic_pageblock(page, zone, order);
+
+			return page;
+		} else {
+#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
+			/* Try again if zone has deferred pages */
+			if (static_branch_unlikely(&deferred_pages)) {
+				if (_deferred_grow_zone(zone, order))
+					goto try_this_zone;
+			}
+#endif
+		}
+	}
+
+	/*
+	 * It's possible on a UMA machine to get through all zones that are
+	 * fragmented. If avoiding fragmentation, reset and try again.
+	 */
+	if (no_fallback) {
+		alloc_flags &= ~ALLOC_NOFRAGMENT;
+		goto retry;
+	}
+
+	return NULL;
+}
+
+/*
+ * Go through the free lists for the given migratetype and remove
+ * the smallest available page from the freelists
+ */
+static __always_inline
+struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
+						int migratetype)
+{
+	unsigned int current_order;
+	struct free_area *area;
+	struct page *page;
+
+	/* Find a page of the appropriate size in the preferred list */
+	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
+		area = &(zone->free_area[current_order]);
+		page = get_page_from_free_area(area, migratetype);
+		if (!page)
+			continue;
+		del_page_from_free_area(page, area);
+		expand(zone, page, order, current_order, area, migratetype);
+		set_pcppage_migratetype(page, migratetype);
+		return page;
+	}
+
+	return NULL;
+}
+
+static inline void expand(struct zone *zone, struct page *page,
+	int low, int high, struct free_area *area,
+	int migratetype)
+{
+	unsigned long size = 1 << high;
+
+	while (high > low) {
+		area--;
+		high--;
+		size >>= 1;
+		VM_BUG_ON_PAGE(bad_range(zone, &page[size]), &page[size]);
+
+		/*
+		 * Mark as guard pages (or page), that will allow to
+		 * merge back to allocator when buddy will be freed.
+		 * Corresponding page table entries will not be touched,
+		 * pages will stay not present in virtual address space
+		 */
+		if (set_page_guard(zone, &page[size], high, migratetype))
+			continue;
+
+		add_to_free_area(&page[size], area, migratetype);
+		set_page_order(&page[size], high);
+	}
+}
+#+end_src
+**** kmap
+***** map single page
+***** mapping page to PKMap region
+**** kmap_atomic
+***** map single page
+***** mapping page to FixedMap region
+**** page level
+***** PGD (page global directory)
+***** PUD (page upper directory)
+***** PMD (page middle directory)
+***** PTE (page table entry)
+*** page management
+**** active list --> inactive list
+**** mm/workingset.c
 ** cdev
 *** insmod
 **** module_init
