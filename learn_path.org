@@ -2415,12 +2415,73 @@ static inline void expand(struct zone *zone, struct page *page,
 ** binder driver
 *** binder_init
 **** create debugfs
-**** register misc device, install file_operations struct
+**** register misc device
+***** create `struct binder_device` binder_device which contains `struct binder_context` context
+***** associate 'struct file_operations' binder_fops
+***** code
+ #+begin_src c
+ static int __init init_binder_device(const char *name)
+ {
+	 int ret;
+	 struct binder_device *binder_device;
+
+	 binder_device = kzalloc(sizeof(*binder_device), GFP_KERNEL);
+	 if (!binder_device)
+		 return -ENOMEM;
+
+	 binder_device->miscdev.fops = &binder_fops;
+	 binder_device->miscdev.minor = MISC_DYNAMIC_MINOR;
+	 binder_device->miscdev.name = name;
+
+	 binder_device->context.binder_context_mgr_uid = INVALID_UID;
+	 binder_device->context.name = name;
+	 mutex_init(&binder_device->context.context_mgr_node_lock);
+
+	 ret = misc_register(&binder_device->miscdev);
+	 if (ret < 0) {
+		 kfree(binder_device);
+		 return ret;
+	 }
+
+	 hlist_add_head(&binder_device->hlist, &binder_devices);
+
+	 return ret;
+ }
+ #+end_src
+
+**** create binderfs
 *** binder_open
-**** create binder_proc struct which is added to global `binder_procs` list
+**** create `struct binder_proc` proc which is added to global `binder_procs` list
 **** filep.private_data = proc, store binder_proc data to file private_data for later use
+**** represents the process which opened binder driver
 *** binder_mmap
-**** 
+**** init `struct binder_alloc` alloc of `struct binder_proc` proc
+***** represents user space vma
+**** create a `struct binder_buffer` buffer
+***** represents ipc data area
+***** managed in rbtree `alloc->free_buffers.rb_node`
+***** alloc pages(control data of `struct page`)
+*** binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+**** protocol
+***** ioctl data -> BINDER_WRITE_READ + `struct binder_write_read` data
+****** which is control data to write buffer, write buffer size, read buffer, read buffer size
+***** binder_write_read data -> BC_TRANSACTION + `struct binder_transaction_data` data
+***** binder_transaction_data -> parcel data
+****** buffer - normal data contains `struct flat_binder_object`
+****** offsets - offsets from buffer to flat_binder_object structs
+**** handle BINDER_XXX cmd
+**** BINDER_WRITE_READ
+***** binder_thread_write
+****** BC_TRANSACTION -> binder_transaction
+****** binder_transaction
+******* find target_node and target_proc with `tr->target.handle`
+******* alloc `struct binder_transaction` t and `struct binder_work` tcomplete
+******* 
+***** code
+#+begin_src c
+
+#+end_src
+
 * todo
 ** binder in c implementation on android device
 ** open device /dev/rtc
