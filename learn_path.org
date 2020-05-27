@@ -2451,22 +2451,22 @@ static inline void expand(struct zone *zone, struct page *page,
 
 **** create binderfs
 *** binder_open
-**** create `struct binder_proc` proc which is added to global `binder_procs` list
+**** create `struct binder_proc` proc which is linked to global `binder_procs` list
 **** filep.private_data = proc, store binder_proc data to file private_data for later use
-**** represents the process which opened binder driver
+**** binder_proc represents the process which opened binder driver
 *** binder_mmap
 **** init `struct binder_alloc` alloc of `struct binder_proc` proc
 ***** represents user space vma
 **** create a `struct binder_buffer` buffer
-***** represents ipc data area
-***** managed in rbtree `alloc->free_buffers.rb_node`
-***** alloc pages(control data of `struct page`)
+***** represents ipc data area, physical page is allocated in `bind_transaction`
+***** linked in rbtree `alloc->free_buffers.rb_node`
+***** alloc `struct binder_lru_page` pages(control data of `struct page`)
 *** binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 **** protocol
 ***** ioctl data -> BINDER_WRITE_READ + `struct binder_write_read` data
-****** which is control data to write buffer, write buffer size, read buffer, read buffer size
+****** binder_write_read is control data to write buffer, write buffer size and consumed size, read buffer, read buffer size and consumed size
 ***** binder_write_read data -> BC_TRANSACTION + `struct binder_transaction_data` data
-***** binder_transaction_data -> parcel data
+***** binder_transaction_data -> parcel data(buffer + offsets)
 ****** buffer - normal data contains `struct flat_binder_object`
 ****** offsets - offsets from buffer to flat_binder_object structs
 **** handle BINDER_XXX cmd
@@ -2476,12 +2476,94 @@ static inline void expand(struct zone *zone, struct page *page,
 ****** binder_transaction
 ******* find target_node and target_proc with `tr->target.handle`
 ******* alloc `struct binder_transaction` t and `struct binder_work` tcomplete
-******* 
-***** code
+******* `binder_alloc_new_buf`
+******** alloc a new binder_buffer in binder_alloc of target_proc for ipc data
+******** alloc physical `struct page` pages with `alloc_page` and `vm_insert_page`, so copy once
+******* `binder_alloc_copy_user_to_buffer`
+******** copy user binder_transaction_data(buffer + offsets) to new allocated binder_buffer with `kmap`
+******* read `struct binder_object` from binder_buffer
+******** `binder_alloc_copy_from_buffer`
+********* read offsets data(pointed to buffer data) from binder_buffer of target_proc
+******** `binder_get_object`
+********* read `struct binder_object` of the offsets above
+******* translate and replace original binder object
+******** `binder_translate_binder`
+********* `binder_get_node` - create `struct binder_node` node for strong binder if not exists
+********* BINDER_TYPE_BINDER -> BINDER_TYPE_HANDLE
+********** `struct binder_node` transfer to `struct binder_ref` when binder server object transferred to another process
+********* `fp->handle = rdata.desc;`
+********** handle of `struct binder_ref` is the index when added to target_proc's `struct rb_root` refs_by_node rbtree
+********* code
 #+begin_src c
+static int binder_translate_binder(struct flat_binder_object *fp,
+				   struct binder_transaction *t,
+				   struct binder_thread *thread)
+{
+	struct binder_node *node;
+	struct binder_proc *proc = thread->proc;
+	struct binder_proc *target_proc = t->to_proc;
+	struct binder_ref_data rdata;
+	int ret = 0;
 
+	node = binder_get_node(proc, fp->binder);
+	if (!node) {
+		node = binder_new_node(proc, fp);
+		if (!node)
+			return -ENOMEM;
+	}
+	if (fp->cookie != node->cookie) {
+		binder_user_error("%d:%d sending u%016llx node %d, cookie mismatch %016llx != %016llx\n",
+				  proc->pid, thread->pid, (u64)fp->binder,
+				  node->debug_id, (u64)fp->cookie,
+				  (u64)node->cookie);
+		ret = -EINVAL;
+		goto done;
+	}
+	if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
+		ret = -EPERM;
+		goto done;
+	}
+
+	ret = binder_inc_ref_for_node(target_proc, node,
+			fp->hdr.type == BINDER_TYPE_BINDER,
+			&thread->todo, &rdata);
+	if (ret)
+		goto done;
+
+	if (fp->hdr.type == BINDER_TYPE_BINDER)
+		fp->hdr.type = BINDER_TYPE_HANDLE;
+	else
+		fp->hdr.type = BINDER_TYPE_WEAK_HANDLE;
+	fp->binder = 0;
+	fp->handle = rdata.desc;
+	fp->cookie = 0;
+
+	trace_binder_transaction_node_to_ref(t, node, &rdata);
+	binder_debug(BINDER_DEBUG_TRANSACTION,
+		     "        node %d u%016llx -> ref %d desc %d\n",
+		     node->debug_id, (u64)node->ptr,
+		     rdata.debug_id, rdata.desc);
+done:
+	binder_put_node(node);
+	return ret;
+}
 #+end_src
 
+******** `binder_alloc_copy_to_buffer`
+********* repalce the original binder object with the translated one
+******* translate fd 
+******** `binder_translate_fd`
+********* `list_add_tail(&fixup->fixup_entry, &t->fd_fixups);`
+********** add fixup data to binder_transaction which is handled in target_proc process
+******* enqueue t to target_thread todo list, tcomplete to current thread todo list
+***** binder_thread_read
+****** `binder_wait_for_work`
+****** `w = binder_dequeue_work_head_ilocked(list);`
+****** `binder_apply_fd_fixups`
+******* `get_unused_fd_flags`
+******* `fd_install`
+******* `binder_alloc_copy_to_buffer`
+****** copy_to_user
 * todo
 ** binder in c implementation on android device
 ** open device /dev/rtc
@@ -2516,6 +2598,16 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ******* AMS
 ******* PMS
 ***** runSelectLoop waiting for process-forking connection
+** service manager
+*** `bs = binder_open(128*1024);`
+*** `binder_become_context_manager(bs)`
+**** set `struct binder_context` context->binder_context_mgr_node = new_node;
+*** `binder_loop(bs, svcmgr_handler);`
+**** set binder_thread->looper = `BC_ENTER_LOOPER`
+**** `ioctl(bs->fd, BINDER_WRITE_READ, &bwr);` -> binder_thread_read wait for transaction
+**** binder_parse
+***** `svcmgr_handler`
+****** `SVC_MGR_ADD_SERVICE` -> call `do_add_service`
 ** ViewRootImpl
 *** requestLayout
 **** checkThread
