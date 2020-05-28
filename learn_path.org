@@ -1491,13 +1491,11 @@ static void __sched notrace __schedule(bool preempt)
 
 *** struct dentry - dir name, file name, associated inode
 *** struct address_space - contents of mappable or cacheable objects, eg, mmap, memory cache for open read syscall
-*** kmap_atomic(page) - map page to a kernel vm address
 *** register_filesystem
-**** just add a struct file_system_type to global file_systems linked list
+**** just add a `struct file_system_type` to global `struct file_system_type *file_systems` linked list
 *** super_block do management of inode(create, write, destroy)
 **** struct super_block->s_op(struct super_operations)
 *** block device
-*** 
 **** bdev pseudo filesystem
 **** bdev_map
 ***** dev_t to gendisk
@@ -1547,36 +1545,6 @@ static void __sched notrace __schedule(bool preempt)
 ***** vm_struct - similar to vm_area_struct
 ***** vmap
 ****** mapping page to VMALLOC region
-***** page management
-****** hash table
-****** code
-#+begin_src c
-#define LAST_PKMAP 1024
-/*
- * Describes one page->virtual association
- */
-struct page_address_map {
-	struct page *page;
-	void *virtual;
-	struct list_head list;
-};
-
-static struct page_address_map page_address_maps[LAST_PKMAP];
-
-/*
- * Hash table bucket
- */
-static struct page_address_slot {
-	struct list_head lh;			/* List of page_address_maps */
-	spinlock_t lock;			/* Protect this bucket's list */
-} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
-
-static struct page_address_slot *page_slot(const struct page *page)
-{
-	return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
-}
-#+end_src
-
 **** alloc_pages
 ***** alloc phisical pages
 ***** from freelist of NUMA zone
@@ -1859,8 +1827,39 @@ static inline void expand(struct zone *zone, struct page *page,
 #+end_src
 **** kmap
 ***** map single page
+***** might sleep
 ***** mapping page to PKMap region
+***** PKMap region page management
+****** hash table
+****** code
+#+begin_src c
+#define LAST_PKMAP 1024
+/*
+ * Describes one page->virtual association
+ */
+struct page_address_map {
+	struct page *page;
+	void *virtual;
+	struct list_head list;
+};
+
+static struct page_address_map page_address_maps[LAST_PKMAP];
+
+/*
+ * Hash table bucket
+ */
+static struct page_address_slot {
+	struct list_head lh;			/* List of page_address_maps */
+	spinlock_t lock;			/* Protect this bucket's list */
+} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
+
+static struct page_address_slot *page_slot(const struct page *page)
+{
+	return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
+}
+#+end_src
 **** kmap_atomic
+***** not sleep
 ***** map single page
 ***** mapping page to FixedMap region
 **** page level
@@ -1950,16 +1949,19 @@ static inline void expand(struct zone *zone, struct page *page,
 **** args
 ***** domain - AF_UNIX, AF_INET
 ***** type - SOCK_STREAM, SOCK_DGRAM, SOCK_RAW
-***** protocol - IPPROTO_TCP, IPPROTO_UDP, IPPROTO_ICMP, 0(inferred) or specified
+***** protocol - IPPROTO_TCP, IPPROTO_UDP, IPPROTO_ICMP(ping), 0(inferred) or specified
 **** syscall
-***** fd -> file -> struct socket(inet_stream_ops) -> struct sock(tcp_prot)
-***** __sys_socket => sock_create -> sock_map_fd
+***** common calling path: fd -> file -> struct socket(inet_stream_ops) -> struct sock(tcp_prot)
+***** synopsis: __sys_socket => sock_create -> sock_map_fd
 ***** sock_create(aka. __sock_create) => sock_alloc -> pf->create()
 ****** sock_alloc
+******* create `struct socket_alloc` sock where a new inode and socket object bound together
 ******* new_pseudo_inode(sock_mnt->mnt_sb) -> alloc_inode -> sock_alloc_inode
 ******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount(socket.c)
 ****** pf = rcu_dereference(net_families[family])
-******* af_net.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
+******* initialize the sock above, eg. `inet_create` for AF_INET address family, `unix_create` for AF_UNIX address family
+******* initialized in af_net.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
+******* af_unix.c for AF_UNIX unix domain socket
 ****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc ->
 ******* lookup -> answer{.prot = &tcp_prot, .ops = &inet_stream_ops} for instance
 ******* sk_alloc
@@ -2031,9 +2033,63 @@ static inline void expand(struct zone *zone, struct page *page,
 *** [[https://zhensheng.im/2017/08/11/%e7%bf%bb%e8%af%91linux%e7%bd%91%e7%bb%9c%e6%a0%88%e4%b9%8b%e9%98%9f%e5%88%97.meow.html][ref]]
 *** net device init
 **** net_dev_init
+** net protocol
+*** layer2
+**** MAC
+***** header format
+****** dest_mac(6byte)
+****** src_mac(6byte)
+****** type(2byte) IP or ARP
+*** layer3
+**** IP
+***** header format
+****** (4bit)version ipv4 or ipv6
+****** (4bit)ip header length
+******* unit 4 byte
+******* [20, 60]
+****** (8bit)TOS
+******* type of service
+****** (16bit)total length
+****** (16bit)identification - packet id
+****** (3bit)flag
+****** (13bit)fragment offsets
+****** (8bit)time to live
+****** (8bit)upper-layer protocol - UDP、TCP、ICMP、IGMP、IGP etc
+****** (16bit)header checksum
+****** (32bit)src ip address
+****** (32bit)dest ip address
+****** options
+****** data
+*** layer4
+**** UDP
+***** header format
+****** (16bit)src port
+****** (16bit)dst port
+****** (16bit)length
+****** (16bit)checksum
+****** data
+**** TCP
+***** header format
+****** (16bit)src port
+****** (16bit)dst port
+****** (32bit)sequence num
+****** (32bit)ack sequence
+****** (4bit)header length
+****** (6bit)flags
+****** (16bit)window size
+****** (16bit)checksum
+****** (16bit)urgency pointer
+****** options
+****** data
+***** hand-shake
+****** 
+#+ATTR_ORG: :width 100
+#+NAME: hand
+[[./_imgs/c067fe62f49e8152368c7be9d91adc08.jpg]]
+****** 
 ** container
 *** namespace
-**** uts pid ipc net user mnt
+**** uts pid ipc net user mnt(mnemonic: pumnic)
 **** nsenter
 **** unshare
 *** cgroup
@@ -2045,6 +2101,16 @@ static inline void expand(struct zone *zone, struct page *page,
 ***** devices
 ***** net_cls,net_prio
 * http protocal
+** request
+*** METHOD URL HTTP_VERSION
+*** Attribute-Name: value
+*** empty line
+*** body
+** response
+*** HTTP_VERSION STATUS_CODE RESPONSE-DESC
+*** Attribute-Name: value
+*** empty line
+*** body
 ** cookie
 *** ref [[https://tools.ietf.org/html/rfc6265][RFC6265]]
 *** syntax
@@ -2055,6 +2121,7 @@ static inline void expand(struct zone *zone, struct page *page,
 **** The user agent will reject cookies unless the Domain attribute specifies a scope for the cookie that would include the origin server.
 **** For example, the user agent will accept a cookie with a Domain attribute of "example.com" or of "foo.example.com" from foo.example.com,
 **** but the user agent will not accept a cookie with a Domain attribute of "bar.example.com" or of "baz.foo.example.com".
+*** ETag and if-none-match
 * java lambda vs inner class
 ** inner class create an instance if the inner class
 ** lambda invoke the lambda function through INVOKEDYNAMIC instruction and MethodLookup MethodHandle
