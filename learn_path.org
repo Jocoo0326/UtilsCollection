@@ -1991,6 +1991,7 @@ static struct page_address_slot *page_slot(const struct page *page)
 **** get_unused_fd_flags(flags) sock_alloc_file()
 **** sock->ops->accept() => inet_accept(of inet_stream_ops) -> inet_csk_accept(of tcp_prot)
 **** inet_csk_accept
+***** `struct sk_buff_head` sk_receive_queue and `struct sk_buff_head` sk_write_queue
 ***** inet_csk_wait_for_connect
 ***** req = reqsk_queue_remove(queue, sk); newsk = req->sk;
 *** connect(int fd, const struct sockaddr *addr, socklen_t addrlen)
@@ -2082,11 +2083,10 @@ static struct page_address_slot *page_slot(const struct page *page)
 ****** options
 ****** data
 ***** hand-shake
-****** 
-#+ATTR_ORG: :width 100
-#+NAME: hand
-[[./_imgs/c067fe62f49e8152368c7be9d91adc08.jpg]]
-****** 
+****** [[./_imgs/tcp_3way_handshake.jpg]]
+****** [[./_imgs/tcp_4way_close.jpg]]
+****** active-close end -> FIN_WAIT_1, FIN_WAIT_2, TIME_WAIT
+****** passive-close end -> CLOSE_WAIT, LAST_ACK
 ** container
 *** namespace
 **** uts pid ipc net user mnt(mnemonic: pumnic)
@@ -2291,7 +2291,8 @@ static struct page_address_slot *page_slot(const struct page *page)
 *** epoll_wait
 ** multiplex io should use nonblocking fd
 ** edge-triggered
-*** notify when state changes
+*** only notify when changes occurred on monitored file descriptor
+*** epoll_wait will wait indefinitely if not consumed the whole buffer data last time
 ** level-triggered
 *** notify each state
 * dynamic programming
