@@ -1945,6 +1945,22 @@ static struct page_address_slot *page_slot(const struct page *page)
 **** semctl
 **** semop
 ** socket
+*** sock_init (in socket.c)
+**** initialize the network sysctl infrastructure
+**** initialize skbuff SLAB cache
+**** initialize `struct socket_alloc` SLAB cache
+***** create a socket and an inode at the same time when call `sock_alloc`
+***** `struct socket_alloc` - where a new inode and socket object bound together
+**** register `sock_fs_type` file system
+***** sockfs -> `struct super_operations` sockfs_ops {.alloc_inode = sock_alloc_inode}
+*** inet_init (in af_inet.c)
+**** proto_register - tcp_prot, udp_prot, raw_prot, ping_prot
+***** create SLAB cache for stack sock
+***** `struct proto` is "socket layer -> transport layer interface"
+**** sock_register(&inet_family_ops)
+***** add inet family to `net_families` array
+**** insert all the elements in inetsw_array[] into the linked list inetsw
+***** inet_register_protosw
 *** socket(int domain, int type, int protocol)
 **** args
 ***** domain - AF_UNIX, AF_INET
@@ -1960,10 +1976,11 @@ static struct page_address_slot *page_slot(const struct page *page)
 ******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount(socket.c)
 ****** pf = rcu_dereference(net_families[family])
 ******* initialize the sock above, eg. `inet_create` for AF_INET address family, `unix_create` for AF_UNIX address family
-******* initialized in af_net.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
+******* initialized in af_inet.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
 ******* af_unix.c for AF_UNIX unix domain socket
-****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc ->
+****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc
 ******* lookup -> answer{.prot = &tcp_prot, .ops = &inet_stream_ops} for instance
+******* sock->ops = &inet_stream_ops
 ******* sk_alloc
 ******** sock_common <- sock <- inet_sock <- inet_connection_sock <- tcp_sock (sock class hierachy)
 ******** sock_common <- sock <- inet_sock <- udp_sock
@@ -2590,11 +2607,11 @@ send_events:
 }
 #+end_src
 ** multiplex io should use nonblocking fd
-** edge-triggered
-*** only notify when changes occurred on monitored file descriptor
-*** epoll_wait will wait indefinitely if not consumed the whole buffer data last time
-** level-triggered
-*** notify each state
+** ET and LT
+| level-triggered   | edge-triggered                                                                    |
+|-------------------+-----------------------------------------------------------------------------------|
+| notify each state | only notify when changes occurred on monitored file descriptor                    |
+|                   | epoll_wait will wait indefinitely if not consumed the whole buffer data last time |
 * dynamic programming
 ** child problem with overlapping
 *** divide-and-conquer without overlapping
