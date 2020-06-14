@@ -589,7 +589,12 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** asm volatile("" ::: "memory") compile-time memory barrier
 *** __sync_synchronize runtime(HW) memory barrier
 ** new operator and operator new
-*** operator new can be called explicitly as a regular function, but in C++, new is an operator with a very specific behavior: An expression with the new operator, first calls function operator new (i.e., this function) with the size of its type specifier as first argument, and if this is successful, it then automatically initializes or constructs the object (if needed). Finally, the expression evaluates as a pointer to the appropriate type.
+*** operator new can be called explicitly as a regular function, 
+*** but in C++, new is an operator with a very specific behavior: 
+*** An expression with the new operator, 
+*** first calls function operator new (i.e., this function) with the size of its type specifier as first argument,
+*** and if this is successful, it then automatically initializes or constructs the object (if needed).
+*** Finally, the expression evaluates as a pointer to the appropriate type.
 *** placement new is constructing new object in a known address
 ** valgrind
 *** leak checks benchmarks
@@ -1005,6 +1010,19 @@ static void __sched notrace __schedule(bool preempt)
     #define __nargs(a,b,c,d,e,f,g,h,n) n
     #define nargs(...) __nargs(VARGS, 7, 6, 5, 4, 3, 2, 1)
     #+end_src
+** template meta programming
+*** synopsis
+**** using type specialization for branch chosing
+**** using template arguments for calculation steps
+**** using type matching for function overloads
+*** check if any type
+**** type specialization
+*** check if type has any function
+**** SFINAE
+**** check return type using `decltype` `declval`
+**** "," expression
+*** non true
+**** enable_if
 * linux kernel
 ** start_kernel
 *** trap_init
