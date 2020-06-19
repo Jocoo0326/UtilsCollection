@@ -1977,6 +1977,8 @@ static struct page_address_slot *page_slot(const struct page *page)
 ***** `struct proto` is "socket layer -> transport layer interface"
 **** sock_register(&inet_family_ops)
 ***** add inet family to `net_families` array
+**** inet_add_protocol - icmp_protocol, udp_protocol, tcp_protocol, igmp_protocol
+***** handler for receiving data `struct net_protocol tcp_protocol{.handler = tcp_v4_rcv}`
 **** insert all the elements in inetsw_array[] into the linked list inetsw
 ***** inet_register_protosw
 *** socket(int domain, int type, int protocol)
