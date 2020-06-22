@@ -1995,10 +1995,12 @@ static struct page_address_slot *page_slot(const struct page *page)
 ******* new_pseudo_inode(sock_mnt->mnt_sb) -> alloc_inode -> sock_alloc_inode
 ******* sock_mnt->mnt_sb->s_op = &sockfs_ops {.alloc_inode = sock_alloc_inode} in sockfs mount(socket.c)
 ****** pf = rcu_dereference(net_families[family])
+******* chosing `inet_family_ops` according to `family`
 ******* initialize the sock above, eg. `inet_create` for AF_INET address family, `unix_create` for AF_UNIX address family
 ******* initialized in af_inet.c inet_init => proto_register(&tcp_prot, 1) -> sock_register(&inet_family_ops){.create = inet_create} -> inet_register_protosw
 ******* af_unix.c for AF_UNIX unix domain socket
 ****** inet_create => lookup inet_protosw in inetsw array with type and protocol -> sk_alloc
+******* chosing `struct inet_protosw` according to `type` and `protocol`
 ******* lookup -> answer{.prot = &tcp_prot, .ops = &inet_stream_ops} for instance
 ******* sock->ops = &inet_stream_ops
 ******* sk_alloc
@@ -2067,7 +2069,14 @@ static struct page_address_slot *page_slot(const struct page *page)
 **** tcp_v4_rcv -> tcp_v4_do_rcv
 ***** tcp_rcv_established
 ***** tcp_rcv_state_process
+**** tcp_recvmsg
+***** sk_receive_queue
+***** prequeue
+***** backlog
 *** Qdisc -> driver queue (ring buffer)
+*** iptables
+**** NAT
+**** netfilters
 *** [[https://zhensheng.im/2017/08/11/%e7%bf%bb%e8%af%91linux%e7%bd%91%e7%bb%9c%e6%a0%88%e4%b9%8b%e9%98%9f%e5%88%97.meow.html][ref]]
 *** net device init
 **** net_dev_init
