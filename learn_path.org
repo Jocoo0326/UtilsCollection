@@ -3192,3 +3192,44 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 #+end_src
 
 
+* flutter
+** Widget
+*** everything is widget
+**** font, style, layout, view
+**** declarative
+*** Text
+**** Text.rich
+**** inner implementation
+***** RichText
+*** Image
+**** Image.asset('images/image.png')
+**** Image.file(new File('images/image.png'))
+**** Image.Network('https://xxxx.png')
+**** FadeInImage.assetNetwork
+**** _ImageState -> ImageProvider -> ImageCache(memory cache) -> ImageStream
+**** CachedNetworkImage
+***** cached image file in local storage
+*** Button
+**** FlatButton
+**** RaisedButton
+**** FloatingActionButton
+**** inner implementation
+***** RawMaterialButton
+****** extends `StatefulWidget`
+****** build() -> `Semantics`
+****** extends `SingleChildRenderObjectWidget` which extends `RenderObjectWidget` which extends `Widget`
+*** ListView
+**** ListView.builder
+**** ListVIew.separate
+**** CustomScrollview - behavior
+***** SliverAppBar
+***** SliverList
+**** ScrollController
+***** scroll offsets listener
+**** NotificationListener<ScrollNotification>
+***** scroll event listener
+** Element
+*** An instantiation of a Widget at a particular position in the tree
+*** aids for widgets diff
+** RenderObject
+*** provide actual rending of the applicatoin
