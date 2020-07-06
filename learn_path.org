@@ -3191,7 +3191,6 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
     }
 #+end_src
 
-
 * flutter
 ** Widget
 *** everything is widget
@@ -3227,7 +3226,34 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** ScrollController
 ***** scroll offsets listener
 **** NotificationListener<ScrollNotification>
-***** scroll event listener
+***** scroll event listener(including offset data `scrollNotificatio.metrics.pixels`)
+*** Container Widget
+**** single child container
+***** Container
+****** combines a number of simpler widgets together into a convenient package
+****** padding - Padding
+****** decoration - DecoratedBox
+****** In fact, the majority of widgets in Flutter are simply combinations of other simpler widgets.
+****** Composition, rather than inheritance, is the primary mechanism for building up widgets.
+***** Center
+***** Align
+***** Padding
+**** multiple children container
+***** Row - LinearLayout
+***** Column
+***** Expanded - LinearLayout weight
+***** alignment
+****** MainAxisAlignment
+****** CrossAxisAlignment
+******* start, center, end
+***** size
+****** MainAxisSize.max - match_parent
+****** MainAxisSize.min - wrap_content
+**** stack container
+***** Stack - FrameLayout
+***** Positioned - absolute position only in Stack
+*** CustomPaint
+**** CustomPainter
 ** Element
 *** An instantiation of a Widget at a particular position in the tree
 *** aids for widgets diff
