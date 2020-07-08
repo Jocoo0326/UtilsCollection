@@ -3196,6 +3196,19 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 *** everything is widget
 **** font, style, layout, view
 **** declarative
+*** State lifecycle
+**** constructor
+**** initState
+**** didChangeDependencies
+**** build
+**** deactivate
+**** dispose
+*** App lifecycle
+**** WidgetsBindingObserver
+**** didChangeAppLifecycleState
+**** WidgetsBinding.instance
+***** addPostFrameCallback
+***** addPersistentFrameCallback
 *** Text
 **** Text.rich
 **** inner implementation
@@ -3254,8 +3267,63 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ***** Positioned - absolute position only in Stack
 *** CustomPaint
 **** CustomPainter
+***** actual custom painting logic
 ** Element
 *** An instantiation of a Widget at a particular position in the tree
 *** aids for widgets diff
 ** RenderObject
 *** provide actual rending of the applicatoin
+** Theme
+*** Theme.of()
+**** Global Theme
+**** Local widget theme
+*** defaultTargetPlatform
+** pubspec.yaml
+*** dependencies
+**** assets
+***** single file path declaration
+***** directory path declaration
+***** 1.0x, 2.0x, 3.0x
+**** fonts
+*** .packages
+**** mappings of lib and local cache path
+*** pubspec.lock
+**** lock file of specific lib dependencies
+** touch event
+*** event
+**** PointerDownEvent
+**** PointerMoveEvent
+**** PointerUpEvent
+**** PointerCancelEvent
+*** Listener
+**** raw pointer event listener
+**** onPointerDown
+**** onPointerMove
+**** onPointerUp
+*** GestureDetector
+**** detecting gesture for widgets
+***** onTap
+***** onDoubleTap
+***** onLongPress
+***** onPanUpdate
+***** etc
+**** returns `RawGestureDetector` in build method
+*** RawGestureDetector
+**** A widget that detects gestures described by the given gesture factories.
+*** GestureBinding
+**** receiving pointer events from window and dispatching to widgets
+**** PointerRouter
+***** A routing table for `PointerEvent` events
+***** dispatch `PointerEvent` to `PointerRoute` entry in two routing table
+****** Map<int, Map<PointerRoute, Matrix4>> _routeMap
+****** Map<PointerRoute, Matrix4> _globalRoutes
+**** GestureArenaManager
+***** mapping of pointer id to arena
+***** Map<int, _GestureArena> _arenas
+***** The first member to accept or the last member to not reject wins
+** asynchronous
+*** Future
+**** then
+**** catchError
+*** Stream
+**** listen
