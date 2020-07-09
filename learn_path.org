@@ -3310,6 +3310,7 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** returns `RawGestureDetector` in build method
 *** RawGestureDetector
 **** A widget that detects gestures described by the given gesture factories.
+**** GestureRecgnizerFactoryWithHandlers
 *** GestureBinding
 **** receiving pointer events from window and dispatching to widgets
 **** PointerRouter
@@ -3327,3 +3328,49 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** catchError
 *** Stream
 **** listen
+** passing data
+*** InheritedWidget
+**** parent -> child
+**** context.inheritFromWidgetOfExactType
+**** read only
+*** Notification
+**** child -> parent
+**** dispatch
+**** NotificationListener
+*** EventBus
+**** custom event bean
+**** fire(event)
+**** initState
+***** subscription = eventBus.on<CustomEvent>().listen((){doSomething();})
+**** dispose
+***** subscription.cancel()
+** navigation
+*** basic routes
+**** Navigator.push(context, MaterialPageRoute())
+*** named routes
+**** register routes in MaterialApp
+***** onUnknownRoute
+**** Navigator.pushNamed(context, 'routeName', arguments: 'name')
+*** passing arguments
+**** RouteSettings
+**** receive args
+***** ModalRoute.of(context).settings.arguments
+**** return back args
+***** Navigator.push().then((value)=>doSomething())
+** animation
+*** Animation
+**** returns animation values
+*** AnimationController
+**** role
+***** Play an animation forward or in reverse, or stop an animation.
+***** Set the animation to a specific value.
+***** Define the upperBound and lowerBound values of an animation.
+***** Create a fling animation effect using a physics simulation.
+**** created in State.initState and disposed in State.dispose
+*** TickerProvider
+**** provide frame callback
+*** AnimatedWidget
+*** AnimatedBuilder
+*** Hero
+**** Shared element transition
+**** provide same tag
