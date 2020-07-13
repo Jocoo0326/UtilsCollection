@@ -136,6 +136,9 @@ enum ThreadState {
 *** android-source/art/runtime/native/java_lang_Thread.cc
 Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
 *** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
+*** why wait need to be called in a synchronized block?
+**** common case: one thread testes a state and wait, another thread changes a state and notify
+**** so test and wait, as well as change and notify must be atomic
 * x86_64
 *** 函数传参寄存器顺序rdi, rsi, rdx, rcx, r8, r9，超过6个则压栈
 *** callq会push %rip(return address aka.下一条指令)
@@ -3360,13 +3363,14 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ** animation
 *** Animation
 **** returns animation values
+**** separates the state of animation from the rendering logic
 *** AnimationController
 **** role
 ***** Play an animation forward or in reverse, or stop an animation.
 ***** Set the animation to a specific value.
 ***** Define the upperBound and lowerBound values of an animation.
 ***** Create a fling animation effect using a physics simulation.
-**** created in State.initState and disposed in State.dispose
+**** good practice: created in State.initState and disposed in State.dispose
 *** TickerProvider
 **** provide frame callback
 *** AnimatedWidget
@@ -3374,3 +3378,54 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 *** Hero
 **** Shared element transition
 **** provide same tag
+** event loop
+*** microtask queue
+**** scheduleMicroTask
+*** event queue
+*** Future(FutureOr<T> computation())
+**** put a callback to event queue
+*** then
+**** `then` share the same event cycle with `Future`
+**** register callbacks to be called when this future completes
+**** If this future is already completed, the callback will not be called immediately, but will be scheduled in a later microtask
+*** practise
+#+begin_src dart
+
+Future(() => print('f1'));//声明一个匿名Future
+Future fx = Future(() =>  null);//声明Future fx，其执行体为null
+
+//声明一个匿名Future，并注册了两个then。在第一个then回调里启动了一个微任务
+Future(() => print('f2')).then((_) {
+  print('f3');
+  scheduleMicrotask(() => print('f4'));
+}).then((_) => print('f5'));
+
+//声明了一个匿名Future，并注册了两个then。第一个then是一个Future
+Future(() => print('f6'))
+  .then((_) => Future(() => print('f7')))
+  .then((_) => print('f8'));
+
+//声明了一个匿名Future
+Future(() => print('f9'));
+
+//往执行体为null的fx注册了了一个then
+fx.then((_) => print('f10'));
+
+//启动一个微任务
+scheduleMicrotask(() => print('f11'));
+print('f12');
+
+//result
+f12
+f11
+f1
+f10
+f2
+f3
+f5
+f4
+f6
+f9
+f7
+f8
+#+end_src
