@@ -3384,13 +3384,14 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 *** event queue
 *** Future(FutureOr<T> computation())
 **** put a callback to event queue
+*** Future.wait
+**** merge Future
 *** then
 **** `then` share the same event cycle with `Future`
 **** register callbacks to be called when this future completes
 **** If this future is already completed, the callback will not be called immediately, but will be scheduled in a later microtask
 *** practise
 #+begin_src dart
-
 Future(() => print('f1'));//声明一个匿名Future
 Future fx = Future(() =>  null);//声明Future fx，其执行体为null
 
@@ -3428,4 +3429,64 @@ f6
 f9
 f7
 f8
+
+
+Future(() => print('f1'))
+  .then((_) async => await Future(() => print('f2')))
+  .then((_) => print('f3'));
+Future(() => print('f4'));
+
+// result
+f1
+f4
+f2
+f3
+
+Future<String> fetchContent() =>
+    Future<String>.delayed(Duration(seconds: 3), () => "Hello")
+        .then((x) => '$x Jocoo');
+
+func() async => print(await fetchContent());
+
+main(List<String> args) async {
+  print('func before');
+  func();
+  print('func after');
+}
+
+// result
+func before
+func after
+Hello Jocoo
+
 #+end_src
+** asynchronous
+*** Future
+**** representation of pending work to be done
+**** 2 states
+***** uncompleted
+***** completed
+**** When a Future created, a work to be done queues up
+**** when a future's operation finishes, the future completes with a value or with an error
+*** async-await
+**** If the async function has a return type, then update the type to be Future<T>, where T is the type of value the function retures
+**** If the function doesn't explicitly return a value, then the return type is Future<void>
+**** 
+** Isolate
+*** an isolated Dart execution context
+**** All dart code runs in an isolate, and code can access classes and values only from the same isolate.
+**** Diffrent isolates can communicate by sending values through ports.[ReceivePort], [SendPort]
+*** controlPort
+*** capability
+**** pause
+**** terminate
+*** compute
+** dio
+*** options
+**** headers
+**** cookies
+*** interceptor
+**** InterceptorsWrapper
+** Json
+*** `json.decode` to map
+*** factory to bean using map
