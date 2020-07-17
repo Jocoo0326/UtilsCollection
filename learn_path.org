@@ -3490,3 +3490,17 @@ Hello Jocoo
 ** Json
 *** `json.decode` to map
 *** factory to bean using map
+** platform specific code
+*** platform channel
+**** MethodChannel
+***** logical identity is a string prefixed with domain in a constructor
+***** invokeMethod(String method)
+***** asynchronous
+***** native code runs in main thread which means callback should run in main thread if method handler is asynchronous
+***** StandardMessageCodec
+****** serialization
+******* int (dart) -> Int (kotlin)
+*** platform view
+**** PlatformViewFactory
+**** AndroidView
+**** UIKitView
