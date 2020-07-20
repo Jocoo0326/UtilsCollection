@@ -3234,6 +3234,7 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ****** build() -> `Semantics`
 ****** extends `SingleChildRenderObjectWidget` which extends `RenderObjectWidget` which extends `Widget`
 *** ListView
+**** StatelessWidget
 **** ListView.builder
 **** ListVIew.separate
 **** CustomScrollview - behavior
@@ -3504,3 +3505,43 @@ Hello Jocoo
 **** PlatformViewFactory
 **** AndroidView
 **** UIKitView
+** dart:ffi
+*** foreign function interface
+*** native interface
+*** language bindings
+** localization
+*** LocalizationDelegate
+*** Flutter Intl plugin
+** screen compatible
+*** OrientationBuilder
+**** SystemChrome.setPreferredOrientations
+*** MediaQueryData
+** compile mode
+*** build type
+**** debug
+***** JIT
+***** assert enabled
+**** release
+***** AOT
+***** assert disabled
+**** profile
+***** nearly same as release
+*** configurations
+**** InheritedWidget
+**** --target/-t option
+***** flutter build apk -t lib/main_dev.dart
+**** variant entry point
+** crash reporting
+*** app exceptions
+**** synchronous try-catch
+**** asynchronous Future.catchError
+**** runZoned((){}, onError:(dynamic e, StackTrace stack){})
+*** frame exceptions
+**** custom error page
+***** ErrorWidget.builder
+**** FlutterError.onError
+** Travis CI
+*** .travis.yml
+**** install
+**** script
+**** deploy
