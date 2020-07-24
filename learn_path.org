@@ -274,6 +274,31 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** 代理加载机制，即先向父ClassLoader请求加载类，未找到则自己加载
 ** defineClass 将字节数组转换成Class对象
 * gradle
+** phase
+*** init
+**** load settings.properties
+*** configure
+*** execute
+** projects
+*** one build.gradle file per project
+*** gradle project
+**** list all projects
+** configuration
+*** configuration for dependencies of a project
+**** annotationProcessor
+**** apiElements
+**** implementation
+**** compile
+**** runtime
+**** testImplementation
+**** etc
+** resolutionStrategy
+*** force
+**** force a dependency when conflict occurred
+** buildSrc
+*** a included build
+*** automatically compiles and tests this code and puts it in the classpath of your build script
+*** configs of project dependencies and versions can use in build.gradle file
 ** gradle init --type java-application
 ** gradle jar
 #+begin_src groovy
