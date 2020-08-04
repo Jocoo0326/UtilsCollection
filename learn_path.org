@@ -3570,3 +3570,14 @@ Hello Jocoo
 **** install
 **** script
 **** deploy
+* algorithms
+** kmp string pattern-matching
+*** main idea
+**** S - source string
+**** M - pattern string
+**** T - partial match table(aka. failure function)
+***** the goal of the table is to allow the algorithm not to match any character of S more than once
+***** T[i+1] = T[i] + 1 or 0
+**** complexity
+***** O(len(S) + len(M))
+*** [[https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm][ref]]
