@@ -2669,19 +2669,6 @@ send_events:
 |-------------------+-----------------------------------------------------------------------------------|
 | notify each state | only notify when changes occurred on monitored file descriptor                    |
 |                   | epoll_wait will wait indefinitely if not consumed the whole buffer data last time |
-* dynamic programming
-** child problem with overlapping
-*** divide-and-conquer without overlapping
-** top to bottom
-*** memorizing result of child problem
-*** handling child-problem in depth-first search
-** bottom up
-*** handling child problem in reverse topological sort
-** Longest common subsequence
-*** minimum edit distance
-*** diff program in unix
-*** k-candidates optimization
-**** https://www.cs.dartmouth.edu/~doug/diff.pdf
 * catlan number
 ** h(n) = h(0)*h(n-1) + h(1)*h(n-2) + ... + h(n-1)*h(0), h(0)=h(1)=1
 ** h(n) = C(2n,n)/(n+1)
@@ -3581,3 +3568,16 @@ Hello Jocoo
 **** complexity
 ***** O(len(S) + len(M))
 *** [[https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm][ref]]
+** dynamic programming
+*** child problem with overlapping
+**** divide-and-conquer without overlapping
+*** top to bottom
+**** memorizing result of child problem
+**** handling child-problem in depth-first search
+*** bottom up
+**** handling child problem in reverse topological sort
+*** Longest common subsequence
+**** minimum edit distance
+**** diff program in unix
+**** k-candidates optimization
+***** https://www.cs.dartmouth.edu/~doug/diff.pdf
