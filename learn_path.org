@@ -3581,3 +3581,29 @@ Hello Jocoo
 **** diff program in unix
 **** k-candidates optimization
 ***** https://www.cs.dartmouth.edu/~doug/diff.pdf
+* spring
+** core
+*** IoC
+**** BeanFactory
+**** ApplicationContext
+***** represents the Spring IoC container
+***** is responsible for instantiating, configuring, and assembling the beans
+**** Configuration metadata
+***** This configuration metadata represents how to instantiate, configure, and assemble the objects in your application.
+***** XML
+***** Annotation-based configuration
+***** Java-based configuration
+***** BeanDefinition
+**** injection mode
+***** constructor
+***** setter
+* Mysql
+** acid
+*** durability
+**** Durability guarantees that once a transaction has been committed, it will remain committed even in the case of a system failure (e.g., power outage or crash).
+** redo log
+*** design for durability
+** binlog
+** change buffer
+*** The change buffer is a special data structure that caches changes to secondary index pages when those pages are not in the buffer pool.
+*** The buffered changes, which may result from INSERT, UPDATE, or DELETE operations (DML), are merged later when the pages are loaded into the buffer pool by other read operations.
