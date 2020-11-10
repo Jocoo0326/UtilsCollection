@@ -103,38 +103,38 @@
     #+end_src
 
 *** android-source/art/runtime/thread_state.h
-enum ThreadState {
-  //                                   Thread.State   JDWP state
-  kTerminated = 66,                 // TERMINATED     TS_ZOMBIE    Thread.run has returned, but Thread* still around
-  kRunnable,                        // RUNNABLE       TS_RUNNING   runnable
-  kTimedWaiting,                    // TIMED_WAITING  TS_WAIT      in Object.wait() with a timeout
-  kSleeping,                        // TIMED_WAITING  TS_SLEEPING  in Thread.sleep()
-  kBlocked,                         // BLOCKED        TS_MONITOR   blocked on a monitor
-  kWaiting,                         // WAITING        TS_WAIT      in Object.wait()
-  kWaitingForLockInflation,         // WAITING        TS_WAIT      blocked inflating a thin-lock
-  kWaitingForTaskProcessor,         // WAITING        TS_WAIT      blocked waiting for taskProcessor
-  kWaitingForGcToComplete,          // WAITING        TS_WAIT      blocked waiting for GC
-  kWaitingForCheckPointsToRun,      // WAITING        TS_WAIT      GC waiting for checkpoints to run
-  kWaitingPerformingGc,             // WAITING        TS_WAIT      performing GC
-  kWaitingForDebuggerSend,          // WAITING        TS_WAIT      blocked waiting for events to be sent
-  kWaitingForDebuggerToAttach,      // WAITING        TS_WAIT      blocked waiting for debugger to attach
-  kWaitingInMainDebuggerLoop,       // WAITING        TS_WAIT      blocking/reading/processing debugger events
-  kWaitingForDebuggerSuspension,    // WAITING        TS_WAIT      waiting for debugger suspend all
-  kWaitingForJniOnLoad,             // WAITING        TS_WAIT      waiting for execution of dlopen and JNI on load code
-  kWaitingForSignalCatcherOutput,   // WAITING        TS_WAIT      waiting for signal catcher IO to complete
-  kWaitingInMainSignalCatcherLoop,  // WAITING        TS_WAIT      blocking/reading/processing signals
-  kWaitingForDeoptimization,        // WAITING        TS_WAIT      waiting for deoptimization suspend all
-  kWaitingForMethodTracingStart,    // WAITING        TS_WAIT      waiting for method tracing to start
-  kWaitingForVisitObjects,          // WAITING        TS_WAIT      waiting for visiting objects
-  kWaitingForGetObjectsAllocated,   // WAITING        TS_WAIT      waiting for getting the number of allocated objects
-  kWaitingWeakGcRootRead,           // WAITING        TS_WAIT      waiting on the GC to read a weak root
-  kWaitingForGcThreadFlip,          // WAITING        TS_WAIT      waiting on the GC thread flip (CC collector) to finish
-  kStarting,                        // NEW            TS_WAIT      native thread started, not yet ready to run managed code
-  kNative,                          // RUNNABLE       TS_RUNNING   running in a JNI native method
-  kSuspended,                       // RUNNABLE       TS_RUNNING   suspended by GC or debugger
-};
+    enum ThreadState {
+    //                                   Thread.State   JDWP state
+    kTerminated = 66,                 // TERMINATED     TS_ZOMBIE    Thread.run has returned, but Thread* still around
+    kRunnable,                        // RUNNABLE       TS_RUNNING   runnable
+    kTimedWaiting,                    // TIMED_WAITING  TS_WAIT      in Object.wait() with a timeout
+    kSleeping,                        // TIMED_WAITING  TS_SLEEPING  in Thread.sleep()
+    kBlocked,                         // BLOCKED        TS_MONITOR   blocked on a monitor
+    kWaiting,                         // WAITING        TS_WAIT      in Object.wait()
+    kWaitingForLockInflation,         // WAITING        TS_WAIT      blocked inflating a thin-lock
+    kWaitingForTaskProcessor,         // WAITING        TS_WAIT      blocked waiting for taskProcessor
+    kWaitingForGcToComplete,          // WAITING        TS_WAIT      blocked waiting for GC
+    kWaitingForCheckPointsToRun,      // WAITING        TS_WAIT      GC waiting for checkpoints to run
+    kWaitingPerformingGc,             // WAITING        TS_WAIT      performing GC
+    kWaitingForDebuggerSend,          // WAITING        TS_WAIT      blocked waiting for events to be sent
+    kWaitingForDebuggerToAttach,      // WAITING        TS_WAIT      blocked waiting for debugger to attach
+    kWaitingInMainDebuggerLoop,       // WAITING        TS_WAIT      blocking/reading/processing debugger events
+    kWaitingForDebuggerSuspension,    // WAITING        TS_WAIT      waiting for debugger suspend all
+    kWaitingForJniOnLoad,             // WAITING        TS_WAIT      waiting for execution of dlopen and JNI on load code
+    kWaitingForSignalCatcherOutput,   // WAITING        TS_WAIT      waiting for signal catcher IO to complete
+    kWaitingInMainSignalCatcherLoop,  // WAITING        TS_WAIT      blocking/reading/processing signals
+    kWaitingForDeoptimization,        // WAITING        TS_WAIT      waiting for deoptimization suspend all
+    kWaitingForMethodTracingStart,    // WAITING        TS_WAIT      waiting for method tracing to start
+    kWaitingForVisitObjects,          // WAITING        TS_WAIT      waiting for visiting objects
+    kWaitingForGetObjectsAllocated,   // WAITING        TS_WAIT      waiting for getting the number of allocated objects
+    kWaitingWeakGcRootRead,           // WAITING        TS_WAIT      waiting on the GC to read a weak root
+    kWaitingForGcThreadFlip,          // WAITING        TS_WAIT      waiting on the GC thread flip (CC collector) to finish
+    kStarting,                        // NEW            TS_WAIT      native thread started, not yet ready to run managed code
+    kNative,                          // RUNNABLE       TS_RUNNING   running in a JNI native method
+    kSuspended,                       // RUNNABLE       TS_RUNNING   suspended by GC or debugger
+    };
 *** android-source/art/runtime/native/java_lang_Thread.cc
-Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
+    Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
 *** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
 *** why wait need to be called in a synchronized block?
 **** common case: one thread testes a state and wait, another thread changes a state and notify
@@ -155,12 +155,12 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** tui enable -- enable TUI display mode
 * lag analyze tool
 *** TraceView
-  - Debug.startMethodTracing("sample") Debug.startMethodTracingSampling() Debug.stopMethodTracing()
+    - Debug.startMethodTracing("sample") Debug.startMethodTracingSampling() Debug.stopMethodTracing()
 *** Systrace
-  - ./systrace.py sched freq idle am wm gfx view sync binder_driver irq workq input -b 96000
-  - java framework: Trace.traceBegin(long traceTag, String methodName) Trace.traceEnd(long traceTag)
-  - app: Trace.beginSection(String sectionName) Trace.endSection()
-  - native: ATRACE_CALL();
+    - ./systrace.py sched freq idle am wm gfx view sync binder_driver irq workq input -b 96000
+    - java framework: Trace.traceBegin(long traceTag, String methodName) Trace.traceEnd(long traceTag)
+    - app: Trace.beginSection(String sectionName) Trace.endSection()
+    - native: ATRACE_CALL();
 *** 获取GC统计信息
 **** - // GC 使用的总耗时，单位是毫秒
 **** Debug.getRuntimeStat("art.gc.gc-time");
@@ -173,15 +173,15 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** inline hook
 *** Substrate
 **** MSHookFunction(void *symbol, void *replace, void **result)
-- 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
-- 替换symbol的前几个指令，将其跳转到replace的首地址，replace中调用*result(mmap新的buffer，保存old function头部被替换的字节，尾部跳转到原函数未被替换字节的首地址)
+     - 作用：symbol：原函数地址，replace：hook函数地址，result：返回动态生成的代替原函数的指针，用于在hook函数中调用原来的逻辑
+     - 替换symbol的前几个指令，将其跳转到replace的首地址，replace中调用*result(mmap新的buffer，保存old function头部被替换的字节，尾部跳转到原函数未被替换字节的首地址)
 ** PLT/GOT hook
 *** PLT(procedure linkage table) GOT(global offset table)
 *** example:
-- callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
-- trampoline code
+    - callq <printf@PLT> 查找GOT中相应记录，若没有加载printf地址，加载so库，修改GOT中printf记录地址为真实地址，后续调用直接调用GOT中真实地址
+    - trampoline code
 *** dl_iterate_phdr
-- walk through list of shared objects
+    - walk through list of shared objects
 *** facebook profilo iqiyi xHook
 * vcpkg
 *** visual stduio管理第三方libs
@@ -190,13 +190,13 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** cmake && google test
 *** gtest
 **** assertions
-| assertions | fatal | intercept |
-|------------+-------+-----------|
-| ASSERT_*   | YES   | YES       |
-| EXPECT_*   | NO    | NO        |
+     | assertions | fatal | intercept |
+     |------------+-------+-----------|
+     | ASSERT_*   | YES   | YES       |
+     | EXPECT_*   | NO    | NO        |
 **** fixtures
 ***** Using the Same Data Configuration for Multiple Tests
-#+begin_src cpp
+      #+begin_src cpp
   // class Queue wanted to be tested
   template <typename E>  // E is the element type.
   class Queue {
@@ -245,7 +245,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
     EXPECT_EQ(q2_.size(), 1);
     delete n;
   }
-#+end_src
+      #+end_src
 **** running tests
 ***** TEST TEST_F 隐式注册到googletest，不需要显示指定需要运行哪些测试
 ***** RUN_ALL_TESTS()
@@ -274,20 +274,41 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** 代理加载机制，即先向父ClassLoader请求加载类，未找到则自己加载
 ** defineClass 将字节数组转换成Class对象
 * gradle
+** features
+*** convention over configuration
+*** transitive dependencies
+*** maven compatible
 ** phase
 *** init
-**** load settings.properties
+**** create a `Settings` instance and evaluate `settings.gradle` file
+**** create the hierarchy of `Project` instances and evaluate each `Project` instance by evaluating its `build.gradle` file
 *** configure
 *** execute
 ** projects
 *** one build.gradle file per project
 *** gradle project
 **** list all projects
+*** dynamic project properties, 5 property delegated scopes
+**** `Project` object
+**** extra properties
+**** extensions
+**** convention
+**** tasks
+**** extra properties and convention properties inherited from parent project
+*** dynamic methods
+**** `Project` object
+**** the build file
+**** extensions
+**** convention
+**** tasks
+**** methods of the parent project, recursively up to the root project
+**** a property of the project whose value is a closure
 ** configuration
 *** configuration for dependencies of a project
 **** annotationProcessor
 **** apiElements
 **** implementation
+**** api
 **** compile
 **** runtime
 **** testImplementation
@@ -301,7 +322,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** configs of project dependencies and versions can use in build.gradle file
 ** gradle init --type java-application
 ** gradle jar
-#+begin_src groovy
+   #+begin_src groovy
   jar {
       manifest {
           attributes("Main-Class": "App")
@@ -322,7 +343,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 
       with jar
   }
-#+end_src
+   #+end_src
 
 * PhontomReference
 ** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
@@ -348,11 +369,11 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 ** umask(0)
 *** 防止继承得来的文件模式创建屏蔽字在创建文件时会拒绝设置某些权限
 ** close fds: STDIN_FILENO STDOUT_FILENO STDERR_FILENO
-#+begin_src c
+   #+begin_src c
   int fd = open("/dev/null", O_RDWR);
   dup2(fd, STDIN_FILENO);
   dup2(fd, STDOUT_FILENO);
-#+end_src
+   #+end_src
 
 * UI
 ** smallestWidth适配
@@ -449,7 +470,7 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 **** 6. Destroy the object using [sqlite3_finalize()].
 ** Hash table
 *** code snippet
-     #+begin_src c
+    #+begin_src c
        struct Hash {
 	 unsigned int htsize;      /* Number of buckets in the hash table */
 	 unsigned int count;       /* Number of entries in this table */
@@ -628,8 +649,24 @@ Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat
 *** leak checks benchmarks
 ** readelf and objdump
 *** objdump -dC main.out
-** smart pointer
-*** unique_ptr create a object which take over the destruction of the other object
+** RAII
+*** resource accquisition is initialization
+*** smart pointer
+**** unique_ptr create a object which take over the destruction of the other object
+**** make_shared
+**** make_unique
+***** my_make_unique
+***** #+begin_src c++
+      template <class T, class... Args>
+      std::unique_ptr<T>
+      my_make_unique(Args&&... args) { // args is a forwarding reference
+        return std::unique_ptr<T>(
+          new T(std::forward<Args>(args)...));
+      }
+      #+end_src
+**** forwarding reference
+***** forwarding references are special kind of references that preserve the value category of a function argument, making it possible to forward it by means of `std::forward`.
+***** function parameter of a function template declared as rvalue reference to cv-unqualified type template parameter of that same function template.
 ** delete is null-pointer safe
 ** malloc
 *** block = mem_control_block + data
@@ -1041,8 +1078,11 @@ static void __sched notrace __schedule(bool preempt)
 ** template meta programming
 *** synopsis
 **** using type specialization for branch chosing
+***** templates specilization
+***** function templates overload matching arguments types or return types
 **** using template arguments for calculation steps
 **** using type matching for function overloads
+**** using types as wrapper of variables, types, templates
 *** check if any type
 **** type specialization
 *** check if type has any function
@@ -1051,6 +1091,25 @@ static void __sched notrace __schedule(bool preempt)
 **** "," expression
 *** non true
 **** enable_if
+*** examples
+**** bits count
+** endian
+*** big-endian
+**** A big-endian system stores the most significant byte of a word at the smallest memory address and the least significant byte at the largest
+*** little-endian
+**** A little-endian system, in contrast, stores the least significant byte at the smallest address
+** value category
+*** lvalue
+**** identified, named value
+*** rvalue
+**** temporary value
+*** glvalue
+**** generalized lvalue
+*** xvalue
+**** expiring value
+**** named rvalue
+*** prvalue
+**** pure right value
 * linux kernel
 ** start_kernel
 *** trap_init
@@ -1095,7 +1154,7 @@ static void __sched notrace __schedule(bool preempt)
 ***** interrupt handler of syscall: entry_INT80_32
 ****** save context registers to pt_regs struct
 ****** code
-#+begin_src c
+       #+begin_src c
        #ifdef __i386__
        struct pt_regs {
 	 unsigned long bx;
@@ -1207,7 +1266,7 @@ static void __sched notrace __schedule(bool preempt)
 					      TASK_UNINTERRUPTIBLE | __TASK_STOPPED | \
 					      __TASK_TRACED | EXIT_DEAD | EXIT_ZOMBIE | \
 					      TASK_PARKED)
-	    #+end_src
+     #+end_src
 **** schedule
      #+begin_src c
      //是否在运行队列上
@@ -1389,30 +1448,30 @@ static void __sched notrace __schedule(bool preempt)
 **** fair_sched_class
 **** idle_sched_class
 *** diagram
-   +--------------------+        +---------------------------------+
-   |struct rq {//perCPU |        |struct cfs_rq {                  |                         +-------+
-   |  struct cfs_rq cfs;+------->+  strcut rb_root tasks_timesline;+------------------------>+rb_node|
-   |  struct rt_rq rt;  |        |  struct rb_node *rb_leftmost;   +----------+             X+-------+X
-   |  struct dl_rq dl;  |        |}                                |          |            X           X
-   |}                   |        +---------------------------------+          |           X             X
-   +--------------------+                                                     |      +-------+        +-------+
-									      |      |rb_node|        |rb_node|
-									      |     X+------X+        +---X--- X
-									      |    X        X             X     X
-									      v   X         X             X      X
-									   +--+----+     +-------+    +-------+   +-------+
-									   |rb_node|     |rb_node|    |rb_node|   |rb_node|
-									   +-------+     +-------+    +-------+   +-+-----+
-														    ^
-														    |
-														    |
-														    |
-				   +-----------------------------+               +--------------------------+       |
-				   |struct task_struct {         |               |struct sched_entity {     |       |
-				   |  struct sched_entity se;    +-------------->+  struct rb_node run_node;+-------+
-				   |  struct sched_rt_entity rt; |               |  u64 vruntime;           |
-				   |}                            |               |}                         |
-				   +-----------------------------+               +--------------------------+
+    +--------------------+        +---------------------------------+
+    |struct rq {//perCPU |        |struct cfs_rq {                  |                         +-------+
+    |  struct cfs_rq cfs;+------->+  strcut rb_root tasks_timesline;+------------------------>+rb_node|
+    |  struct rt_rq rt;  |        |  struct rb_node *rb_leftmost;   +----------+             X+-------+X
+    |  struct dl_rq dl;  |        |}                                |          |            X           X
+    |}                   |        +---------------------------------+          |           X             X
+    +--------------------+                                                     |      +-------+        +-------+
+    |      |rb_node|        |rb_node|
+    |     X+------X+        +---X--- X
+    |    X        X             X     X
+    v   X         X             X      X
+    +--+----+     +-------+    +-------+   +-------+
+    |rb_node|     |rb_node|    |rb_node|   |rb_node|
+    +-------+     +-------+    +-------+   +-+-----+
+    ^
+    |
+    |
+    |
+    +-----------------------------+               +--------------------------+       |
+    |struct task_struct {         |               |struct sched_entity {     |       |
+    |  struct sched_entity se;    +-------------->+  struct rb_node run_node;+-------+
+    |  struct sched_rt_entity rt; |               |  u64 vruntime;           |
+    |}                            |               |}                         |
+    +-----------------------------+               +--------------------------+
 *** schedule()
 **** pick_next_task(rq, prev, &rf)
 **** context_switch()
@@ -1595,7 +1654,7 @@ static void __sched notrace __schedule(bool preempt)
 ***** alloc phisical pages
 ***** from freelist of NUMA zone
 ***** code
-#+begin_src c
+      #+begin_src c
 /*
  * This is the 'heart' of the zoned buddy allocator.
  */
@@ -1870,7 +1929,7 @@ static inline void expand(struct zone *zone, struct page *page,
 		set_page_order(&page[size], high);
 	}
 }
-#+end_src
+      #+end_src
 **** kmap
 ***** map single page
 ***** might sleep
@@ -1878,7 +1937,7 @@ static inline void expand(struct zone *zone, struct page *page,
 ***** PKMap region page management
 ****** hash table
 ****** code
-#+begin_src c
+       #+begin_src c
 #define LAST_PKMAP 1024
 /*
  * Describes one page->virtual association
@@ -1903,7 +1962,7 @@ static struct page_address_slot *page_slot(const struct page *page)
 {
 	return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
 }
-#+end_src
+       #+end_src
 **** kmap_atomic
 ***** not sleep
 ***** map single page
@@ -1935,34 +1994,34 @@ static struct page_address_slot *page_slot(const struct page *page)
 *** linux 4bit per node, nginx 2bit per node
 *** shift is high to low from top to bottom
 *** graph
-               +--------+
-               |  0100  |
-               +---+----+
-                   |
-                   |
-     +----------------------------+
-     |             |              |
-     |             |              |
-     v             v              v
-+----+---+    +----+---+     +----+---+
-|  0000  |    |  0001  |     |  0010  |  ....
-+--------+    +--------+     +--------+
+    +--------+
+    |  0100  |
+    +---+----+
+    |
+    |
+    +----------------------------+
+    |             |              |
+    |             |              |
+    v             v              v
+    +----+---+    +----+---+     +----+---+
+    |  0000  |    |  0001  |     |  0010  |  ....
+    +--------+    +--------+     +--------+
 
 
 
-                 ...
+    ...
 
 
 
- +--------+       +--------+     +--------+
- |  0010  |       |  0011  |     |  0100  |
- +---+----+       +----+---+     +----+---+
-     |                 |              |
-     |                 |              |
-     v                 v              v
- +---+----+       +----+---+     +----+---+
- |  value |       |  value |     |  value |
- +--------+       +--------+     +--------+
+    +--------+       +--------+     +--------+
+    |  0010  |       |  0011  |     |  0100  |
+    +---+----+       +----+---+     +----+---+
+    |                 |              |
+    |                 |              |
+    v                 v              v
+    +---+----+       +----+---+     +----+---+
+    |  value |       |  value |     |  value |
+    +--------+       +--------+     +--------+
 ** ipc
 *** cmd
 **** ipcmk
@@ -2361,11 +2420,11 @@ static struct page_address_slot *page_slot(const struct page *page)
 * epoll
 ** epoll_create
 *** create `struct eventpoll` ep
-#+begin_src c
+    #+begin_src c
 error = ep_alloc(&ep);
-#+end_src
+    #+end_src
 *** alloc a pseudo file, and attach ep to file->private_data
-#+begin_src c
+    #+begin_src c
 fd = get_unused_fd_flags(O_RDWR | (flags & O_CLOEXEC));
 if (fd < 0) {
 	error = fd;
@@ -2375,12 +2434,12 @@ file = anon_inode_getfile("[eventpoll]", &eventpoll_fops, ep,
 			 O_RDWR | (flags & O_CLOEXEC));
 ep->file = file;
 fd_install(fd, file);
-#+end_src
+    #+end_src
 ** epoll_ctl
 *** create a `struct epitem`
 *** add a `struct eppoll_entry` to socket wait_queue and register a `ep_poll_callback` which is triggered when file receive events(POLLIN, POLLOUT)
 *** link `struct epitem` to rbtree ep->rbr
-#+begin_src c
+    #+begin_src c
 epi = ep_find(ep, tf.file, fd);
 
 error = -EINVAL;
@@ -2538,14 +2597,14 @@ error_create_wakeup_source:
 
 	return error;
 }
-#+end_src
+    #+end_src
 ** epoll_wait
 *** check read list `ep->rdllist` or overflow list `ep->ovflist` has events available
 *** try to sleep if not have events available
 *** try to transfer events to user space
 *** new events were added to overflow list `ep->ovflist` when transferring data to user space, which were added to ready list later on
 *** LT events were just added to ready list agian for next trigger
-#+begin_src c
+    #+begin_src c
 static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 		   int maxevents, long timeout)
 {
@@ -2662,13 +2721,13 @@ send_events:
 
 	return res;
 }
-#+end_src
+    #+end_src
 ** multiplex io should use nonblocking fd
 ** ET and LT
-| level-triggered   | edge-triggered                                                                    |
-|-------------------+-----------------------------------------------------------------------------------|
-| notify each state | only notify when changes occurred on monitored file descriptor                    |
-|                   | epoll_wait will wait indefinitely if not consumed the whole buffer data last time |
+   | level-triggered   | edge-triggered                                                                    |
+   |-------------------+-----------------------------------------------------------------------------------|
+   | notify each state | only notify when changes occurred on monitored file descriptor                    |
+   |                   | epoll_wait will wait indefinitely if not consumed the whole buffer data last time |
 * catlan number
 ** h(n) = h(0)*h(n-1) + h(1)*h(n-2) + ... + h(n-1)*h(0), h(0)=h(1)=1
 ** h(n) = C(2n,n)/(n+1)
@@ -2848,7 +2907,7 @@ send_events:
 ***** create `struct binder_device` binder_device which contains `struct binder_context` context
 ***** associate 'struct file_operations' binder_fops
 ***** code
- #+begin_src c
+      #+begin_src c
  static int __init init_binder_device(const char *name)
  {
 	 int ret;
@@ -2876,7 +2935,7 @@ send_events:
 
 	 return ret;
  }
- #+end_src
+      #+end_src
 
 **** create binderfs
 *** binder_open
@@ -2923,7 +2982,7 @@ send_events:
 ********* `fp->handle = rdata.desc;`
 ********** handle of `struct binder_ref` is the index when added to target_proc's `struct rb_root` refs_by_node rbtree
 ********* code
-#+begin_src c
+	  #+begin_src c
 static int binder_translate_binder(struct flat_binder_object *fp,
 				   struct binder_transaction *t,
 				   struct binder_thread *thread)
@@ -2976,7 +3035,7 @@ done:
 	binder_put_node(node);
 	return ret;
 }
-#+end_src
+	  #+end_src
 
 ******** `binder_alloc_copy_to_buffer`
 ********* repalce the original binder object with the translated one
@@ -3000,7 +3059,7 @@ done:
 ** init process
 *** add init.${ro.hardware}.rc to init.rc at compile time
 **** code
-#+begin_src rc
+     #+begin_src rc
 ...
 import /init.environ.rc
 import /init.usb.rc
@@ -3014,14 +3073,20 @@ import /init.${ro.zygote}.rc
 ...
 mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init directory
 ...
-#+end_src
-- 1) /system/etc/init/ is for core system items such as SurfaceFlinger, MediaService, and logcatd.
-- 2) /vendor/etc/init/ is for SoC vendor items such as actions or daemons needed for core SoC functionality.
-- 3) /odm/etc/init/ is for device manufacturer items such as actions or daemons needed for motion sensor or other peripheral functionality.
+     #+end_src
+     - 1) /system/etc/init/ is for core system items such as SurfaceFlinger, MediaService, and logcatd.
+     - 2) /vendor/etc/init/ is for SoC vendor items such as actions or daemons needed for core SoC functionality.
+     - 3) /odm/etc/init/ is for device manufacturer items such as actions or daemons needed for motion sensor or other peripheral functionality.
 *** parse init.rc file
 *** start servicemanager
 *** start zygote service /system/bin/app_process (app_main.cpp)
 **** start zygote (com.android.internal.os.ZygoteInit)
+***** creating VM - JniInvocation.init()
+****** loading libart.so file with `dlopen`
+****** loading `JNI_GetDefaultJavaVMInitArgs_` symbol with `dlsym`
+****** loading `JNI_CreateJavaVM_` symbol
+****** loading `JNI_GetCreatedJavaVMs_` symbol
+***** AndroidRuntime#startVm
 ***** start system_server
 ****** start services
 ******* AMS
@@ -3047,7 +3112,7 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ***** mHandler.getLooper().getQueue().postSyncBarrier()
 ****** Message is synchronous by default
 ******* code
-#+begin_src java
+	#+begin_src java
     public boolean isAsynchronous() {
         return (flags & FLAG_ASYNCHRONOUS) != 0;
     }
@@ -3094,11 +3159,11 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
             return token;
         }
     }
-#+end_src
+	#+end_src
 ****** Message#next()
 ******* when head msg is sync barrier, find first asynchronous msg
 ******** code
-#+begin_src java
+	 #+begin_src java
     Message next() {
         // Return here if the message loop has already quit and been disposed.
         // This can happen if the application tries to restart a looper after quit
@@ -3204,7 +3269,7 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
             nextPollTimeoutMillis = 0;
         }
     }
-#+end_src
+	 #+end_src
 
 * flutter
 ** Widget
@@ -3404,7 +3469,7 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** register callbacks to be called when this future completes
 **** If this future is already completed, the callback will not be called immediately, but will be scheduled in a later microtask
 *** practise
-#+begin_src dart
+    #+begin_src dart
 Future(() => print('f1'));//声明一个匿名Future
 Future fx = Future(() =>  null);//声明Future fx，其执行体为null
 
@@ -3472,7 +3537,7 @@ func before
 func after
 Hello Jocoo
 
-#+end_src
+    #+end_src
 ** asynchronous
 *** Future
 **** representation of pending work to be done
@@ -3594,9 +3659,20 @@ Hello Jocoo
 ***** Annotation-based configuration
 ***** Java-based configuration
 ***** BeanDefinition
-**** injection mode
-***** constructor
+**** loading process
+***** load bean metadata as BeanDefinition from source
+***** BeanFactoryPostProcessor
+***** BeanPostProcessor
+**** INJECTION MODE
+***** CONSTRUCTOR
 ***** setter
+**** BeanPostProcessor
+***** after BeanDefinition loaded, before instance created
+***** implementing Awareable beans, e.g. ApplicationContextAware, EnvironmentAware, ResourceLoaderAware
+**** DefaultListableBeanFactory
+**** AnnotationConfigApplicationContext
+***** Configuration class
+****** creating a enhanced class of configuration class with cglib's `Enhanced` class, method calls delegated to original methods by `Callback`
 * Mysql
 ** acid
 *** durability
