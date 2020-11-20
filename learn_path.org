@@ -3683,3 +3683,8 @@ Hello Jocoo
 ** change buffer
 *** The change buffer is a special data structure that caches changes to secondary index pages when those pages are not in the buffer pool.
 *** The buffered changes, which may result from INSERT, UPDATE, or DELETE operations (DML), are merged later when the pages are loaded into the buffer pool by other read operations.
+* art runtime
+** JNIEnv
+*** thread-specific jniEnv which is a JNIEnvExt object
+*** store local references in `IndirectReferenceTable`
+*** store in thread's `tlsPtr_`
