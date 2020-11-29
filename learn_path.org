@@ -3684,7 +3684,33 @@ Hello Jocoo
 *** The change buffer is a special data structure that caches changes to secondary index pages when those pages are not in the buffer pool.
 *** The buffered changes, which may result from INSERT, UPDATE, or DELETE operations (DML), are merged later when the pages are loaded into the buffer pool by other read operations.
 * art runtime
-** JNIEnv
-*** thread-specific jniEnv which is a JNIEnvExt object
-*** store local references in `IndirectReferenceTable`
-*** store in thread's `tlsPtr_`
+** JNI
+*** JNIEnv
+**** thread-specific jniEnv which is a JNIEnvExt object
+**** store local references in `IndirectReferenceTable`
+**** store in thread's `tlsPtr_`
+*** JavaVM
+**** representasion of art runtime
+**** one for per process
+**** store global references in `Indirectreferencetable`
+*** jobject
+**** encoded pointer of mirror::object
+*** jfieldID
+**** encoded pointer of `ArtField`
+*** jmethodID
+**** encoded pointer of `ArtMethod`
+*** IndirectReferenceTable
+**** managing Local or Global references of object
+**** kind of an array of `IrtEntry`
+**** `JniMethodStart` and `JniMethodEnd` wrapped native method
+** art::Thread
+*** createPeer
+**** create java `Thread` object
+** ClassLoader
+*** delegation
+**** this.loadClass -> parent.loadClass
+*** inherited class
+**** BootClassLoader
+**** PathClassLoader -> BaseDexClassLoader
+***** DexPathList
+****** loading class from dex file(apk jar)
