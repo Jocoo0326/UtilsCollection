@@ -208,6 +208,18 @@
 *** Stubbing
 **** constraints method return values
 ***** foo.foo() >> "ok"
+**** custom return value will replace the mocked object
+***** #+begin_src groovy
+      def rawAction = Mock(Runnable)
+      when:
+      action.execute(executionListener)
+      then:
+      1 * actionFactory1.configureCommandLineParser(!null) >> { CommandLineParser parser -> parser.option("some-option") }
+      1 * actionFactory2.configureCommandLineParser(!null)
+      1 * actionFactory1.createAction(!null, !null) >> rawAction
+      1 * rawAction.run()
+      #+end_src
+
 ** 安全的重构代码
 ** cmake && google test
 ** gtest
