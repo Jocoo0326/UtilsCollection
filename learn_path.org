@@ -186,69 +186,91 @@
 * vcpkg
 *** visual stduio管理第三方libs
 * unit test
-*** 安全的重构代码
-*** cmake && google test
-*** gtest
-**** assertions
-     | assertions | fatal | intercept |
-     |------------+-------+-----------|
-     | ASSERT_*   | YES   | YES       |
-     | EXPECT_*   | NO    | NO        |
-**** fixtures
-***** Using the Same Data Configuration for Multiple Tests
-      #+begin_src cpp
-  // class Queue wanted to be tested
-  template <typename E>  // E is the element type.
-  class Queue {
-   public:
-    Queue();
-    void Enqueue(const E& element);
-    E* Dequeue();  // Returns NULL if the queue is empty.
-    size_t size() const;
-    ...
-  };
+** Junit
+*** 
+** Spock
+*** Fixture methods
+**** setupSpec()
+**** setup()
+**** cleanup()
+**** cleanupSpec()
+*** blocks in Feature methods
+**** given
+**** when
+**** then
+**** expect
+**** cleanup
+**** where
+*** Mocking
+**** Foo foo = Mock()
+**** constraints method invocation numbers
+***** 1 * foo.foo()
+*** Stubbing
+**** constraints method return values
+***** foo.foo() >> "ok"
+** 安全的重构代码
+** cmake && google test
+** gtest
+*** assertions
+    | assertions | fatal | intercept |
+    |------------+-------+-----------|
+    | ASSERT_*   | YES   | YES       |
+    | EXPECT_*   | NO    | NO        |
+*** fixtures
+**** Using the Same Data Configuration for Multiple Tests
+     #+begin_src cpp
+ // class Queue wanted to be tested
+ template <typename E>  // E is the element type.
+ class Queue {
+  public:
+   Queue();
+   void Enqueue(const E& element);
+   E* Dequeue();  // Returns NULL if the queue is empty.
+   size_t size() const;
+   ...
+ };
 
-  // test case fixture class
-  class QueueTest : public ::testing::Test {
-   protected:
-    void SetUp() override {
-       q1_.Enqueue(1);
-       q2_.Enqueue(2);
-       q2_.Enqueue(3);
-    }
+ // test case fixture class
+ class QueueTest : public ::testing::Test {
+  protected:
+   void SetUp() override {
+      q1_.Enqueue(1);
+      q2_.Enqueue(2);
+      q2_.Enqueue(3);
+   }
 
-    // void TearDown() override {}
+   // void TearDown() override {}
 
-    Queue<int> q0_;
-    Queue<int> q1_;
-    Queue<int> q2_;
-  };
+   Queue<int> q0_;
+   Queue<int> q1_;
+   Queue<int> q2_;
+ };
 
-  // tests
-  TEST_F(QueueTest, IsEmptyInitially) {
-    EXPECT_EQ(q0_.size(), 0);
-  }
+ // tests
+ TEST_F(QueueTest, IsEmptyInitially) {
+   EXPECT_EQ(q0_.size(), 0);
+ }
 
-  TEST_F(QueueTest, DequeueWorks) {
-    int* n = q0_.Dequeue();
-    EXPECT_EQ(n, nullptr);
+ TEST_F(QueueTest, DequeueWorks) {
+   int* n = q0_.Dequeue();
+   EXPECT_EQ(n, nullptr);
 
-    n = q1_.Dequeue();
-    ASSERT_NE(n, nullptr);
-    EXPECT_EQ(*n, 1);
-    EXPECT_EQ(q1_.size(), 0);
-    delete n;
+   n = q1_.Dequeue();
+   ASSERT_NE(n, nullptr);
+   EXPECT_EQ(*n, 1);
+   EXPECT_EQ(q1_.size(), 0);
+   delete n;
 
-    n = q2_.Dequeue();
-    ASSERT_NE(n, nullptr);
-    EXPECT_EQ(*n, 2);
-    EXPECT_EQ(q2_.size(), 1);
-    delete n;
-  }
-      #+end_src
-**** running tests
-***** TEST TEST_F 隐式注册到googletest，不需要显示指定需要运行哪些测试
-***** RUN_ALL_TESTS()
+   n = q2_.Dequeue();
+   ASSERT_NE(n, nullptr);
+   EXPECT_EQ(*n, 2);
+   EXPECT_EQ(q2_.size(), 1);
+   delete n;
+ }
+     #+end_src
+*** running tests
+**** TEST TEST_F 隐式注册到googletest，不需要显示指定需要运行哪些测试
+**** RUN_ALL_TESTS()
 * ASM
 ** event-based and tree-based api
 ** Parsing Generating Transforming class
@@ -3714,3 +3736,20 @@ Hello Jocoo
 **** PathClassLoader -> BaseDexClassLoader
 ***** DexPathList
 ****** loading class from dex file(apk jar)
+** gc
+*** types
+**** mark sweep collection
+***** CMS (default gc)
+***** Initialize phase
+***** mark phase
+***** reclaim phase
+***** finish phase
+**** copying collection
+**** mark compact collection
+*** strategy
+**** sticky
+**** partial
+**** full
+*** reference
+**** PhantomReference
+***** a way to be aware of reclaiming of the referent object with references added to the associated `ReferenceQueue`
