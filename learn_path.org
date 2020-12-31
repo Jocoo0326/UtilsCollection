@@ -16,14 +16,6 @@
 
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
-* RecyclerView
-*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
-    # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
-    # 根据type查找mAttachedScrap-->mCachedViews
-    # if mViewCacheExtension != null, 通过mViewCacheExtension查找
-    # mRecyclerPool.mScrap中查找
-    # mAdapter.createViewHolder
-
 * android gradle plugin
 *** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
 *** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、compileOptions etc
@@ -379,6 +371,13 @@
   }
    #+end_src
 
+** source code analysis
+*** basics
+**** create `CommandLineParser`
+**** `CommandLineAction` configures `CommandLineParser`
+**** `CommandLineParser` parses `args` into `ParsedCommandLine`
+**** `CommandLineAction` creates action(Runnable)
+**** run action
 * PhontomReference
 ** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
 * line-oriented search tools
@@ -701,6 +700,7 @@
 **** forwarding reference
 ***** forwarding references are special kind of references that preserve the value category of a function argument, making it possible to forward it by means of `std::forward`.
 ***** function parameter of a function template declared as rvalue reference to cv-unqualified type template parameter of that same function template.
+**** Reference collapsing
 ** delete is null-pointer safe
 ** malloc
 *** block = mem_control_block + data
@@ -2848,28 +2848,6 @@ send_events:
 **** -> parent coroutine -> context[CoroutineExceptionHandler] -> Global CoroutineExceptionHandler with ServiceLoader -> Thread.uncaughtExceptionHandler
 *** a continuation parameter(as callback, which is outer scope coroutine) added to suspending function by compiler
 **** receive with `suspendCoroutineUninterceptedOrReturn` function
-* android view drawing process
-** Measuring layouting drawing
-** custom view
-** MeasureSpec
-** ?attr
-** overloads
-*** onSizeChanged
-*** onFinishInflate
-** dispatchTouchEvent
-*** TouchTarget aka mFirstTouchTarget
-**** TouchTarget is a view with pointers touched to it
-**** TouchTargets connected as a linked list
-*** when (event is not canceled or intercepted) and (action is ACTION_DOWN or ACTION_POINTER_DOWN), find if a child would to consume the event, if so create a touch target as the head of mFirstTouchTarget(linked list)
-**** special case
-***** when an event with ACTION_POINTER_DOWN can't find a consumer, it will add the associated pointer id to the TouchTarget  created by the early ACTION_DOWN event
-*** other events with pointer_up action_up will delivered to mFirstTouchTarget
-*** if no child would to consume the event, the viewgroup it self will try it
-** click listener
-*** performed when view is clickable or longclickable
-*** performed between action_down and action_up event(not the others, eg. action_pointer_down or action_pointer_up)
-** window
-** nested scrolling
 * RxJava
 ** CacheObservable and NetworkObservable case
 *** requires
@@ -2915,16 +2893,7 @@ send_events:
 **** exception -> RxJavaPlugins.errorHandler -> Thread.getUncaughtExceptionHandler()(defaultUncaughtExceptionHandler -> thread group)
 *** before disposing
 **** onErrorResumeNext
-* android input system
-** diagram
-*** user touch -> driver -> /dev/input/event* (EventHub via epoll(polling new events) and inotify(adding or removing devices)) -> InputReader enqueue EventEntry to mInboundQueue(property of InputDispatcher) -> InputDispatcher dequeue DispatchEntry to outboundQueue(property of Connection), InputManagerService created a pair socket(socketpair) with UI thread of currently focused window, thus InputDispatcher send input data to UI thread via Connection -> Looper.loop -> MessageQueue.next -> MessageQueue.nativePollOnce -> InputEventReceiver.dispatchInputEvent -> call ViewRootImpl$WindowInputEventReceiver.onInputEvent -> mView.dispatchPointerEvent -> windowCallback.dispatchTouchEvent(Activity or Dialog) -> PhoneWindow.dispatchTouchEvent -> view.dispatchTouchEvent
-*** ref[https://wanandroid.com/wenda/show/12119]
-*** InputManagerService
-**** InputChannel client end: ViewRootImpl.mInputChannel, epoll-controlled by Looper of UI thread
-**** InputChannel server end: WindowState.mInputChannel, epoll-controlled by Looper of InputDispatcher
-**** diagram
-***** ViewRootImpl$setView -> mWindowSession.addToDisplay(...mInputChannel) --binder-> Session$addToDisplay(outInputChannel) -> WMS$addWindow() -> win = new WindowState() -> win.openInputChannel() -> InputChannel$openInputChannelPair() --jni-> socketpair() -> mClientChannel.transferTo(outInputChannel) -> mService.mInputManager.registerInputChannel() -> mInputManager->getDispatcher()->registerInputChannel -> new Connection and mLooper.addFd(fd, 0, ALOOPER_EVENT_INPUT, handleReceiveCallback, this)
-***** ViewRootImpl$setView -> new WindowInputReceiver(mInputChannel, Looper.myLooper()) -> InputEventReceiver.nativeInit --jni-> receiver = new NativeInputReceiver -> receiver.initialize() -> setFdEvents(ALOOPER_EVENT_INPUT) -> mMessageQueue->getLooper()->addFd(fd, 0, events, this/*callback*/, NULL)
+
 * android smart pointer
 ** RefBase
 *** wrapping the strong reference count and weak reference count, for auto deallocate objects which usually extends from `RefBase` class, when decStrong() encounts 0
@@ -3136,175 +3105,280 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** binder_parse
 ***** `svcmgr_handler`
 ****** `SVC_MGR_ADD_SERVICE` -> call `do_add_service`
-** ViewRootImpl
-*** requestLayout
-**** checkThread
-***** check mThread == Thread.currentThread()
-***** mThread is the one ViewRootImpl object created in
-****** mThread = Thread.currentThread() in ViewRootImpl constructor
-**** scheduleTravversals
-***** mHandler.getLooper().getQueue().postSyncBarrier()
-****** Message is synchronous by default
-******* code
-	#+begin_src java
-    public boolean isAsynchronous() {
-        return (flags & FLAG_ASYNCHRONOUS) != 0;
-    }
-
-    public static Message obtain() {
-        synchronized (sPoolSync) {
-            if (sPool != null) {
-                Message m = sPool;
-                sPool = m.next;
-                m.next = null;
-                m.flags = 0; // clear in-use flag, no FLAG_ASYNCHRONOUS flag
-                sPoolSize--;
-                return m;
-            }
-        }
-        return new Message();
-    }
-
-    private int postSyncBarrier(long when) {
-        // Enqueue a new sync barrier token.
-        // We don't need to wake the queue because the purpose of a barrier is to stall it.
-        synchronized (this) {
-            final int token = mNextBarrierToken++;
-            final Message msg = Message.obtain();
-            msg.markInUse();
-            msg.when = when;
-            msg.arg1 = token;
-
-            Message prev = null;
-            Message p = mMessages;
-            if (when != 0) {
-                while (p != null && p.when <= when) {
-                    prev = p;
-                    p = p.next;
-                }
-            }
-            if (prev != null) { // invariant: p == prev.next
-                msg.next = p;
-                prev.next = msg;
-            } else {
-                msg.next = p;
-                mMessages = msg;
-            }
-            return token;
-        }
-    }
-	#+end_src
-****** Message#next()
-******* when head msg is sync barrier, find first asynchronous msg
+** android input system
+*** diagram
+**** user touch -> driver -> /dev/input/event* (EventHub via epoll(polling new events) and inotify(adding or removing devices)) -> InputReader enqueue EventEntry to mInboundQueue(property of InputDispatcher) -> InputDispatcher dequeue DispatchEntry to outboundQueue(property of Connection), InputManagerService created a pair socket(socketpair) with UI thread of currently focused window, thus InputDispatcher send input data to UI thread via Connection -> Looper.loop -> MessageQueue.next -> MessageQueue.nativePollOnce -> InputEventReceiver.dispatchInputEvent -> call ViewRootImpl$WindowInputEventReceiver.onInputEvent -> mView.dispatchPointerEvent -> windowCallback.dispatchTouchEvent(Activity or Dialog) -> PhoneWindow.dispatchTouchEvent -> view.dispatchTouchEvent
+**** ref[https://wanandroid.com/wenda/show/12119]
+**** InputManagerService
+***** InputChannel client end: ViewRootImpl.mInputChannel, epoll-controlled by Looper of UI thread
+***** InputChannel server end: WindowState.mInputChannel, epoll-controlled by Looper of InputDispatcher
+***** diagram
+****** ViewRootImpl$setView -> mWindowSession.addToDisplay(...mInputChannel) --binder-> Session$addToDisplay(outInputChannel) -> WMS$addWindow() -> win = new WindowState() -> win.openInputChannel() -> InputChannel$openInputChannelPair() --jni-> socketpair() -> mClientChannel.transferTo(outInputChannel) -> mService.mInputManager.registerInputChannel() -> mInputManager->getDispatcher()->registerInputChannel -> new Connection and mLooper.addFd(fd, 0, ALOOPER_EVENT_INPUT, handleReceiveCallback, this)
+****** ViewRootImpl$setView -> new WindowInputReceiver(mInputChannel, Looper.myLooper()) -> InputEventReceiver.nativeInit --jni-> receiver = new NativeInputReceiver -> receiver.initialize() -> setFdEvents(ALOOPER_EVENT_INPUT) -> mMessageQueue->getLooper()->addFd(fd, 0, events, this/*callback*/, NULL)
+** Choreographer->SurfaceFlinger
+*** Coordinates the timing of input, animations and drawing
+**** doFrame handling event: input -> animation -> traversal -> commit
+*** Apps interact with Choreographer indirectly using Animation framework or view hierarchy
+**** ValueAnimator.start
+**** View.postOnAnimation
+***** To post a `Runnable` to be invoked once at the beginning of the next display frame
+**** View.postOnAnimationDelayed
+**** View.postInvalidateOnAnimation
+***** To post a call to `View.invalidate` to occur once at the beginning of the next display frame
+*** postCallback -> scheduleFrameLocked -> scheduleVsyncLocked -> DisplayEventReceiver.scheduleVsync -> nativeScheduleVsync(android_view_DisplayEventReceiver)
+*** NativeDisplayEventReceiver.scheduleVsync -> DisplayEventReceiver.requestNextVsync -> BpDisplayEventConnection.requestNextVsync(IDisplayEventConnection.cpp) --binder ipc-> EventThread::requestNextVsync
+*** SurfaceFlinger::resyncWithRateLimit -> DispSync::setPeriod -> DispSync.updateModel -> mCond.signal() -> DispSyncThread.threadLoop wakeup on mCond.wait
+*** DisplayEventDispatcher::handleEvent(Looper wake up) -> FrameDisplayEventReceiver.dispatchVsync -> onVsync -> Handler.sendMessageAtTime(asynchronous message) -> doFrame
+** View
+*** ViewRootImpl
+**** requestLayout
+***** checkThread
+****** check mThread == Thread.currentThread()
+****** mThread is the thread ViewRootImpl object created in
+******* mThread = Thread.currentThread() in ViewRootImpl constructor
+***** scheduleTraversals
+****** mHandler.getLooper().getQueue().postSyncBarrier()
+******* Message is synchronous by default
 ******** code
 	 #+begin_src java
-    Message next() {
-        // Return here if the message loop has already quit and been disposed.
-        // This can happen if the application tries to restart a looper after quit
-        // which is not supported.
-        final long ptr = mPtr;
-        if (ptr == 0) {
-            return null;
-        }
+     public boolean isAsynchronous() {
+         return (flags & FLAG_ASYNCHRONOUS) != 0;
+     }
 
-        int pendingIdleHandlerCount = -1; // -1 only during first iteration
-        int nextPollTimeoutMillis = 0;
-        for (;;) {
-            if (nextPollTimeoutMillis != 0) {
-                Binder.flushPendingCommands();
-            }
+     public static Message obtain() {
+         synchronized (sPoolSync) {
+             if (sPool != null) {
+                 Message m = sPool;
+                 sPool = m.next;
+                 m.next = null;
+                 m.flags = 0; // clear in-use flag, no FLAG_ASYNCHRONOUS flag
+                 sPoolSize--;
+                 return m;
+             }
+         }
+         return new Message();
+     }
 
-            nativePollOnce(ptr, nextPollTimeoutMillis);
+     private int postSyncBarrier(long when) {
+         // Enqueue a new sync barrier token.
+         // We don't need to wake the queue because the purpose of a barrier is to stall it.
+         synchronized (this) {
+             final int token = mNextBarrierToken++;
+             final Message msg = Message.obtain();
+             msg.markInUse();
+             msg.when = when;
+             msg.arg1 = token;
 
-            synchronized (this) {
-                // Try to retrieve the next message.  Return if found.
-                final long now = SystemClock.uptimeMillis();
-                Message prevMsg = null;
-                Message msg = mMessages;
-                if (msg != null && msg.target == null) {
-                    // Stalled by a barrier.  Find the next asynchronous message in the queue.
-                    do {
-                        prevMsg = msg;
-                        msg = msg.next;
-                    } while (msg != null && !msg.isAsynchronous());
-                }
-                if (msg != null) {
-                    if (now < msg.when) {
-                        // Next message is not ready.  Set a timeout to wake up when it is ready.
-                        nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
-                    } else {
-                        // Got a message.
-                        mBlocked = false;
-                        if (prevMsg != null) {
-                            prevMsg.next = msg.next;
-                        } else {
-                            mMessages = msg.next;
-                        }
-                        msg.next = null;
-                        if (DEBUG) Log.v(TAG, "Returning message: " + msg);
-                        msg.markInUse();
-                        return msg;
-                    }
-                } else {
-                    // No more messages.
-                    nextPollTimeoutMillis = -1;
-                }
-
-                // Process the quit message now that all pending messages have been handled.
-                if (mQuitting) {
-                    dispose();
-                    return null;
-                }
-
-                // If first time idle, then get the number of idlers to run.
-                // Idle handles only run if the queue is empty or if the first message
-                // in the queue (possibly a barrier) is due to be handled in the future.
-                if (pendingIdleHandlerCount < 0
-                        && (mMessages == null || now < mMessages.when)) {
-                    pendingIdleHandlerCount = mIdleHandlers.size();
-                }
-                if (pendingIdleHandlerCount <= 0) {
-                    // No idle handlers to run.  Loop and wait some more.
-                    mBlocked = true;
-                    continue;
-                }
-
-                if (mPendingIdleHandlers == null) {
-                    mPendingIdleHandlers = new IdleHandler[Math.max(pendingIdleHandlerCount, 4)];
-                }
-                mPendingIdleHandlers = mIdleHandlers.toArray(mPendingIdleHandlers);
-            }
-
-            // Run the idle handlers.
-            // We only ever reach this code block during the first iteration.
-            for (int i = 0; i < pendingIdleHandlerCount; i++) {
-                final IdleHandler idler = mPendingIdleHandlers[i];
-                mPendingIdleHandlers[i] = null; // release the reference to the handler
-
-                boolean keep = false;
-                try {
-                    keep = idler.queueIdle();
-                } catch (Throwable t) {
-                    Log.wtf(TAG, "IdleHandler threw exception", t);
-                }
-
-                if (!keep) {
-                    synchronized (this) {
-                        mIdleHandlers.remove(idler);
-                    }
-                }
-            }
-
-            // Reset the idle handler count to 0 so we do not run them again.
-            pendingIdleHandlerCount = 0;
-
-            // While calling an idle handler, a new message could have been delivered
-            // so go back and look again for a pending message without waiting.
-            nextPollTimeoutMillis = 0;
-        }
-    }
+             Message prev = null;
+             Message p = mMessages;
+             if (when != 0) {
+                 while (p != null && p.when <= when) {
+                     prev = p;
+                     p = p.next;
+                 }
+             }
+             if (prev != null) { // invariant: p == prev.next
+                 msg.next = p;
+                 prev.next = msg;
+             } else {
+                 msg.next = p;
+                 mMessages = msg;
+             }
+             return token;
+         }
+     }
 	 #+end_src
+******* Message#next()
+******** when head msg is sync barrier, find first asynchronous msg
+********* code
+	  #+begin_src java
+     Message next() {
+         // Return here if the message loop has already quit and been disposed.
+         // This can happen if the application tries to restart a looper after quit
+         // which is not supported.
+         final long ptr = mPtr;
+         if (ptr == 0) {
+             return null;
+         }
 
+         int pendingIdleHandlerCount = -1; // -1 only during first iteration
+         int nextPollTimeoutMillis = 0;
+         for (;;) {
+             if (nextPollTimeoutMillis != 0) {
+                 Binder.flushPendingCommands();
+             }
+
+             nativePollOnce(ptr, nextPollTimeoutMillis);
+
+             synchronized (this) {
+                 // Try to retrieve the next message.  Return if found.
+                 final long now = SystemClock.uptimeMillis();
+                 Message prevMsg = null;
+                 Message msg = mMessages;
+                 if (msg != null && msg.target == null) {
+                     // Stalled by a barrier.  Find the next asynchronous message in the queue.
+                     do {
+                         prevMsg = msg;
+                         msg = msg.next;
+                     } while (msg != null && !msg.isAsynchronous());
+                 }
+                 if (msg != null) {
+                     if (now < msg.when) {
+                         // Next message is not ready.  Set a timeout to wake up when it is ready.
+                         nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
+                     } else {
+                         // Got a message.
+                         mBlocked = false;
+                         if (prevMsg != null) {
+                             prevMsg.next = msg.next;
+                         } else {
+                             mMessages = msg.next;
+                         }
+                         msg.next = null;
+                         if (DEBUG) Log.v(TAG, "Returning message: " + msg);
+                         msg.markInUse();
+                         return msg;
+                     }
+                 } else {
+                     // No more messages.
+                     nextPollTimeoutMillis = -1;
+                 }
+
+                 // Process the quit message now that all pending messages have been handled.
+                 if (mQuitting) {
+                     dispose();
+                     return null;
+                 }
+
+                 // If first time idle, then get the number of idlers to run.
+                 // Idle handles only run if the queue is empty or if the first message
+                 // in the queue (possibly a barrier) is due to be handled in the future.
+                 if (pendingIdleHandlerCount < 0
+                         && (mMessages == null || now < mMessages.when)) {
+                     pendingIdleHandlerCount = mIdleHandlers.size();
+                 }
+                 if (pendingIdleHandlerCount <= 0) {
+                     // No idle handlers to run.  Loop and wait some more.
+                     mBlocked = true;
+                     continue;
+                 }
+
+                 if (mPendingIdleHandlers == null) {
+                     mPendingIdleHandlers = new IdleHandler[Math.max(pendingIdleHandlerCount, 4)];
+                 }
+                 mPendingIdleHandlers = mIdleHandlers.toArray(mPendingIdleHandlers);
+             }
+
+             // Run the idle handlers.
+             // We only ever reach this code block during the first iteration.
+             for (int i = 0; i < pendingIdleHandlerCount; i++) {
+                 final IdleHandler idler = mPendingIdleHandlers[i];
+                 mPendingIdleHandlers[i] = null; // release the reference to the handler
+
+                 boolean keep = false;
+                 try {
+                     keep = idler.queueIdle();
+                 } catch (Throwable t) {
+                     Log.wtf(TAG, "IdleHandler threw exception", t);
+                 }
+
+                 if (!keep) {
+                     synchronized (this) {
+                         mIdleHandlers.remove(idler);
+                     }
+                 }
+             }
+
+             // Reset the idle handler count to 0 so we do not run them again.
+             pendingIdleHandlerCount = 0;
+
+             // While calling an idle handler, a new message could have been delivered
+             // so go back and look again for a pending message without waiting.
+             nextPollTimeoutMillis = 0;
+         }
+     }
+	  #+end_src
+****** mChoreographer.postCallback(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null)
+*** rendering
+**** software render
+***** cpu rasterising
+***** View.drawSoftware
+***** backed on bitmap
+***** using `Canvas.class`
+**** hardware render
+***** OpenGL rasterising
+***** ThreadedRenderer.draw
+***** create display list(drawing commands) for `RenderNode` (record and replay)
+****** PFLAG_INVALIDATED indicates that it's required to recreate a view's display list
+***** using `DisplayListCanvas.class`
+***** setTranslationX/Y/Z、setRotationX/Y/Z、setScaleX/Y do not call `View.onDraw`
+****** translation, rotation scale will update matrix of render node, View.hasIdentityMatrix will return false if has transform
+*** invalidate
+**** mPrivateFlags |= PFLAG_INVALIDATED
+**** mPrivateFlags &= ~PFLAG_DRAWING_CACHE_VALID
+**** invalidateChild -> invalidateChildInParent
+**** ViewRootImpl.scheduleTraversals
+*** post(Runnable)
+**** add to handler if the view is attached to window, or add to `HandlerActionQueue`, post to handler when the view is attached to window
+**** performTraversals -> host.dispatchAttachedToWindow -> HandlerActionQueue.executeActions -> handler.postDelayed -> measureHierarchy -> performLayout -> performDraw
+** android view drawing process
+*** Measuring layouting drawing
+*** custom view
+*** MeasureSpec
+*** ?attr
+*** overloads
+**** onSizeChanged
+**** onFinishInflate
+*** dispatchTouchEvent
+**** TouchTarget aka mFirstTouchTarget
+***** TouchTarget is a view with pointers touched on it
+***** TouchTargets connected as a linked list
+**** when (event is not canceled or intercepted) and (action is ACTION_DOWN or ACTION_POINTER_DOWN), find if a child would to consume the event, if so create a touch target as the head of mFirstTouchTarget(linked list)
+***** special case
+****** when an event with ACTION_POINTER_DOWN can't find a consumer, it will add the associated pointer id to the TouchTarget  created by the early ACTION_DOWN event
+**** other events with pointer_up action_up will delivered to mFirstTouchTarget
+**** if no child would to consume the event, the viewgroup it self will try it
+*** click listener
+**** performed when view is clickable or longclickable
+**** performed between action_down and action_up event(not the others, eg. action_pointer_down or action_pointer_up)
+*** window
+*** nested scrolling
+** low-memory-killer
+*** category of pages
+**** used pages
+**** cached pages
+**** free pages
+*** category of process
+**** Native: init kswapd netd logd adbd installd
+**** System: system_server
+**** Persistent: phone signal message bluetooth wifi
+**** Foreground apps
+**** Perceptible: music
+**** Service: cloud-fetching
+**** Home
+**** Previous apps
+**** Cached apps
+*** kswapd-threshold -> activated when free memory is low under lmk-threshold
+*** counting size of memory usage
+**** RSS-resident set size
+***** App fully responsible for shared pages
+**** PSS-proportional set size
+***** App proportionally responsible for shared pages
+**** USS-unique set size
+***** App not responsible for shared pages
+*** adb shell dumpsys meminfo -s ${process-pakage-name}
+** RecyclerView
+*** caches
+**** mAttachedScrap
+**** mCachedView
+**** ViewCacheExtension
+**** RecyclerVIewPool
+*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
+    # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
+    # 根据type查找mAttachedScrap-->mCachedViews
+    # if mViewCacheExtension != null, 通过mViewCacheExtension查找
+    # mRecyclerPool.mScrap中查找
+    # mAdapter.createViewHolder
 * flutter
 ** Widget
 *** everything is widget
