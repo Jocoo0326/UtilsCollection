@@ -1,136 +1,5 @@
-* crash
-*** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获取进程mem reg信息，同时获取procfs信息得到thread stacktrace
-*** breakpad   ---> crashDump --> addr2line
-*** fork使用fork syscall实现, pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
-*** thread specific stack is on heap(mmap) with guard page of guardsize protected by mprotect
-*** core dump file
-**** with systemd systems cat /proc/sys/kernel/core_pattern -> |/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %e
-**** core dump files stored in directory /var/lib/systemd/coredump
-**** core dump file managed by coredumpctl
-**** list all core dump files: coredumpctl list | tail -5
-**** extract core dump file: coredumpctl dump ${pid} -o core
-* Finalizer
-*** object.finalize() run in FinalizerDaemon thread
-*** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，则发出SIGQUIT signal
-*** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
-
 * generate code at runtime
 *** u1 code[PAGE_SIZE]; mprotect(code, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC); memcpy(code, "\xC3", 1);
-* android gradle plugin
-*** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
-*** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、compileOptions etc
-*** defaultConfig是默认的productFlavor类型，包含applicationId、minSdkVersion、versionCode、versionName、testInstrumentationRunner、ndk etc
-*** buildType属性：applicationSuffix、debuggable、jniDebuggable、minifyEnabled、multiDexEnabled、proguardFile、shrinkResources、signingConfig、zipAlignEnabled
-*** variant 是productFlavors和buildTypes组合产物，variant有applicationVariants、libraryVariants、testVariants
-*** 使用exec可以执行命令行操作
-*** 可以通过环境变量System.getenv()获取签名信息，从而隐藏签名信息
-*** manifestPlaceHolders buildConfigField resValue
-* Java Thread start
-*** State
-    #+begin_src java
-        public enum State {
-        /**
-         * Thread state for a thread which has not yet started.
-         */
-        NEW,
-
-        /**
-         * Thread state for a runnable thread.  A thread in the runnable
-         * state is executing in the Java virtual machine but it may
-         * be waiting for other resources from the operating system
-         * such as processor.
-         */
-        RUNNABLE,
-
-        /**
-         * Thread state for a thread blocked waiting for a monitor lock.
-         * A thread in the blocked state is waiting for a monitor lock
-         * to enter a synchronized block/method or
-         * reenter a synchronized block/method after calling
-         * {@link Object#wait() Object.wait}.
-         */
-        BLOCKED,
-
-        /**
-         * Thread state for a waiting thread.
-         * A thread is in the waiting state due to calling one of the
-         * following methods:
-         * <ul>
-         *   <li>{@link Object#wait() Object.wait} with no timeout</li>
-         *   <li>{@link #join() Thread.join} with no timeout</li>
-         *   <li>{@link LockSupport#park() LockSupport.park}</li>
-         * </ul>
-         *
-         * <p>A thread in the waiting state is waiting for another thread to
-         * perform a particular action.
-         *
-         * For example, a thread that has called <tt>Object.wait()</tt>
-         * on an object is waiting for another thread to call
-         * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
-         * that object. A thread that has called <tt>Thread.join()</tt>
-         * is waiting for a specified thread to terminate.
-         */
-        WAITING,
-
-        /**
-         * Thread state for a waiting thread with a specified waiting time.
-         * A thread is in the timed waiting state due to calling one of
-         * the following methods with a specified positive waiting time:
-         * <ul>
-         *   <li>{@link #sleep Thread.sleep}</li>
-         *   <li>{@link Object#wait(long) Object.wait} with timeout</li>
-         *   <li>{@link #join(long) Thread.join} with timeout</li>
-         *   <li>{@link LockSupport#parkNanos LockSupport.parkNanos}</li>
-         *   <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
-         * </ul>
-         */
-        TIMED_WAITING,
-
-        /**
-         * Thread state for a terminated thread.
-         * The thread has completed execution.
-         */
-        TERMINATED;
-    }
-    #+end_src
-
-*** android-source/art/runtime/thread_state.h
-    enum ThreadState {
-    //                                   Thread.State   JDWP state
-    kTerminated = 66,                 // TERMINATED     TS_ZOMBIE    Thread.run has returned, but Thread* still around
-    kRunnable,                        // RUNNABLE       TS_RUNNING   runnable
-    kTimedWaiting,                    // TIMED_WAITING  TS_WAIT      in Object.wait() with a timeout
-    kSleeping,                        // TIMED_WAITING  TS_SLEEPING  in Thread.sleep()
-    kBlocked,                         // BLOCKED        TS_MONITOR   blocked on a monitor
-    kWaiting,                         // WAITING        TS_WAIT      in Object.wait()
-    kWaitingForLockInflation,         // WAITING        TS_WAIT      blocked inflating a thin-lock
-    kWaitingForTaskProcessor,         // WAITING        TS_WAIT      blocked waiting for taskProcessor
-    kWaitingForGcToComplete,          // WAITING        TS_WAIT      blocked waiting for GC
-    kWaitingForCheckPointsToRun,      // WAITING        TS_WAIT      GC waiting for checkpoints to run
-    kWaitingPerformingGc,             // WAITING        TS_WAIT      performing GC
-    kWaitingForDebuggerSend,          // WAITING        TS_WAIT      blocked waiting for events to be sent
-    kWaitingForDebuggerToAttach,      // WAITING        TS_WAIT      blocked waiting for debugger to attach
-    kWaitingInMainDebuggerLoop,       // WAITING        TS_WAIT      blocking/reading/processing debugger events
-    kWaitingForDebuggerSuspension,    // WAITING        TS_WAIT      waiting for debugger suspend all
-    kWaitingForJniOnLoad,             // WAITING        TS_WAIT      waiting for execution of dlopen and JNI on load code
-    kWaitingForSignalCatcherOutput,   // WAITING        TS_WAIT      waiting for signal catcher IO to complete
-    kWaitingInMainSignalCatcherLoop,  // WAITING        TS_WAIT      blocking/reading/processing signals
-    kWaitingForDeoptimization,        // WAITING        TS_WAIT      waiting for deoptimization suspend all
-    kWaitingForMethodTracingStart,    // WAITING        TS_WAIT      waiting for method tracing to start
-    kWaitingForVisitObjects,          // WAITING        TS_WAIT      waiting for visiting objects
-    kWaitingForGetObjectsAllocated,   // WAITING        TS_WAIT      waiting for getting the number of allocated objects
-    kWaitingWeakGcRootRead,           // WAITING        TS_WAIT      waiting on the GC to read a weak root
-    kWaitingForGcThreadFlip,          // WAITING        TS_WAIT      waiting on the GC thread flip (CC collector) to finish
-    kStarting,                        // NEW            TS_WAIT      native thread started, not yet ready to run managed code
-    kNative,                          // RUNNABLE       TS_RUNNING   running in a JNI native method
-    kSuspended,                       // RUNNABLE       TS_RUNNING   suspended by GC or debugger
-    };
-*** android-source/art/runtime/native/java_lang_Thread.cc
-    Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
-*** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
-*** why wait need to be called in a synchronized block?
-**** common case: one thread testes a state and wait, another thread changes a state and notify
-**** so test and wait, as well as change and notify must be atomic
 * x86_64
 *** 函数传参寄存器顺序rdi, rsi, rdx, rcx, r8, r9，超过6个则压栈
 *** callq会push %rip(return address aka.下一条指令)
@@ -299,87 +168,6 @@
 ** 数组对象的Class由JVM创建，非ClassLoader，且与其元素类型Class的ClassLoader相同；基本类型数据数组的Class无ClassLoader
 ** 代理加载机制，即先向父ClassLoader请求加载类，未找到则自己加载
 ** defineClass 将字节数组转换成Class对象
-* gradle
-** features
-*** convention over configuration
-*** transitive dependencies
-*** maven compatible
-** phase
-*** init
-**** create a `Settings` instance and evaluate `settings.gradle` file
-**** create the hierarchy of `Project` instances and evaluate each `Project` instance by evaluating its `build.gradle` file
-*** configure
-*** execute
-** projects
-*** one build.gradle file per project
-*** gradle project
-**** list all projects
-*** dynamic project properties, 5 property delegated scopes
-**** `Project` object
-**** extra properties
-**** extensions
-**** convention
-**** tasks
-**** extra properties and convention properties inherited from parent project
-*** dynamic methods
-**** `Project` object
-**** the build file
-**** extensions
-**** convention
-**** tasks
-**** methods of the parent project, recursively up to the root project
-**** a property of the project whose value is a closure
-** configuration
-*** configuration for dependencies of a project
-**** annotationProcessor
-**** apiElements
-**** implementation
-**** api
-**** compile
-**** runtime
-**** testImplementation
-**** etc
-** resolutionStrategy
-*** force
-**** force a dependency when conflict occurred
-** buildSrc
-*** a included build
-*** automatically compiles and tests this code and puts it in the classpath of your build script
-*** configs of project dependencies and versions can use in build.gradle file
-** gradle init --type java-application
-** gradle jar
-   #+begin_src groovy
-  jar {
-      manifest {
-          attributes("Main-Class": "App")
-      }
-  }
-
-  task uberJar(type: Jar) {
-      classifier = "all"
-      from sourceSets.main.output
-      manifest {
-          attributes("Main-Class": "App")
-      }
-
-      dependsOn configurations.runtimeClasspath
-      from {
-          configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
-      }
-
-      with jar
-  }
-   #+end_src
-
-** source code analysis
-*** basics
-**** create `CommandLineParser`
-**** `CommandLineAction` configures `CommandLineParser`
-**** `CommandLineParser` parses `args` into `ParsedCommandLine`
-**** `CommandLineAction` creates action(Runnable)
-**** run action
-* PhontomReference
-** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
 * line-oriented search tools
 ** the silver searcher
 ** git grep
@@ -2289,9 +2077,6 @@ static struct page_address_slot *page_slot(const struct page *page)
 **** For example, the user agent will accept a cookie with a Domain attribute of "example.com" or of "foo.example.com" from foo.example.com,
 **** but the user agent will not accept a cookie with a Domain attribute of "bar.example.com" or of "baz.foo.example.com".
 *** ETag and if-none-match
-* java lambda vs inner class
-** inner class create an instance if the inner class
-** lambda invoke the lambda function through INVOKEDYNAMIC instruction and MethodLookup MethodHandle
 * data structure
 ** HashMap
 *** key is nullable
@@ -2778,12 +2563,6 @@ send_events:
 *** S: s t (sum n+1)
 *** X: s-1 t-1(sum n-1)
 *** reflect left partition -> S: s-1+t=n X: s+t-1=n
-* ViewGroup
-** isMotionEventSplittingEnabled
-*** when true(default), ACTION_POINTER_DOWN will be split
-*** case two buttons in a viewgroup, press down two buttons at the same time, two click will invoked
-**** viewgroup: ACTION_DOWN -> ACTION_POINTER_DOWN -> ACTION_POINTER_UP -> ACTION_UP
-**** both buttons: ACTION_DOWN -> ACTION_UP
 * socket
 ** unix domain socket vs IP socket
 *** unix domain socket
@@ -2894,170 +2673,209 @@ send_events:
 *** before disposing
 **** onErrorResumeNext
 
-* android smart pointer
-** RefBase
-*** wrapping the strong reference count and weak reference count, for auto deallocate objects which usually extends from `RefBase` class, when decStrong() encounts 0
-** sp template class
-*** wrapping RefBase objects, implementing object copy constructing, copy assignment, move constructing, move assignment and deallocating, increasing or decreasing strong references of delegated RefBase objects
-* android Watchdog
-** monitoring deadlock of targets
-** started as a thread in SystemServer
-* binder
-** binder driver
-*** binder_init
-**** create debugfs
-**** register misc device
-***** create `struct binder_device` binder_device which contains `struct binder_context` context
-***** associate 'struct file_operations' binder_fops
-***** code
-      #+begin_src c
- static int __init init_binder_device(const char *name)
- {
-	 int ret;
-	 struct binder_device *binder_device;
-
-	 binder_device = kzalloc(sizeof(*binder_device), GFP_KERNEL);
-	 if (!binder_device)
-		 return -ENOMEM;
-
-	 binder_device->miscdev.fops = &binder_fops;
-	 binder_device->miscdev.minor = MISC_DYNAMIC_MINOR;
-	 binder_device->miscdev.name = name;
-
-	 binder_device->context.binder_context_mgr_uid = INVALID_UID;
-	 binder_device->context.name = name;
-	 mutex_init(&binder_device->context.context_mgr_node_lock);
-
-	 ret = misc_register(&binder_device->miscdev);
-	 if (ret < 0) {
-		 kfree(binder_device);
-		 return ret;
-	 }
-
-	 hlist_add_head(&binder_device->hlist, &binder_devices);
-
-	 return ret;
- }
-      #+end_src
-
-**** create binderfs
-*** binder_open
-**** create `struct binder_proc` proc which is linked to global `binder_procs` list
-**** filep.private_data = proc, store binder_proc data to file private_data for later use
-**** binder_proc represents the process which opened binder driver
-*** binder_mmap
-**** init `struct binder_alloc` alloc of `struct binder_proc` proc
-***** represents user space vma
-**** create a `struct binder_buffer` buffer
-***** represents ipc data area, physical page is allocated in `bind_transaction`
-***** linked in rbtree `alloc->free_buffers.rb_node`
-***** alloc `struct binder_lru_page` pages(control data of `struct page`)
-*** binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-**** protocol
-***** ioctl data -> BINDER_WRITE_READ + `struct binder_write_read` data
-****** binder_write_read is control data to write buffer, write buffer size and consumed size, read buffer, read buffer size and consumed size
-***** binder_write_read data -> BC_TRANSACTION + `struct binder_transaction_data` data
-***** binder_transaction_data -> parcel data(buffer + offsets)
-****** buffer - normal data contains `struct flat_binder_object`
-****** offsets - offsets from buffer to flat_binder_object structs
-**** handle BINDER_XXX cmd
-**** BINDER_WRITE_READ
-***** binder_thread_write
-****** BC_TRANSACTION -> binder_transaction
-****** binder_transaction
-******* find target_node and target_proc with `tr->target.handle`
-******* alloc `struct binder_transaction` t and `struct binder_work` tcomplete
-******* `binder_alloc_new_buf`
-******** alloc a new binder_buffer in binder_alloc of target_proc for ipc data
-******** alloc physical `struct page` pages with `alloc_page` and `vm_insert_page`, so copy once
-******* `binder_alloc_copy_user_to_buffer`
-******** copy user binder_transaction_data(buffer + offsets) to new allocated binder_buffer with `kmap`
-******* read `struct binder_object` from binder_buffer
-******** `binder_alloc_copy_from_buffer`
-********* read offsets data(pointed to buffer data) from binder_buffer of target_proc
-******** `binder_get_object`
-********* read `struct binder_object` of the offsets above
-******* translate and replace original binder object
-******** `binder_translate_binder`
-********* `binder_get_node` - create `struct binder_node` node for strong binder if not exists
-********* BINDER_TYPE_BINDER -> BINDER_TYPE_HANDLE
-********** `struct binder_node` transfer to `struct binder_ref` when binder server object transferred to another process
-********* `fp->handle = rdata.desc;`
-********** handle of `struct binder_ref` is the index when added to target_proc's `struct rb_root` refs_by_node rbtree
-********* code
-	  #+begin_src c
-static int binder_translate_binder(struct flat_binder_object *fp,
-				   struct binder_transaction *t,
-				   struct binder_thread *thread)
-{
-	struct binder_node *node;
-	struct binder_proc *proc = thread->proc;
-	struct binder_proc *target_proc = t->to_proc;
-	struct binder_ref_data rdata;
-	int ret = 0;
-
-	node = binder_get_node(proc, fp->binder);
-	if (!node) {
-		node = binder_new_node(proc, fp);
-		if (!node)
-			return -ENOMEM;
-	}
-	if (fp->cookie != node->cookie) {
-		binder_user_error("%d:%d sending u%016llx node %d, cookie mismatch %016llx != %016llx\n",
-				  proc->pid, thread->pid, (u64)fp->binder,
-				  node->debug_id, (u64)fp->cookie,
-				  (u64)node->cookie);
-		ret = -EINVAL;
-		goto done;
-	}
-	if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
-		ret = -EPERM;
-		goto done;
-	}
-
-	ret = binder_inc_ref_for_node(target_proc, node,
-			fp->hdr.type == BINDER_TYPE_BINDER,
-			&thread->todo, &rdata);
-	if (ret)
-		goto done;
-
-	if (fp->hdr.type == BINDER_TYPE_BINDER)
-		fp->hdr.type = BINDER_TYPE_HANDLE;
-	else
-		fp->hdr.type = BINDER_TYPE_WEAK_HANDLE;
-	fp->binder = 0;
-	fp->handle = rdata.desc;
-	fp->cookie = 0;
-
-	trace_binder_transaction_node_to_ref(t, node, &rdata);
-	binder_debug(BINDER_DEBUG_TRANSACTION,
-		     "        node %d u%016llx -> ref %d desc %d\n",
-		     node->debug_id, (u64)node->ptr,
-		     rdata.debug_id, rdata.desc);
-done:
-	binder_put_node(node);
-	return ret;
-}
-	  #+end_src
-
-******** `binder_alloc_copy_to_buffer`
-********* repalce the original binder object with the translated one
-******* translate fd 
-******** `binder_translate_fd`
-********* `list_add_tail(&fixup->fixup_entry, &t->fd_fixups);`
-********** add fixup data to binder_transaction which is handled in target_proc process
-******* enqueue t to target_thread todo list, tcomplete to current thread todo list
-***** binder_thread_read
-****** `binder_wait_for_work`
-****** `w = binder_dequeue_work_head_ilocked(list);`
-****** `binder_apply_fd_fixups`
-******* `get_unused_fd_flags`
-******* `fd_install`
-******* `binder_alloc_copy_to_buffer`
-****** copy_to_user
 * todo
 ** binder in c implementation on android device
 ** open device /dev/rtc
+* Java
+** java lambda vs inner class
+*** inner class create an instance if the inner class
+*** lambda expression or method reference expression invoke the lambda function through `INVOKEDYNAMIC` instruction and MethodLookup MethodHandle
+*** `invokeDynamic` sugar:
+**** invokeStatic LambdaMetafactory.metafactory
+** Java Thread start
+**** State
+     #+begin_src java
+         public enum State {
+         /**
+          * Thread state for a thread which has not yet started.
+          */
+         NEW,
+
+         /**
+          * Thread state for a runnable thread.  A thread in the runnable
+          * state is executing in the Java virtual machine but it may
+          * be waiting for other resources from the operating system
+          * such as processor.
+          */
+         RUNNABLE,
+
+         /**
+          * Thread state for a thread blocked waiting for a monitor lock.
+          * A thread in the blocked state is waiting for a monitor lock
+          * to enter a synchronized block/method or
+          * reenter a synchronized block/method after calling
+          * {@link Object#wait() Object.wait}.
+          */
+         BLOCKED,
+
+         /**
+          * Thread state for a waiting thread.
+          * A thread is in the waiting state due to calling one of the
+          * following methods:
+          * <ul>
+          *   <li>{@link Object#wait() Object.wait} with no timeout</li>
+          *   <li>{@link #join() Thread.join} with no timeout</li>
+          *   <li>{@link LockSupport#park() LockSupport.park}</li>
+          * </ul>
+          *
+          * <p>A thread in the waiting state is waiting for another thread to
+          * perform a particular action.
+          *
+          * For example, a thread that has called <tt>Object.wait()</tt>
+          * on an object is waiting for another thread to call
+          * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
+          * that object. A thread that has called <tt>Thread.join()</tt>
+          * is waiting for a specified thread to terminate.
+          */
+         WAITING,
+
+         /**
+          * Thread state for a waiting thread with a specified waiting time.
+          * A thread is in the timed waiting state due to calling one of
+          * the following methods with a specified positive waiting time:
+          * <ul>
+          *   <li>{@link #sleep Thread.sleep}</li>
+          *   <li>{@link Object#wait(long) Object.wait} with timeout</li>
+          *   <li>{@link #join(long) Thread.join} with timeout</li>
+          *   <li>{@link LockSupport#parkNanos LockSupport.parkNanos}</li>
+          *   <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
+          * </ul>
+          */
+         TIMED_WAITING,
+
+         /**
+          * Thread state for a terminated thread.
+          * The thread has completed execution.
+          */
+         TERMINATED;
+     }
+     #+end_src
+
+**** android-source/art/runtime/thread_state.h
+     enum ThreadState {
+     //                                   Thread.State   JDWP state
+     kTerminated = 66,                 // TERMINATED     TS_ZOMBIE    Thread.run has returned, but Thread* still around
+     kRunnable,                        // RUNNABLE       TS_RUNNING   runnable
+     kTimedWaiting,                    // TIMED_WAITING  TS_WAIT      in Object.wait() with a timeout
+     kSleeping,                        // TIMED_WAITING  TS_SLEEPING  in Thread.sleep()
+     kBlocked,                         // BLOCKED        TS_MONITOR   blocked on a monitor
+     kWaiting,                         // WAITING        TS_WAIT      in Object.wait()
+     kWaitingForLockInflation,         // WAITING        TS_WAIT      blocked inflating a thin-lock
+     kWaitingForTaskProcessor,         // WAITING        TS_WAIT      blocked waiting for taskProcessor
+     kWaitingForGcToComplete,          // WAITING        TS_WAIT      blocked waiting for GC
+     kWaitingForCheckPointsToRun,      // WAITING        TS_WAIT      GC waiting for checkpoints to run
+     kWaitingPerformingGc,             // WAITING        TS_WAIT      performing GC
+     kWaitingForDebuggerSend,          // WAITING        TS_WAIT      blocked waiting for events to be sent
+     kWaitingForDebuggerToAttach,      // WAITING        TS_WAIT      blocked waiting for debugger to attach
+     kWaitingInMainDebuggerLoop,       // WAITING        TS_WAIT      blocking/reading/processing debugger events
+     kWaitingForDebuggerSuspension,    // WAITING        TS_WAIT      waiting for debugger suspend all
+     kWaitingForJniOnLoad,             // WAITING        TS_WAIT      waiting for execution of dlopen and JNI on load code
+     kWaitingForSignalCatcherOutput,   // WAITING        TS_WAIT      waiting for signal catcher IO to complete
+     kWaitingInMainSignalCatcherLoop,  // WAITING        TS_WAIT      blocking/reading/processing signals
+     kWaitingForDeoptimization,        // WAITING        TS_WAIT      waiting for deoptimization suspend all
+     kWaitingForMethodTracingStart,    // WAITING        TS_WAIT      waiting for method tracing to start
+     kWaitingForVisitObjects,          // WAITING        TS_WAIT      waiting for visiting objects
+     kWaitingForGetObjectsAllocated,   // WAITING        TS_WAIT      waiting for getting the number of allocated objects
+     kWaitingWeakGcRootRead,           // WAITING        TS_WAIT      waiting on the GC to read a weak root
+     kWaitingForGcThreadFlip,          // WAITING        TS_WAIT      waiting on the GC thread flip (CC collector) to finish
+     kStarting,                        // NEW            TS_WAIT      native thread started, not yet ready to run managed code
+     kNative,                          // RUNNABLE       TS_RUNNING   running in a JNI native method
+     kSuspended,                       // RUNNABLE       TS_RUNNING   suspended by GC or debugger
+     };
+**** android-source/art/runtime/native/java_lang_Thread.cc
+     Thread.start()-->nativeCreate()-->Thread.CreateNativeThread()-->JNIEnvExt::Creat()-->pthread_create()-->child_thread invoke java Thread.run() method
+**** JNIEnv implemented in android-source/art/runtime/jni_internal.cc
+**** why wait need to be called in a synchronized block?
+***** common case: one thread testes a state and wait, another thread changes a state and notify
+***** so test and wait, as well as change and notify must be atomic
+* gradle
+** features
+*** convention over configuration
+*** transitive dependencies
+*** maven compatible
+** phase
+*** init
+**** create a `Settings` instance and evaluate `settings.gradle` file
+**** create the hierarchy of `Project` instances and evaluate each `Project` instance by evaluating its `build.gradle` file
+*** configure
+*** execute
+** projects
+*** one build.gradle file per project
+*** gradle project
+**** list all projects
+*** dynamic project properties, 5 property delegated scopes
+**** `Project` object
+**** extra properties
+**** extensions
+**** convention
+**** tasks
+**** extra properties and convention properties inherited from parent project
+*** dynamic methods
+**** `Project` object
+**** the build file
+**** extensions
+**** convention
+**** tasks
+**** methods of the parent project, recursively up to the root project
+**** a property of the project whose value is a closure
+** configuration
+*** configuration for dependencies of a project
+**** annotationProcessor
+**** apiElements
+**** implementation
+**** api
+**** compile
+**** runtime
+**** testImplementation
+**** etc
+** resolutionStrategy
+*** force
+**** force a dependency when conflict occurred
+** buildSrc
+*** a included build
+*** automatically compiles and tests this code and puts it in the classpath of your build script
+*** configs of project dependencies and versions can use in build.gradle file
+** gradle init --type java-application
+** gradle jar
+   #+begin_src groovy
+  jar {
+      manifest {
+          attributes("Main-Class": "App")
+      }
+  }
+
+  task uberJar(type: Jar) {
+      classifier = "all"
+      from sourceSets.main.output
+      manifest {
+          attributes("Main-Class": "App")
+      }
+
+      dependsOn configurations.runtimeClasspath
+      from {
+          configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+      }
+
+      with jar
+  }
+   #+end_src
+
+** source code analysis
+*** basics
+**** create `CommandLineParser`
+**** `CommandLineAction` configures `CommandLineParser`
+**** `CommandLineParser` parses `args` into `ParsedCommandLine`
+**** `CommandLineAction` creates action(Runnable)
+**** run action
+** android gradle plugin
+**** 方法的最后一个参数是闭包时可以将{}移到()外，同时()可以省略，所以常见的android {...}
+**** android包含属性：compileSdkVersion、buildToolsVersion、defaultConfig、buildTypes、signingConfigs、lintOptions、compileOptions etc
+**** defaultConfig是默认的productFlavor类型，包含applicationId、minSdkVersion、versionCode、versionName、testInstrumentationRunner、ndk etc
+**** buildType属性：applicationSuffix、debuggable、jniDebuggable、minifyEnabled、multiDexEnabled、proguardFile、shrinkResources、signingConfig、zipAlignEnabled
+**** variant 是productFlavors和buildTypes组合产物，variant有applicationVariants、libraryVariants、testVariants
+**** 使用exec可以执行命令行操作
+**** 可以通过环境变量System.getenv()获取签名信息，从而隐藏签名信息
+**** manifestPlaceHolders buildConfigField resValue
 * android
 ** init process
 *** add init.${ro.hardware}.rc to init.rc at compile time
@@ -3321,64 +3139,248 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 *** post(Runnable)
 **** add to handler if the view is attached to window, or add to `HandlerActionQueue`, post to handler when the view is attached to window
 **** performTraversals -> host.dispatchAttachedToWindow -> HandlerActionQueue.executeActions -> handler.postDelayed -> measureHierarchy -> performLayout -> performDraw
-** android view drawing process
-*** Measuring layouting drawing
-*** custom view
-*** MeasureSpec
-*** ?attr
-*** overloads
-**** onSizeChanged
-**** onFinishInflate
-*** dispatchTouchEvent
-**** TouchTarget aka mFirstTouchTarget
-***** TouchTarget is a view with pointers touched on it
-***** TouchTargets connected as a linked list
-**** when (event is not canceled or intercepted) and (action is ACTION_DOWN or ACTION_POINTER_DOWN), find if a child would to consume the event, if so create a touch target as the head of mFirstTouchTarget(linked list)
-***** special case
-****** when an event with ACTION_POINTER_DOWN can't find a consumer, it will add the associated pointer id to the TouchTarget  created by the early ACTION_DOWN event
-**** other events with pointer_up action_up will delivered to mFirstTouchTarget
-**** if no child would to consume the event, the viewgroup it self will try it
-*** click listener
-**** performed when view is clickable or longclickable
-**** performed between action_down and action_up event(not the others, eg. action_pointer_down or action_pointer_up)
-*** window
-*** nested scrolling
-** low-memory-killer
-*** category of pages
-**** used pages
-**** cached pages
-**** free pages
-*** category of process
-**** Native: init kswapd netd logd adbd installd
-**** System: system_server
-**** Persistent: phone signal message bluetooth wifi
-**** Foreground apps
-**** Perceptible: music
-**** Service: cloud-fetching
-**** Home
-**** Previous apps
-**** Cached apps
-*** kswapd-threshold -> activated when free memory is low under lmk-threshold
-*** counting size of memory usage
-**** RSS-resident set size
-***** App fully responsible for shared pages
-**** PSS-proportional set size
-***** App proportionally responsible for shared pages
-**** USS-unique set size
-***** App not responsible for shared pages
-*** adb shell dumpsys meminfo -s ${process-pakage-name}
-** RecyclerView
-*** caches
-**** mAttachedScrap
-**** mCachedView
-**** ViewCacheExtension
-**** RecyclerVIewPool
-*** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
-    # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
-    # 根据type查找mAttachedScrap-->mCachedViews
-    # if mViewCacheExtension != null, 通过mViewCacheExtension查找
-    # mRecyclerPool.mScrap中查找
-    # mAdapter.createViewHolder
+** ViewGroup
+*** isMotionEventSplittingEnabled
+**** when true(default), ACTION_POINTER_DOWN will be split
+**** case two buttons in a viewgroup, press down two buttons at the same time, two click will invoked
+***** viewgroup: ACTION_DOWN -> ACTION_POINTER_DOWN -> ACTION_POINTER_UP -> ACTION_UP
+***** both buttons: ACTION_DOWN -> ACTION_UP
+*** android view drawing process
+**** Measuring layouting drawing
+**** custom view
+**** MeasureSpec
+**** ?attr
+**** overloads
+***** onSizeChanged
+***** onFinishInflate
+**** dispatchTouchEvent
+***** TouchTarget aka mFirstTouchTarget
+****** TouchTarget is a view with pointers touched on it
+****** TouchTargets connected as a linked list
+***** when (event is not canceled or intercepted) and (action is ACTION_DOWN or ACTION_POINTER_DOWN), find if a child would to consume the event, if so create a touch target as the head of mFirstTouchTarget(linked list)
+****** special case
+******* when an event with ACTION_POINTER_DOWN can't find a consumer, it will add the associated pointer id to the TouchTarget  created by the early ACTION_DOWN event
+***** other events with pointer_up action_up will delivered to mFirstTouchTarget
+***** if no child would to consume the event, the viewgroup it self will try it
+**** click listener
+***** performed when view is clickable or longclickable
+***** performed between action_down and action_up event(not the others, eg. action_pointer_down or action_pointer_up)
+**** window
+**** nested scrolling
+*** low-memory-killer
+**** category of pages
+***** used pages
+***** cached pages
+***** free pages
+**** category of process
+***** Native: init kswapd netd logd adbd installd
+***** System: system_server
+***** Persistent: phone signal message bluetooth wifi
+***** Foreground apps
+***** Perceptible: music
+***** Service: cloud-fetching
+***** Home
+***** Previous apps
+***** Cached apps
+**** kswapd-threshold -> activated when free memory is low under lmk-threshold
+**** counting size of memory usage
+***** RSS-resident set size
+****** App fully responsible for shared pages
+***** PSS-proportional set size
+****** App proportionally responsible for shared pages
+***** USS-unique set size
+****** App not responsible for shared pages
+**** adb shell dumpsys meminfo -s ${process-pakage-name}
+*** RecyclerView
+**** caches
+***** mAttachedScrap
+***** mCachedView
+***** ViewCacheExtension
+***** RecyclerVIewPool
+**** Recycler.tryGetViewHolderForPositionByDeadline缓存逻辑:
+     # 根据position查找mAttachedScrap-->mHiddenViews-->mCachedViews，
+     # 根据type查找mAttachedScrap-->mCachedViews
+     # if mViewCacheExtension != null, 通过mViewCacheExtension查找
+     # mRecyclerPool.mScrap中查找
+     # mAdapter.createViewHolder
+** android smart pointer
+*** RefBase
+**** wrapping the strong reference count and weak reference count, for auto deallocate objects which usually extends from `RefBase` class, when decStrong() encounts 0
+*** sp template class
+**** wrapping RefBase objects, implementing object copy constructing, copy assignment, move constructing, move assignment and deallocating, increasing or decreasing strong references of delegated RefBase objects
+** android Watchdog
+*** monitoring deadlock of targets
+*** started as a thread in SystemServer
+** binder
+*** binder driver
+**** binder_init
+***** create debugfs
+***** register misc device
+****** create `struct binder_device` binder_device which contains `struct binder_context` context
+****** associate 'struct file_operations' binder_fops
+****** code
+       #+begin_src c
+  static int __init init_binder_device(const char *name)
+  {
+	  int ret;
+	  struct binder_device *binder_device;
+
+	  binder_device = kzalloc(sizeof(*binder_device), GFP_KERNEL);
+	  if (!binder_device)
+		  return -ENOMEM;
+
+	  binder_device->miscdev.fops = &binder_fops;
+	  binder_device->miscdev.minor = MISC_DYNAMIC_MINOR;
+	  binder_device->miscdev.name = name;
+
+	  binder_device->context.binder_context_mgr_uid = INVALID_UID;
+	  binder_device->context.name = name;
+	  mutex_init(&binder_device->context.context_mgr_node_lock);
+
+	  ret = misc_register(&binder_device->miscdev);
+	  if (ret < 0) {
+		  kfree(binder_device);
+		  return ret;
+	  }
+
+	  hlist_add_head(&binder_device->hlist, &binder_devices);
+
+	  return ret;
+  }
+       #+end_src
+
+***** create binderfs
+**** binder_open
+***** create `struct binder_proc` proc which is linked to global `binder_procs` list
+***** filep.private_data = proc, store binder_proc data to file private_data for later use
+***** binder_proc represents the process which opened binder driver
+**** binder_mmap
+***** init `struct binder_alloc` alloc of `struct binder_proc` proc
+****** represents user space vma
+***** create a `struct binder_buffer` buffer
+****** represents ipc data area, physical page is allocated in `bind_transaction`
+****** linked in rbtree `alloc->free_buffers.rb_node`
+****** alloc `struct binder_lru_page` pages(control data of `struct page`)
+**** binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+***** protocol
+****** ioctl data -> BINDER_WRITE_READ + `struct binder_write_read` data
+******* binder_write_read is control data to write buffer, write buffer size and consumed size, read buffer, read buffer size and consumed size
+****** binder_write_read data -> BC_TRANSACTION + `struct binder_transaction_data` data
+****** binder_transaction_data -> parcel data(buffer + offsets)
+******* buffer - normal data contains `struct flat_binder_object`
+******* offsets - offsets from buffer to flat_binder_object structs
+***** handle BINDER_XXX cmd
+***** BINDER_WRITE_READ
+****** binder_thread_write
+******* BC_TRANSACTION -> binder_transaction
+******* binder_transaction
+******** find target_node and target_proc with `tr->target.handle`
+******** alloc `struct binder_transaction` t and `struct binder_work` tcomplete
+******** `binder_alloc_new_buf`
+********* alloc a new binder_buffer in binder_alloc of target_proc for ipc data
+********* alloc physical `struct page` pages with `alloc_page` and `vm_insert_page`, so copy once
+******** `binder_alloc_copy_user_to_buffer`
+********* copy user binder_transaction_data(buffer + offsets) to new allocated binder_buffer with `kmap`
+******** read `struct binder_object` from binder_buffer
+********* `binder_alloc_copy_from_buffer`
+********** read offsets data(pointed to buffer data) from binder_buffer of target_proc
+********* `binder_get_object`
+********** read `struct binder_object` of the offsets above
+******** translate and replace original binder object
+********* `binder_translate_binder`
+********** `binder_get_node` - create `struct binder_node` node for strong binder if not exists
+********** BINDER_TYPE_BINDER -> BINDER_TYPE_HANDLE
+*********** `struct binder_node` transfer to `struct binder_ref` when binder server object transferred to another process
+********** `fp->handle = rdata.desc;`
+*********** handle of `struct binder_ref` is the index when added to target_proc's `struct rb_root` refs_by_node rbtree
+********** code
+	   #+begin_src c
+ static int binder_translate_binder(struct flat_binder_object *fp,
+				    struct binder_transaction *t,
+				    struct binder_thread *thread)
+ {
+	 struct binder_node *node;
+	 struct binder_proc *proc = thread->proc;
+	 struct binder_proc *target_proc = t->to_proc;
+	 struct binder_ref_data rdata;
+	 int ret = 0;
+
+	 node = binder_get_node(proc, fp->binder);
+	 if (!node) {
+		 node = binder_new_node(proc, fp);
+		 if (!node)
+			 return -ENOMEM;
+	 }
+	 if (fp->cookie != node->cookie) {
+		 binder_user_error("%d:%d sending u%016llx node %d, cookie mismatch %016llx != %016llx\n",
+				   proc->pid, thread->pid, (u64)fp->binder,
+				   node->debug_id, (u64)fp->cookie,
+				   (u64)node->cookie);
+		 ret = -EINVAL;
+		 goto done;
+	 }
+	 if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
+		 ret = -EPERM;
+		 goto done;
+	 }
+
+	 ret = binder_inc_ref_for_node(target_proc, node,
+			 fp->hdr.type == BINDER_TYPE_BINDER,
+			 &thread->todo, &rdata);
+	 if (ret)
+		 goto done;
+
+	 if (fp->hdr.type == BINDER_TYPE_BINDER)
+		 fp->hdr.type = BINDER_TYPE_HANDLE;
+	 else
+		 fp->hdr.type = BINDER_TYPE_WEAK_HANDLE;
+	 fp->binder = 0;
+	 fp->handle = rdata.desc;
+	 fp->cookie = 0;
+
+	 trace_binder_transaction_node_to_ref(t, node, &rdata);
+	 binder_debug(BINDER_DEBUG_TRANSACTION,
+		      "        node %d u%016llx -> ref %d desc %d\n",
+		      node->debug_id, (u64)node->ptr,
+		      rdata.debug_id, rdata.desc);
+ done:
+	 binder_put_node(node);
+	 return ret;
+ }
+	   #+end_src
+
+********* `binder_alloc_copy_to_buffer`
+********** repalce the original binder object with the translated one
+******** translate fd 
+********* `binder_translate_fd`
+********** `list_add_tail(&fixup->fixup_entry, &t->fd_fixups);`
+*********** add fixup data to binder_transaction which is handled in target_proc process
+******** enqueue t to target_thread todo list, tcomplete to current thread todo list
+****** binder_thread_read
+******* `binder_wait_for_work`
+******* `w = binder_dequeue_work_head_ilocked(list);`
+******* `binder_apply_fd_fixups`
+******** `get_unused_fd_flags`
+******** `fd_install`
+******** `binder_alloc_copy_to_buffer`
+******* copy_to_user
+** crash
+**** 进程crash时会发送signal（SIGSEGV，SIGART etc），提前注册sigaction处理目标signal，然后clone进程，使用ptrace syscall获取进程mem reg信息，同时获取procfs信息得到thread stacktrace
+**** breakpad   ---> crashDump --> addr2line
+**** fork使用fork syscall实现, pthread_create都使用clone syscall实现，可以指定共享哪些数据区域
+**** thread specific stack is on heap(mmap) with guard page of guardsize protected by mprotect
+**** core dump file
+***** with systemd systems cat /proc/sys/kernel/core_pattern -> |/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %e
+***** core dump files stored in directory /var/lib/systemd/coredump
+***** core dump file managed by coredumpctl
+***** list all core dump files: coredumpctl list | tail -5
+***** extract core dump file: coredumpctl dump ${pid} -o core
+** Finalizer
+**** object.finalize() run in FinalizerDaemon thread
+**** FinalizerWatchdogDaemon thread 监控FinalizerDaemon thread的执行，若FinalizerDaemon执行某个object的finalize方法超过10s，则发出SIGQUIT signal
+**** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
+** 插件化
+*** 修复bug和动态发布新功能
 * flutter
 ** Widget
 *** everything is widget
@@ -3839,3 +3841,4 @@ Hello Jocoo
 *** reference
 **** PhantomReference
 ***** a way to be aware of reclaiming of the referent object with references added to the associated `ReferenceQueue`
+*** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
