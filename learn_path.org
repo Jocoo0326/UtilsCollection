@@ -3381,6 +3381,134 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** finalize timeout 可以通过反射停止FinalizerWatchdogDaemon，Android P限制反射调用失效
 ** 插件化
 *** 修复bug和动态发布新功能
+*** ClassLoader
+**** PathClassLoader
+***** load System class and app class
+***** optimizedDirectory is null
+**** DexClassLoader
+***** load classes from jar apk files which not installed as part of an application
+***** param `optimizedDirectory` where optimized dex files should be wrriten, must not be null
+*** hook
+**** code
+***** hook AMP
+****** ActivityManageNative.gDefault (sdk_int <= 27 Nougat)
+******* gDefault - Singleton<IActivityManager> - hook mInstance
+****** ActivityManager.IActivityManagerSingleton (sdk_int >= 28 Oreo)
+******* IActivityManagerSingleton - Singleton<IActivitymanager> - hook mInstance
+****** override `startActivity`
+******* replace with `StubActivity`
+***** hook ActivityThread
+****** hook mH(Handler).mCallback(Handler.Callback)
+******* handleLaunchActivity
+**** resource
+***** AssetManager
+****** addAssetPath
+** AMS
+*** AMN AMP AMS三者关系
+**** AMN是Stub类, server端IPC逻辑
+**** AMP是Proxy类, client代理IPC逻辑
+**** AMS继承了AMN, 业务实现类
+** activity
+*** Instrumentation.execStartActivity
+*** AMP.startActivity -> AMS.startActivity
+*** ActivityStarter.startActivityMayWait
+*** ActivityStackSupervisor.resolveIntent
+**** check component existance in AndroidManifest file
+*** ActivityStarter.startActivityLocked
+**** new ActivityRecord
+*** ActivityStarter.startActivityUnchecked
+*** ActivityStackSupervisor.resumeTopActivityUncheckedLocked
+*** ActivityStack.resumeTopActivityUncheckedLocked
+*** ActivityStack.resumeTopActivityInnerLocked
+*** ActivityStack.startPausingLocked->Activity.onPause
+*** AMS.activityPaused->ActivityStack.activityPaused->completePauseLocked
+*** ActivityStackSupervisor.resumeFocusedStackTopActivityLocked
+*** ActivityStack.resumeTopActivityUncheckedLocked
+*** ActivityStackSupervisor.startSpecificActivityLocked
+*** AMS.startProcessLocked->Process.start
+*** ActivityThread.main->attach
+*** AMS.attachApplication->ApplicatoinThread.bindApplication
+*** ActivityThread.handleBindApplication
+**** create application
+**** call application onCreate
+*** ActivityStackSupervisor.attachApplicationLocked
+*** ActivityStackSupervisor.realStartActivityLocked
+*** ATP.scheduleLaunchActivity
+*** AT.handleLaunchActivity
+*** performLaunchActivity
+**** Instrumentation.newActivity
+**** Instrumentation.callActivityOnCreate
+**** activity.attach
+***** new PhoneWindow
+*** handleResumeActivity
+**** performResumeActivity
+**** WindowManagerGlobal.addView
+***** new ViewRootImpl
+***** ViewRootImpl.setView
+****** requestLayout
+**** AMP.activityResumed
+** service
+*** startService and bindService(intent, serviceConnection, flags)
+*** ContextImpl.bindService->bindServiceCommon
+**** new ServiceDispatcher
+***** new InnerConnection
+***** InnerConnection extends IServiceConnection.Stub
+**** AMP.bindService
+*** AMS.bindService->ActiveServices.bindServiceLocked
+*** ActiveServices.bringUpServiceLocked
+*** AMS.startProcessLocked
+*** ActivityThread.main->attach
+*** AMS.attachApplication->ApplicatoinThread.bindApplication
+*** ActivityThread.handleBindApplication
+*** ActiveServices.attachApplicationLocked
+*** ActiveServices.realStartServiceLocked
+*** ATP.scheduleCreateService
+*** AT.handleCreateService
+**** LoadedApk.getClassLoader
+**** ClassLoader.newInstance
+**** ContextImpl.createAppContext
+**** Service.onCreate
+*** ActiveServices.requestServiceBindingsLocked
+*** ATP.scheduleBindService
+*** AT.handleBindService
+**** Service.onBind
+**** AMP.publishService
+*** ActiveServices.publishServiceLocked
+**** IServiceConnection.connected
+*** ServiceDispatcher.InnerConnection.connected
+**** ServiceDispatcher.connected
+**** ServiceDispatcher.doConnected
+**** ServiceConnection.onServiceConnected
+** broadcast
+*** registerReceiver
+**** ContextImpl.registerReceiverInternal
+***** new LoadedApk.ReceiverDispatcher
+****** new InnerReceiver(extends IIntentReceiver.Stub)
+***** AMP.registerReceiver
+**** AMS.registerReceiver
+**** new BroadcastFilter
+**** IntentResolver.addFilter(BroadcastFilter)
+**** BroadcastQueue.scheduleBroadcastsLocked
+***** Enqueue broadcasts for all existing stickies that match this filter
+*** sendBroadcast
+**** ContextImpl.sendBroadcast->AMS.broadcastIntent
+**** AMS.broadcastIntent
+**** AMS.broadcastIntentLocked
+**** IntentResolver.queryIntent
+**** new BroadcastRecord
+**** BroadcastQueue.enqueueParallelBroadcastLocked
+**** BroadcastQueue.scheduleBroadcastsLocked
+***** Handler.sendMessage(BROADCAST_INTENT_MSG)
+**** BroadcastQueue.processNextBroadcast
+***** deliverToRegisteredReceiverLocked
+***** performReceiveLocked
+***** ATP.scheduleRegisteredReceiver
+**** AT.scheduleRegisteredReceiver
+**** LoadedApk.ReceiverDispatcher.InnerReceiver.performReceive
+***** ReceiverDispatcher.performReceive
+****** new Args
+****** Handler.post(Args)
+***** BroadcastReceiver.onReceive
 * flutter
 ** Widget
 *** everything is widget
@@ -3842,3 +3970,26 @@ Hello Jocoo
 **** PhantomReference
 ***** a way to be aware of reclaiming of the referent object with references added to the associated `ReferenceQueue`
 *** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
+* zip file format
+** overview of ZIP file format
+      [local file header 1]
+      [encryption header 1]
+      [file data 1]
+      [data descriptor 1]
+      . 
+      .
+      .
+      [local file header n]
+      [encryption header n]
+      [file data n]
+      [data descriptor n]
+      [archive decryption header] 
+      [archive extra data record] 
+      [central directory header 1]
+      .
+      .
+      .
+      [central directory header n]
+      [zip64 end of central directory record]
+      [zip64 end of central directory locator] 
+      [end of central directory record]
