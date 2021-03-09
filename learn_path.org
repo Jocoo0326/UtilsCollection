@@ -3403,6 +3403,14 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** resource
 ***** AssetManager
 ****** addAssetPath
+*** resource hook
+**** resource id
+***** ID -> 0xppttiiii
+***** pp -> packageID
+***** tt -> typeID
+***** iiii -> index
+**** aapt hook
+***** ResourceTable.cpp
 ** AMS
 *** AMN AMP AMS三者关系
 **** AMN是Stub类, server端IPC逻辑
