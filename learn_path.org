@@ -3892,6 +3892,13 @@ Hello Jocoo
 **** diff program in unix
 **** k-candidates optimization
 ***** https://www.cs.dartmouth.edu/~doug/diff.pdf
+** bsdiff
+*** suffix sorting
+*** separate into 3 parts
+**** control data
+**** diff data
+**** extra data
+*** bzip2 write patch file
 * spring
 ** core
 *** IoC
