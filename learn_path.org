@@ -92,54 +92,54 @@
 *** fixtures
 **** Using the Same Data Configuration for Multiple Tests
      #+begin_src cpp
- // class Queue wanted to be tested
- template <typename E>  // E is the element type.
- class Queue {
-  public:
-   Queue();
-   void Enqueue(const E& element);
-   E* Dequeue();  // Returns NULL if the queue is empty.
-   size_t size() const;
-   ...
- };
+			 // class Queue wanted to be tested
+			 template <typename E>  // E is the element type.
+			 class Queue {
+			 public:
+				 Queue();
+				 void Enqueue(const E& element);
+				 E* Dequeue();  // Returns NULL if the queue is empty.
+				 size_t size() const;
+				 ...
+			 };
 
- // test case fixture class
- class QueueTest : public ::testing::Test {
-  protected:
-   void SetUp() override {
-      q1_.Enqueue(1);
-      q2_.Enqueue(2);
-      q2_.Enqueue(3);
-   }
+			 // test case fixture class
+			 class QueueTest : public ::testing::Test {
+			 protected:
+				 void SetUp() override {
+					 q1_.Enqueue(1);
+					 q2_.Enqueue(2);
+					 q2_.Enqueue(3);
+				 }
 
-   // void TearDown() override {}
+				 // void TearDown() override {}
 
-   Queue<int> q0_;
-   Queue<int> q1_;
-   Queue<int> q2_;
- };
+				 Queue<int> q0_;
+				 Queue<int> q1_;
+				 Queue<int> q2_;
+			 };
 
- // tests
- TEST_F(QueueTest, IsEmptyInitially) {
-   EXPECT_EQ(q0_.size(), 0);
- }
+			 // tests
+			 TEST_F(QueueTest, IsEmptyInitially) {
+				 EXPECT_EQ(q0_.size(), 0);
+			 }
 
- TEST_F(QueueTest, DequeueWorks) {
-   int* n = q0_.Dequeue();
-   EXPECT_EQ(n, nullptr);
+			 TEST_F(QueueTest, DequeueWorks) {
+				 int* n = q0_.Dequeue();
+				 EXPECT_EQ(n, nullptr);
 
-   n = q1_.Dequeue();
-   ASSERT_NE(n, nullptr);
-   EXPECT_EQ(*n, 1);
-   EXPECT_EQ(q1_.size(), 0);
-   delete n;
+				 n = q1_.Dequeue();
+				 ASSERT_NE(n, nullptr);
+				 EXPECT_EQ(*n, 1);
+				 EXPECT_EQ(q1_.size(), 0);
+				 delete n;
 
-   n = q2_.Dequeue();
-   ASSERT_NE(n, nullptr);
-   EXPECT_EQ(*n, 2);
-   EXPECT_EQ(q2_.size(), 1);
-   delete n;
- }
+				 n = q2_.Dequeue();
+				 ASSERT_NE(n, nullptr);
+				 EXPECT_EQ(*n, 2);
+				 EXPECT_EQ(q2_.size(), 1);
+				 delete n;
+			 }
      #+end_src
 *** running tests
 **** TEST TEST_F 隐式注册到googletest，不需要显示指定需要运行哪些测试
@@ -191,9 +191,9 @@
 *** 防止继承得来的文件模式创建屏蔽字在创建文件时会拒绝设置某些权限
 ** close fds: STDIN_FILENO STDOUT_FILENO STDERR_FILENO
    #+begin_src c
-  int fd = open("/dev/null", O_RDWR);
-  dup2(fd, STDIN_FILENO);
-  dup2(fd, STDOUT_FILENO);
+		 int fd = open("/dev/null", O_RDWR);
+		 dup2(fd, STDIN_FILENO);
+		 dup2(fd, STDOUT_FILENO);
    #+end_src
 
 * UI
@@ -231,32 +231,32 @@
 * bookmark optimization
 ** #+DESCRIPTION: emacs lisp multibyte string
    #+BEGIN_SRC emacs-lisp
-     (defun compare (string-a string-b)
-       (cl-loop for a being the elements of string-a
-                for b being the elements of string-b
-                unless (eql a b)
-                return (cons a b)))
+		 (defun compare (string-a string-b)
+			 (cl-loop for a being the elements of string-a
+								for b being the elements of string-b
+								unless (eql a b)
+								return (cons a b)))
 
-     (benchmark-run
-         (let ((a (make-string 100000 0))
-               (b (make-string 100000 0)))
-           (compare a b)))
-     ;; => (0.012568031 0 0.0)
+		 (benchmark-run
+				 (let ((a (make-string 100000 0))
+							 (b (make-string 100000 0)))
+					 (compare a b)))
+		 ;; => (0.012568031 0 0.0)
 
-     (benchmark-run
-         (let ((a (make-string 100000 0))
-               (b (make-string 100000 0)))
-           (setf (aref a (1- (length a))) 256)
-           (compare a b)))
-     ;; => (0.012680513 0 0.0)
+		 (benchmark-run
+				 (let ((a (make-string 100000 0))
+							 (b (make-string 100000 0)))
+					 (setf (aref a (1- (length a))) 256)
+					 (compare a b)))
+		 ;; => (0.012680513 0 0.0)
 
-     (benchmark-run
-         (let ((a (make-string 100000 0))
-               (b (make-string 100000 0)))
-           (setf (aref a (1- (length a))) 256
-                 (aref b (1- (length b))) 256)
-           (compare a b)))
-     ;; => (2.327959762 0 0.0)
+		 (benchmark-run
+				 (let ((a (make-string 100000 0))
+							 (b (make-string 100000 0)))
+					 (setf (aref a (1- (length a))) 256
+								 (aref b (1- (length b))) 256)
+					 (compare a b)))
+		 ;; => (2.327959762 0 0.0)
    #+END_SRC
 ** To avoid the O(n) cost on this common indexing operating, Emacs keeps a “bookmark” for the last indexing location into a multibyte string. If the next access is nearby, it can starting looking from this bookmark, forwards or backwards.
 * application binary interface
@@ -292,37 +292,37 @@
 ** Hash table
 *** code snippet
     #+begin_src c
-       struct Hash {
-	 unsigned int htsize;      /* Number of buckets in the hash table */
-	 unsigned int count;       /* Number of entries in this table */
-	 HashElem *first;          /* The first element of the array */
-	 struct _ht {              /* the hash table */
-	   int count;                 /* Number of entries with this hash */
-	   HashElem *chain;           /* Pointer to first entry with this hash */
-	 } *ht;
-       };
+			struct Hash {
+				unsigned int htsize;      /* Number of buckets in the hash table */
+				unsigned int count;       /* Number of entries in this table */
+				HashElem *first;          /* The first element of the array */
+				struct _ht {              /* the hash table */
+					int count;                 /* Number of entries with this hash */
+					HashElem *chain;           /* Pointer to first entry with this hash */
+				} *ht;
+			};
 
-       struct HashElem {
-	 HashElem *next, *prev;       /* Next and previous elements in the table */
-	 void *data;                  /* Data associated with this element */
-	 const char *pKey;            /* Key associated with this element */
-       };
-       
-       /*
-	** The hashing function.
-	*/
-       static unsigned int strHash(const char *z){
-	 unsigned int h = 0;
-	 unsigned char c;
-	 while( (c = (unsigned char)*z++)!=0 ){     /*OPTIMIZATION-IF-TRUE*/
-	   /* Knuth multiplicative hashing.  (Sorting & Searching, p. 510).
-	   ** 0x9e3779b1 is 2654435761 which is the closest prime number to
-	   ** (2**32)*golden_ratio, where golden_ratio = (sqrt(5) - 1)/2. */
-	   h += sqlite3UpperToLower[c];
-	   h *= 0x9e3779b1;
-	 }
-	 return h;
-	}
+			struct HashElem {
+				HashElem *next, *prev;       /* Next and previous elements in the table */
+				void *data;                  /* Data associated with this element */
+				const char *pKey;            /* Key associated with this element */
+			};
+
+			/*
+			,** The hashing function.
+			,*/
+			static unsigned int strHash(const char *z){
+				unsigned int h = 0;
+				unsigned char c;
+				while( (c = (unsigned char)*z++)!=0 ){     /*OPTIMIZATION-IF-TRUE*/
+					/* Knuth multiplicative hashing.  (Sorting & Searching, p. 510).
+					,** 0x9e3779b1 is 2654435761 which is the closest prime number to
+					,** (2**32)*golden_ratio, where golden_ratio = (sqrt(5) - 1)/2. */
+					h += sqlite3UpperToLower[c];
+					h *= 0x9e3779b1;
+				}
+				return h;
+			}
     #+end_src
 *** All elements of the hash table are on a single doubly-linked list.
 *** Hash.first points to the head of this list.
@@ -423,21 +423,21 @@
 *** analogy to Java
 *** code snippets
     #+begin_src c
-    void * new (const void * _class, ...)
-    { 
-      const struct Class * class = _class;
-      void * p = calloc(1, class —> size);
-      assert(p);
-      *(const struct Class **) p = class;
-      if (class —> ctor)
-      { 
-	va_list ap;
-	va_start(ap, _class);
-	p = class —> ctor(p, & ap);
-	va_end(ap);
-      }
-      return p;
-    }
+			void * new (const void * _class, ...)
+			{ 
+				const struct Class * class = _class;
+				void * p = calloc(1, class —> size);
+				assert(p);
+				,*(const struct Class **) p = class;
+				if (class —> ctor)
+				{ 
+					va_list ap;
+					va_start(ap, _class);
+					p = class —> ctor(p, & ap);
+					va_end(ap);
+				}
+				return p;
+			}
     #+end_src
 ** we need to pass size param to malloc, then why not to call free?
 *** malloc allocate a bit more memory than you asked for, this extra memory is used to store information such as the size of the allocated block
@@ -481,8 +481,8 @@
       template <class T, class... Args>
       std::unique_ptr<T>
       my_make_unique(Args&&... args) { // args is a forwarding reference
-        return std::unique_ptr<T>(
-          new T(std::forward<Args>(args)...));
+      return std::unique_ptr<T>(
+      new T(std::forward<Args>(args)...));
       }
       #+end_src
 **** forwarding reference
@@ -498,167 +498,167 @@
 **** thread cache
 *** code
     #+begin_src c
-    /**
-  * @brief Dynamic distribute memory function
-  * @param numbytes: what size you need   
-  * @retval a void pointer to the distribute first address
-  */ 
-void * malloc(unsigned int numbytes)
-{
-    unsigned int current_location,otherbck_location;
-    /* This is the same as current_location, but cast to a memory_control_block */
-    mem_control_block * current_location_mcb = NULL,* other_location_mcb = NULL;
-    /* varialbe for saving return value and be set to 0 until we find something suitable */
-    void * memory_location = NULL;
-    /* current dividing block size */
-    unsigned int process_blocksize;
-    
-    /* Initialize if we haven't already done so */
-    if(! has_initialized) {
-        malloc_init();
-    }
-    
-    /* Begin searching at the start of managed memory */
-    current_location = managed_memory_start;
-    /* Keep going until we have searched all allocated space */
-    while(current_location != managed_memory_end){
-        /* current_location and current_location_mcb point to the same address.  However, 
-         * current_location_mcb is of the correct type, so we can use it as a struct. current_location 
-         * is a void pointer so we can use it to calculate addresses.
-         */
-        current_location_mcb = (mem_control_block *)current_location;
-        /* judge whether current block is avaiable */
-        if(current_location_mcb->is_available){
-            /* judge whether current block size exactly fit for the need */
-            if((current_location_mcb->current_blocksize == numbytes)){
-                /* It is no longer available */ 
-                current_location_mcb->is_available = 0;            
-                /* We own it */
-                memory_location = (void *)(current_location + sizeof(mem_control_block));
-                /* Leave the loop */
-                break;
-            /* judge whether current block size is enough for dividing a new block */
-            }else if(current_location_mcb->current_blocksize >= numbytes + sizeof(mem_control_block)){
-                /* It is no longer available */ 
-                current_location_mcb->is_available = 0;
-                /* because we will divide current blcok,before we changed current block size,we should
-                 * save the integral size.
-                 */
-                process_blocksize = current_location_mcb->current_blocksize;
-                /* Now blcok size could be changed */
-                current_location_mcb->current_blocksize = numbytes;
-                
-                /* find the memory_control_block's head of remaining block and set parameter,block of no
-                 * parameter can't be managed. 
-                 */
-                other_location_mcb = (mem_control_block *)(current_location + numbytes \
-                                                + sizeof(mem_control_block));
-                /* the remaining block is still avaiable */
-                other_location_mcb->is_available = 1;
-                /* of course,its prior block size is numbytes */
-                other_location_mcb->prior_blocksize = numbytes;
-                /* its size should get small */
-                other_location_mcb->current_blocksize = process_blocksize - numbytes \
-                                                - sizeof(mem_control_block);
-                
-                /* find the memory_control_block's head of block after current block and \
-                 * set parameter--prior_blocksize. 
-                 */
-                otherbck_location = current_location + process_blocksize \
-                                            + sizeof(mem_control_block);                
-                /* We need check wehter this block is on the edge of managed memeory! */
-                if(otherbck_location != managed_memory_end){
-                    other_location_mcb = (mem_control_block *)(otherbck_location);
-                    /*  its prior block size has changed! */
-                    other_location_mcb->prior_blocksize = process_blocksize\
-                        - numbytes - sizeof(mem_control_block);
-                }
-                /*We own the occupied block ,not remaining block */ 
-                memory_location = (void *)(current_location + sizeof(mem_control_block));
-                /* Leave the loop */
-                break;
-            } 
-        }
-        /* current block is unavaiable or block size is too small and move to next block*/
-        current_location += current_location_mcb->current_blocksize \
-                                    + sizeof(mem_control_block);
-    }
-    /* if we still don't have a valid location,we'll have to return NULL */
-    if(memory_location == NULL)    {
-        return NULL;
-    }
-    /* return the pointer */
-    return memory_location;    
-}
+			/**
+			 ,* @brief Dynamic distribute memory function
+			 ,* @param numbytes: what size you need   
+			 ,* @retval a void pointer to the distribute first address
+			 ,*/ 
+			void * malloc(unsigned int numbytes)
+			{
+				unsigned int current_location,otherbck_location;
+				/* This is the same as current_location, but cast to a memory_control_block */
+				mem_control_block * current_location_mcb = NULL,* other_location_mcb = NULL;
+				/* varialbe for saving return value and be set to 0 until we find something suitable */
+				void * memory_location = NULL;
+				/* current dividing block size */
+				unsigned int process_blocksize;
 
-/**
-  * @brief  free your unused block 
-  * @param  firstbyte: a pointer to first address of your unused block
-  * @retval None
-  */ 
-void free(void *firstbyte) 
-{
-    unsigned int current_location,otherbck_location;
-    mem_control_block * current_mcb = NULL,* next_mcb = NULL,* prior_mcb \
-                                = NULL,* other_mcb = NULL;
-    /* Backup from the given pointer to find the current block */
-    current_location = (unsigned int)firstbyte - sizeof(mem_control_block);
-    current_mcb = (mem_control_block *)current_location;
-    /* Mark the block as being avaiable */
-    current_mcb->is_available = 1;
-    
-    /* find next block location */
-    otherbck_location = current_location + sizeof(mem_control_block) \
-                                    + current_mcb->current_blocksize;
-    /* We need check wehter this block is on the edge of managed memeory! */
-    if(otherbck_location != managed_memory_end){
-        /* point to next block */
-        next_mcb = (mem_control_block *)otherbck_location;
-        /* We need check whether its next block is avaiable */ 
-        if(next_mcb->is_available){
-            /* Because its next block is also avaiable,we should merge blocks */
-            current_mcb->current_blocksize = current_mcb->current_blocksize \
-                + sizeof(mem_control_block) + next_mcb->current_blocksize;
-            
-            /* We have merge two blocks,so we need change prior_blocksize of
-             * block after the two blocks,just find next block location. 
-             */
-            otherbck_location = current_location + sizeof(mem_control_block) \
-                                    + current_mcb->current_blocksize;
-            /* We need check wehter this block is on the edge of managed memeory! */
-            if(otherbck_location != managed_memory_end){
-                other_mcb = (mem_control_block *)otherbck_location;
-                /*  its prior block size has changed! */
-                other_mcb->prior_blocksize = current_mcb->current_blocksize;
-            }
-        }
-    }
-    
-    /* We need check wehter this block is on the edge of managed memeory! */
-    if(current_location != managed_memory_start){
-        /* point to prior block */
-        prior_mcb = (mem_control_block *)(current_location - sizeof(mem_control_block)\
-                                            - current_mcb->prior_blocksize);
-        /* We need check whether its prior block is avaiable */ 
-        if(prior_mcb->is_available){
-            /* Because its prior block is also avaiable,we should merge blocks */
-            prior_mcb->current_blocksize = prior_mcb->current_blocksize \
-                + sizeof(mem_control_block) + current_mcb->current_blocksize;
-            
-            /* We have merge two blocks,so we need change prior_blocksize of
-             * block after the two blocks,just find next block location. 
-             */
-            otherbck_location = current_location + sizeof(mem_control_block) \
-                                    + current_mcb->current_blocksize;
-            /* We need check wehter this block is on the edge of managed memeory! */
-            if(otherbck_location != managed_memory_end){
-                other_mcb = (mem_control_block *)otherbck_location;
-                /*  its prior block size has changed! */
-                other_mcb->prior_blocksize = prior_mcb->current_blocksize;
-            }
-        }
-    }
-}
+				/* Initialize if we haven't already done so */
+				if(! has_initialized) {
+					malloc_init();
+				}
+
+				/* Begin searching at the start of managed memory */
+				current_location = managed_memory_start;
+				/* Keep going until we have searched all allocated space */
+				while(current_location != managed_memory_end){
+					/* current_location and current_location_mcb point to the same address.  However, 
+					 ,* current_location_mcb is of the correct type, so we can use it as a struct. current_location 
+					 ,* is a void pointer so we can use it to calculate addresses.
+					 ,*/
+					current_location_mcb = (mem_control_block *)current_location;
+					/* judge whether current block is avaiable */
+					if(current_location_mcb->is_available){
+						/* judge whether current block size exactly fit for the need */
+						if((current_location_mcb->current_blocksize == numbytes)){
+							/* It is no longer available */ 
+							current_location_mcb->is_available = 0;            
+							/* We own it */
+							memory_location = (void *)(current_location + sizeof(mem_control_block));
+							/* Leave the loop */
+							break;
+							/* judge whether current block size is enough for dividing a new block */
+						}else if(current_location_mcb->current_blocksize >= numbytes + sizeof(mem_control_block)){
+							/* It is no longer available */ 
+							current_location_mcb->is_available = 0;
+							/* because we will divide current blcok,before we changed current block size,we should
+							 ,* save the integral size.
+							 ,*/
+							process_blocksize = current_location_mcb->current_blocksize;
+							/* Now blcok size could be changed */
+							current_location_mcb->current_blocksize = numbytes;
+
+							/* find the memory_control_block's head of remaining block and set parameter,block of no
+							 ,* parameter can't be managed. 
+							 ,*/
+							other_location_mcb = (mem_control_block *)(current_location + numbytes \
+																												 + sizeof(mem_control_block));
+							/* the remaining block is still avaiable */
+							other_location_mcb->is_available = 1;
+							/* of course,its prior block size is numbytes */
+							other_location_mcb->prior_blocksize = numbytes;
+							/* its size should get small */
+							other_location_mcb->current_blocksize = process_blocksize - numbytes \
+								- sizeof(mem_control_block);
+
+							/* find the memory_control_block's head of block after current block and \
+							 ,* set parameter--prior_blocksize. 
+							 ,*/
+							otherbck_location = current_location + process_blocksize \
+								+ sizeof(mem_control_block);                
+							/* We need check wehter this block is on the edge of managed memeory! */
+							if(otherbck_location != managed_memory_end){
+								other_location_mcb = (mem_control_block *)(otherbck_location);
+								/*  its prior block size has changed! */
+								other_location_mcb->prior_blocksize = process_blocksize\
+									- numbytes - sizeof(mem_control_block);
+							}
+							/*We own the occupied block ,not remaining block */ 
+							memory_location = (void *)(current_location + sizeof(mem_control_block));
+							/* Leave the loop */
+							break;
+						} 
+					}
+					/* current block is unavaiable or block size is too small and move to next block*/
+					current_location += current_location_mcb->current_blocksize \
+						+ sizeof(mem_control_block);
+				}
+				/* if we still don't have a valid location,we'll have to return NULL */
+				if(memory_location == NULL)    {
+					return NULL;
+				}
+				/* return the pointer */
+				return memory_location;    
+			}
+
+			/**
+			 ,* @brief  free your unused block 
+			 ,* @param  firstbyte: a pointer to first address of your unused block
+			 ,* @retval None
+			 ,*/ 
+			void free(void *firstbyte) 
+			{
+				unsigned int current_location,otherbck_location;
+				mem_control_block * current_mcb = NULL,* next_mcb = NULL,* prior_mcb \
+					= NULL,* other_mcb = NULL;
+				/* Backup from the given pointer to find the current block */
+				current_location = (unsigned int)firstbyte - sizeof(mem_control_block);
+				current_mcb = (mem_control_block *)current_location;
+				/* Mark the block as being avaiable */
+				current_mcb->is_available = 1;
+
+				/* find next block location */
+				otherbck_location = current_location + sizeof(mem_control_block) \
+					+ current_mcb->current_blocksize;
+				/* We need check wehter this block is on the edge of managed memeory! */
+				if(otherbck_location != managed_memory_end){
+					/* point to next block */
+					next_mcb = (mem_control_block *)otherbck_location;
+					/* We need check whether its next block is avaiable */ 
+					if(next_mcb->is_available){
+						/* Because its next block is also avaiable,we should merge blocks */
+						current_mcb->current_blocksize = current_mcb->current_blocksize \
+							+ sizeof(mem_control_block) + next_mcb->current_blocksize;
+
+						/* We have merge two blocks,so we need change prior_blocksize of
+						 ,* block after the two blocks,just find next block location. 
+						 ,*/
+						otherbck_location = current_location + sizeof(mem_control_block) \
+							+ current_mcb->current_blocksize;
+						/* We need check wehter this block is on the edge of managed memeory! */
+						if(otherbck_location != managed_memory_end){
+							other_mcb = (mem_control_block *)otherbck_location;
+							/*  its prior block size has changed! */
+							other_mcb->prior_blocksize = current_mcb->current_blocksize;
+						}
+					}
+				}
+
+				/* We need check wehter this block is on the edge of managed memeory! */
+				if(current_location != managed_memory_start){
+					/* point to prior block */
+					prior_mcb = (mem_control_block *)(current_location - sizeof(mem_control_block)\
+																						- current_mcb->prior_blocksize);
+					/* We need check whether its prior block is avaiable */ 
+					if(prior_mcb->is_available){
+						/* Because its prior block is also avaiable,we should merge blocks */
+						prior_mcb->current_blocksize = prior_mcb->current_blocksize \
+							+ sizeof(mem_control_block) + current_mcb->current_blocksize;
+
+						/* We have merge two blocks,so we need change prior_blocksize of
+						 ,* block after the two blocks,just find next block location. 
+						 ,*/
+						otherbck_location = current_location + sizeof(mem_control_block) \
+							+ current_mcb->current_blocksize;
+						/* We need check wehter this block is on the edge of managed memeory! */
+						if(otherbck_location != managed_memory_end){
+							other_mcb = (mem_control_block *)otherbck_location;
+							/*  its prior block size has changed! */
+							other_mcb->prior_blocksize = prior_mcb->current_blocksize;
+						}
+					}
+				}
+			}
     #+end_src
 ** wait_queue
 *** schedule make process hang
@@ -668,157 +668,157 @@ void free(void *firstbyte)
 ***** switch_mm
 ***** switch_to
       #+begin_src c
- /*
-  * context_switch - switch to the new MM and the new thread's register state.
-  */
- static __always_inline struct rq *
- context_switch(struct rq *rq, struct task_struct *prev,
-		struct task_struct *next, struct rq_flags *rf)
- {
-	 prepare_task_switch(rq, prev, next);
+				/*
+				 ,* context_switch - switch to the new MM and the new thread's register state.
+				 ,*/
+				static __always_inline struct rq *
+				context_switch(struct rq *rq, struct task_struct *prev,
+											 struct task_struct *next, struct rq_flags *rf)
+				{
+					prepare_task_switch(rq, prev, next);
 
-	 /*
-	  * For paravirt, this is coupled with an exit in switch_to to
-	  * combine the page table reload and the switch backend into
-	  * one hypercall.
-	  */
-	 arch_start_context_switch(prev);
+					/*
+					 ,* For paravirt, this is coupled with an exit in switch_to to
+					 ,* combine the page table reload and the switch backend into
+					 ,* one hypercall.
+					 ,*/
+					arch_start_context_switch(prev);
 
-	 /*
-	  * kernel -> kernel   lazy + transfer active
-	  *   user -> kernel   lazy + mmgrab() active
-	  *
-	  * kernel ->   user   switch + mmdrop() active
-	  *   user ->   user   switch
-	  */
-	 if (!next->mm) {                                // to kernel
-		 enter_lazy_tlb(prev->active_mm, next);
+					/*
+					 ,* kernel -> kernel   lazy + transfer active
+					 ,*   user -> kernel   lazy + mmgrab() active
+					 ,*
+					 ,* kernel ->   user   switch + mmdrop() active
+					 ,*   user ->   user   switch
+					 ,*/
+					if (!next->mm) {                                // to kernel
+						enter_lazy_tlb(prev->active_mm, next);
 
-		 next->active_mm = prev->active_mm;
-		 if (prev->mm)                           // from user
-			 mmgrab(prev->active_mm);
-		 else
-			 prev->active_mm = NULL;
-	 } else {                                        // to user
-		 membarrier_switch_mm(rq, prev->active_mm, next->mm);
-		 /*
-		  * sys_membarrier() requires an smp_mb() between setting
-		  * rq->curr / membarrier_switch_mm() and returning to userspace.
-		  *
-		  * The below provides this either through switch_mm(), or in
-		  * case 'prev->active_mm == next->mm' through
-		  * finish_task_switch()'s mmdrop().
-		  */
-		 switch_mm_irqs_off(prev->active_mm, next->mm, next);
+						next->active_mm = prev->active_mm;
+						if (prev->mm)                           // from user
+							mmgrab(prev->active_mm);
+						else
+							prev->active_mm = NULL;
+					} else {                                        // to user
+						membarrier_switch_mm(rq, prev->active_mm, next->mm);
+						/*
+						 ,* sys_membarrier() requires an smp_mb() between setting
+						 ,* rq->curr / membarrier_switch_mm() and returning to userspace.
+						 ,*
+						 ,* The below provides this either through switch_mm(), or in
+						 ,* case 'prev->active_mm == next->mm' through
+						 ,* finish_task_switch()'s mmdrop().
+						 ,*/
+						switch_mm_irqs_off(prev->active_mm, next->mm, next);
 
-		 if (!prev->mm) {                        // from kernel
-			 /* will mmdrop() in finish_task_switch(). */
-			 rq->prev_mm = prev->active_mm;
-			 prev->active_mm = NULL;
-		 }
-	 }
+						if (!prev->mm) {                        // from kernel
+							/* will mmdrop() in finish_task_switch(). */
+							rq->prev_mm = prev->active_mm;
+							prev->active_mm = NULL;
+						}
+					}
 
-	 rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
+					rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
 
-	 prepare_lock_switch(rq, next, rf);
+					prepare_lock_switch(rq, next, rf);
 
-	 /* Here we just switch the register state and the stack. */
-	 switch_to(prev, next, prev);
-	 barrier();
+					/* Here we just switch the register state and the stack. */
+					switch_to(prev, next, prev);
+					barrier();
 
-	 return finish_task_switch(prev);
- }
+					return finish_task_switch(prev);
+				}
       #+end_src
 **** code
      #+begin_src c
-static void __sched notrace __schedule(bool preempt)
-{
-	struct task_struct *prev, *next;
-	unsigned long *switch_count;
-	struct rq_flags rf;
-	struct rq *rq;
-	int cpu;
+			 static void __sched notrace __schedule(bool preempt)
+			 {
+				 struct task_struct *prev, *next;
+				 unsigned long *switch_count;
+				 struct rq_flags rf;
+				 struct rq *rq;
+				 int cpu;
 
-	cpu = smp_processor_id();
-	rq = cpu_rq(cpu);
-	prev = rq->curr;
+				 cpu = smp_processor_id();
+				 rq = cpu_rq(cpu);
+				 prev = rq->curr;
 
-	schedule_debug(prev, preempt);
+				 schedule_debug(prev, preempt);
 
-	if (sched_feat(HRTICK))
-		hrtick_clear(rq);
+				 if (sched_feat(HRTICK))
+					 hrtick_clear(rq);
 
-	local_irq_disable();
-	rcu_note_context_switch(preempt);
+				 local_irq_disable();
+				 rcu_note_context_switch(preempt);
 
-	/*
-	 * Make sure that signal_pending_state()->signal_pending() below
-	 * can't be reordered with __set_current_state(TASK_INTERRUPTIBLE)
-	 * done by the caller to avoid the race with signal_wake_up().
-	 *
-	 * The membarrier system call requires a full memory barrier
-	 * after coming from user-space, before storing to rq->curr.
-	 */
-	rq_lock(rq, &rf);
-	smp_mb__after_spinlock();
+				 /*
+					,* Make sure that signal_pending_state()->signal_pending() below
+					,* can't be reordered with __set_current_state(TASK_INTERRUPTIBLE)
+					,* done by the caller to avoid the race with signal_wake_up().
+					,*
+					,* The membarrier system call requires a full memory barrier
+					,* after coming from user-space, before storing to rq->curr.
+					,*/
+				 rq_lock(rq, &rf);
+				 smp_mb__after_spinlock();
 
-	/* Promote REQ to ACT */
-	rq->clock_update_flags <<= 1;
-	update_rq_clock(rq);
+				 /* Promote REQ to ACT */
+				 rq->clock_update_flags <<= 1;
+				 update_rq_clock(rq);
 
-	switch_count = &prev->nivcsw;
-	if (!preempt && prev->state) {
-		if (signal_pending_state(prev->state, prev)) {
-			prev->state = TASK_RUNNING;
-		} else {
-			deactivate_task(rq, prev, DEQUEUE_SLEEP | DEQUEUE_NOCLOCK);
+				 switch_count = &prev->nivcsw;
+				 if (!preempt && prev->state) {
+					 if (signal_pending_state(prev->state, prev)) {
+						 prev->state = TASK_RUNNING;
+					 } else {
+						 deactivate_task(rq, prev, DEQUEUE_SLEEP | DEQUEUE_NOCLOCK);
 
-			if (prev->in_iowait) {
-				atomic_inc(&rq->nr_iowait);
-				delayacct_blkio_start();
-			}
-		}
-		switch_count = &prev->nvcsw;
-	}
+						 if (prev->in_iowait) {
+							 atomic_inc(&rq->nr_iowait);
+							 delayacct_blkio_start();
+						 }
+					 }
+					 switch_count = &prev->nvcsw;
+				 }
 
-	next = pick_next_task(rq, prev, &rf);
-	clear_tsk_need_resched(prev);
-	clear_preempt_need_resched();
+				 next = pick_next_task(rq, prev, &rf);
+				 clear_tsk_need_resched(prev);
+				 clear_preempt_need_resched();
 
-	if (likely(prev != next)) {
-		rq->nr_switches++;
-		/*
-		 * RCU users of rcu_dereference(rq->curr) may not see
-		 * changes to task_struct made by pick_next_task().
-		 */
-		RCU_INIT_POINTER(rq->curr, next);
-		/*
-		 * The membarrier system call requires each architecture
-		 * to have a full memory barrier after updating
-		 * rq->curr, before returning to user-space.
-		 *
-		 * Here are the schemes providing that barrier on the
-		 * various architectures:
-		 * - mm ? switch_mm() : mmdrop() for x86, s390, sparc, PowerPC.
-		 *   switch_mm() rely on membarrier_arch_switch_mm() on PowerPC.
-		 * - finish_lock_switch() for weakly-ordered
-		 *   architectures where spin_unlock is a full barrier,
-		 * - switch_to() for arm64 (weakly-ordered, spin_unlock
-		 *   is a RELEASE barrier),
-		 */
-		++*switch_count;
+				 if (likely(prev != next)) {
+					 rq->nr_switches++;
+					 /*
+						,* RCU users of rcu_dereference(rq->curr) may not see
+						,* changes to task_struct made by pick_next_task().
+						,*/
+					 RCU_INIT_POINTER(rq->curr, next);
+					 /*
+						,* The membarrier system call requires each architecture
+						,* to have a full memory barrier after updating
+						,* rq->curr, before returning to user-space.
+						,*
+						,* Here are the schemes providing that barrier on the
+						,* various architectures:
+						,* - mm ? switch_mm() : mmdrop() for x86, s390, sparc, PowerPC.
+						,*   switch_mm() rely on membarrier_arch_switch_mm() on PowerPC.
+						,* - finish_lock_switch() for weakly-ordered
+						,*   architectures where spin_unlock is a full barrier,
+						,* - switch_to() for arm64 (weakly-ordered, spin_unlock
+						,*   is a RELEASE barrier),
+						,*/
+					 ++*switch_count;
 
-		trace_sched_switch(preempt, prev, next);
+					 trace_sched_switch(preempt, prev, next);
 
-		/* Also unlocks the rq: */
-		rq = context_switch(rq, prev, next, &rf);
-	} else {
-		rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
-		rq_unlock_irq(rq, &rf);
-	}
+					 /* Also unlocks the rq: */
+					 rq = context_switch(rq, prev, next, &rf);
+				 } else {
+					 rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
+					 rq_unlock_irq(rq, &rf);
+				 }
 
-	balance_callback(rq);
-}
+				 balance_callback(rq);
+			 }
      #+end_src
 *** wake_up_process
 *** sleep_on interruptible_sleep_on
@@ -837,43 +837,43 @@ static void __sched notrace __schedule(bool preempt)
 ** fd -> file
 *** struct file
     #+begin_src c
-    // in struct task_struct
-    ..
-    /* Open file information: */
-    struct files_struct		*files;
+			// in struct task_struct
+			..
+			/* Open file information: */
+			struct files_struct		*files;
 
-    /*
-     * Open file table structure
-     */
-    struct files_struct {
-      /*
-       * read mostly part
-       */
-	    atomic_t count;
-	    bool resize_in_progress;
-	    wait_queue_head_t resize_wait;
+			/*
+			 ,* Open file table structure
+			 ,*/
+			struct files_struct {
+				/*
+				 ,* read mostly part
+				 ,*/
+				atomic_t count;
+				bool resize_in_progress;
+				wait_queue_head_t resize_wait;
 
-	    struct fdtable __rcu *fdt;
-	    struct fdtable fdtab;
-      /*
-       * written part on a separate cache line in SMP
-       */
-	    spinlock_t file_lock ____cacheline_aligned_in_smp;
-	    unsigned int next_fd;
-	    unsigned long close_on_exec_init[1];
-	    unsigned long open_fds_init[1];
-	    unsigned long full_fds_bits_init[1];
-	    struct file __rcu * fd_array[NR_OPEN_DEFAULT];
-    };
+				struct fdtable __rcu *fdt;
+				struct fdtable fdtab;
+				/*
+				 ,* written part on a separate cache line in SMP
+				 ,*/
+				spinlock_t file_lock ____cacheline_aligned_in_smp;
+				unsigned int next_fd;
+				unsigned long close_on_exec_init[1];
+				unsigned long open_fds_init[1];
+				unsigned long full_fds_bits_init[1];
+				struct file __rcu * fd_array[NR_OPEN_DEFAULT];
+			};
 
-    struct fdtable {
-	unsigned int max_fds;
-	struct file __rcu **fd;      /* current fd array */ // fd is index in the fd array
-	unsigned long *close_on_exec;
-	unsigned long *open_fds;
-	unsigned long *full_fds_bits;
-	struct rcu_head rcu;
-    };
+			struct fdtable {
+				unsigned int max_fds;
+				struct file __rcu **fd;      /* current fd array */ // fd is index in the fd array
+				unsigned long *close_on_exec;
+				unsigned long *open_fds;
+				unsigned long *full_fds_bits;
+				struct rcu_head rcu;
+			};
     #+end_src
 
 ** fork
@@ -894,8 +894,8 @@ static void __sched notrace __schedule(bool preempt)
 *** INLINE_SYSCALL
 *** code
     #+begin_src c
-    #define __nargs(a,b,c,d,e,f,g,h,n) n
-    #define nargs(...) __nargs(VARGS, 7, 6, 5, 4, 3, 2, 1)
+			#define __nargs(a,b,c,d,e,f,g,h,n) n
+			#define nargs(...) __nargs(VARGS, 7, 6, 5, 4, 3, 2, 1)
     #+end_src
 ** template meta programming
 *** synopsis
@@ -938,91 +938,91 @@ static void __sched notrace __schedule(bool preempt)
 **** idt_setup_traps
 ***** register IDT(interrupt description table)
       #+begin_src c
-      static const __initconst struct idt_data def_idts[] = {
-	INTG(X86_TRAP_DE,		divide_error),
-	INTG(X86_TRAP_NMI,		nmi),
-	INTG(X86_TRAP_BR,		bounds),
-	INTG(X86_TRAP_UD,		invalid_op),
-	INTG(X86_TRAP_NM,		device_not_available),
-	INTG(X86_TRAP_OLD_MF,		coprocessor_segment_overrun),
-	INTG(X86_TRAP_TS,		invalid_TSS),
-	INTG(X86_TRAP_NP,		segment_not_present),
-	INTG(X86_TRAP_SS,		stack_segment),
-	INTG(X86_TRAP_GP,		general_protection),
-	INTG(X86_TRAP_SPURIOUS,		spurious_interrupt_bug),
-	INTG(X86_TRAP_MF,		coprocessor_error),
-	INTG(X86_TRAP_AC,		alignment_check),
-	INTG(X86_TRAP_XF,		simd_coprocessor_error),
+				static const __initconst struct idt_data def_idts[] = {
+					INTG(X86_TRAP_DE,		divide_error),
+					INTG(X86_TRAP_NMI,		nmi),
+					INTG(X86_TRAP_BR,		bounds),
+					INTG(X86_TRAP_UD,		invalid_op),
+					INTG(X86_TRAP_NM,		device_not_available),
+					INTG(X86_TRAP_OLD_MF,		coprocessor_segment_overrun),
+					INTG(X86_TRAP_TS,		invalid_TSS),
+					INTG(X86_TRAP_NP,		segment_not_present),
+					INTG(X86_TRAP_SS,		stack_segment),
+					INTG(X86_TRAP_GP,		general_protection),
+					INTG(X86_TRAP_SPURIOUS,		spurious_interrupt_bug),
+					INTG(X86_TRAP_MF,		coprocessor_error),
+					INTG(X86_TRAP_AC,		alignment_check),
+					INTG(X86_TRAP_XF,		simd_coprocessor_error),
 
-#ifdef CONFIG_X86_32
-	TSKG(X86_TRAP_DF,		GDT_ENTRY_DOUBLEFAULT_TSS),
-#else
-	INTG(X86_TRAP_DF,		double_fault),
-#endif
-	INTG(X86_TRAP_DB,		debug),
+				#ifdef CONFIG_X86_32
+					TSKG(X86_TRAP_DF,		GDT_ENTRY_DOUBLEFAULT_TSS),
+				#else
+					INTG(X86_TRAP_DF,		double_fault),
+				#endif
+					INTG(X86_TRAP_DB,		debug),
 
-#ifdef CONFIG_X86_MCE
-	INTG(X86_TRAP_MC,		&machine_check),
-#endif
+				#ifdef CONFIG_X86_MCE
+					INTG(X86_TRAP_MC,		&machine_check),
+				#endif
 
-	SYSG(X86_TRAP_OF,		overflow),
-#if defined(CONFIG_IA32_EMULATION)
-	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_compat),
-#elif defined(CONFIG_X86_32)
-	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),
-#endif
-};
+					SYSG(X86_TRAP_OF,		overflow),
+				#if defined(CONFIG_IA32_EMULATION)
+					SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_compat),
+				#elif defined(CONFIG_X86_32)
+					SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),
+				#endif
+				};
       #+end_src
 ***** interrupt handler of syscall: entry_INT80_32
 ****** save context registers to pt_regs struct
 ****** code
        #+begin_src c
-       #ifdef __i386__
-       struct pt_regs {
-	 unsigned long bx;
-	 unsigned long cx;
-	 unsigned long dx;
-	 unsigned long si;
-	 unsigned long di;
-	 unsigned long bp;
-	 unsigned long ax;
-	 unsigned long ds;
-	 unsigned long es;
-	 unsigned long fs;
-	 unsigned long gs;
-	 unsigned long orig_ax;
-	 unsigned long ip;
-	 unsigned long cs;
-	 unsigned long flags;
-	 unsigned long sp;
-	 unsigned long ss;
-       };
-       #else 
-       struct pt_regs {
-	 unsigned long r15;
-	 unsigned long r14;
-	 unsigned long r13;
-	 unsigned long r12;
-	 unsigned long bp;
-	 unsigned long bx;
-	 unsigned long r11;
-	 unsigned long r10;
-	 unsigned long r9;
-	 unsigned long r8;
-	 unsigned long ax;
-	 unsigned long cx;
-	 unsigned long dx;
-	 unsigned long si;
-	 unsigned long di;
-	 unsigned long orig_ax;
-	 unsigned long ip;
-	 unsigned long cs;
-	 unsigned long flags;
-	 unsigned long sp;
-	 unsigned long ss;
-       /* top of stack page */
-       };
-       #endif
+				 #ifdef __i386__
+				 struct pt_regs {
+					 unsigned long bx;
+					 unsigned long cx;
+					 unsigned long dx;
+					 unsigned long si;
+					 unsigned long di;
+					 unsigned long bp;
+					 unsigned long ax;
+					 unsigned long ds;
+					 unsigned long es;
+					 unsigned long fs;
+					 unsigned long gs;
+					 unsigned long orig_ax;
+					 unsigned long ip;
+					 unsigned long cs;
+					 unsigned long flags;
+					 unsigned long sp;
+					 unsigned long ss;
+				 };
+				 #else 
+				 struct pt_regs {
+					 unsigned long r15;
+					 unsigned long r14;
+					 unsigned long r13;
+					 unsigned long r12;
+					 unsigned long bp;
+					 unsigned long bx;
+					 unsigned long r11;
+					 unsigned long r10;
+					 unsigned long r9;
+					 unsigned long r8;
+					 unsigned long ax;
+					 unsigned long cx;
+					 unsigned long dx;
+					 unsigned long si;
+					 unsigned long di;
+					 unsigned long orig_ax;
+					 unsigned long ip;
+					 unsigned long cs;
+					 unsigned long flags;
+					 unsigned long sp;
+					 unsigned long ss;
+					 /* top of stack page */
+				 };
+				 #endif
        #+end_src
 
 ** syscall
@@ -1044,218 +1044,218 @@ static void __sched notrace __schedule(bool preempt)
 *** categories
 **** id
      #+begin_src c
-     pid_t pid;
-     pid_t tgid; // pid of thread group leader
-     struct task_struct *group_leader;
+			 pid_t pid;
+			 pid_t tgid; // pid of thread group leader
+			 struct task_struct *group_leader;
      #+end_src
 **** status
      #+begin_src c
-     volatile long state; // TASK_RUNNING, TASK_INTERRUPTIBLE, TASK_UNINTERUPTIBLE
-     int exit_state;
-     unsigned int flags;
+			 volatile long state; // TASK_RUNNING, TASK_INTERRUPTIBLE, TASK_UNINTERUPTIBLE
+			 int exit_state;
+			 unsigned int flags;
 
-     /* Used in tsk->state: */
-     #define TASK_RUNNING			0x0000
-     #define TASK_INTERRUPTIBLE		        0x0001
-     #define TASK_UNINTERRUPTIBLE		0x0002
-     #define __TASK_STOPPED			0x0004
-     #define __TASK_TRACED			0x0008
-     /* Used in tsk->exit_state: */
-     #define EXIT_DEAD			        0x0010
-     #define EXIT_ZOMBIE			0x0020
-     #define EXIT_TRACE			(EXIT_ZOMBIE | EXIT_DEAD)
-     /* Used in tsk->state again: */
-     #define TASK_PARKED			0x0040
-     #define TASK_DEAD			        0x0080
-     #define TASK_WAKEKILL			0x0100
-     #define TASK_WAKING			0x0200
-     #define TASK_NOLOAD			0x0400
-     #define TASK_NEW			        0x0800
-     #define TASK_STATE_MAX			0x1000
+			 /* Used in tsk->state: */
+			 #define TASK_RUNNING			0x0000
+			 #define TASK_INTERRUPTIBLE		        0x0001
+			 #define TASK_UNINTERRUPTIBLE		0x0002
+			 #define __TASK_STOPPED			0x0004
+			 #define __TASK_TRACED			0x0008
+			 /* Used in tsk->exit_state: */
+			 #define EXIT_DEAD			        0x0010
+			 #define EXIT_ZOMBIE			0x0020
+			 #define EXIT_TRACE			(EXIT_ZOMBIE | EXIT_DEAD)
+			 /* Used in tsk->state again: */
+			 #define TASK_PARKED			0x0040
+			 #define TASK_DEAD			        0x0080
+			 #define TASK_WAKEKILL			0x0100
+			 #define TASK_WAKING			0x0200
+			 #define TASK_NOLOAD			0x0400
+			 #define TASK_NEW			        0x0800
+			 #define TASK_STATE_MAX			0x1000
 
-     /* Convenience macros for the sake of set_current_state: */
-     #define TASK_KILLABLE			(TASK_WAKEKILL | TASK_UNINTERRUPTIBLE)
-     #define TASK_STOPPED			(TASK_WAKEKILL | __TASK_STOPPED)
-     #define TASK_TRACED			(TASK_WAKEKILL | __TASK_TRACED)
+			 /* Convenience macros for the sake of set_current_state: */
+			 #define TASK_KILLABLE			(TASK_WAKEKILL | TASK_UNINTERRUPTIBLE)
+			 #define TASK_STOPPED			(TASK_WAKEKILL | __TASK_STOPPED)
+			 #define TASK_TRACED			(TASK_WAKEKILL | __TASK_TRACED)
 
-     #define TASK_IDLE			        (TASK_UNINTERRUPTIBLE | TASK_NOLOAD)
+			 #define TASK_IDLE			        (TASK_UNINTERRUPTIBLE | TASK_NOLOAD)
 
-     /* Convenience macros for the sake of wake_up(): */
-     #define TASK_NORMAL			(TASK_INTERRUPTIBLE | TASK_UNINTERRUPTIBLE)
+			 /* Convenience macros for the sake of wake_up(): */
+			 #define TASK_NORMAL			(TASK_INTERRUPTIBLE | TASK_UNINTERRUPTIBLE)
 
-     /* get_task_state(): */
-     #define TASK_REPORT			(TASK_RUNNING | TASK_INTERRUPTIBLE | \
-					      TASK_UNINTERRUPTIBLE | __TASK_STOPPED | \
-					      __TASK_TRACED | EXIT_DEAD | EXIT_ZOMBIE | \
-					      TASK_PARKED)
+			 /* get_task_state(): */
+			 #define TASK_REPORT			(TASK_RUNNING | TASK_INTERRUPTIBLE |				\
+																TASK_UNINTERRUPTIBLE | __TASK_STOPPED |		\
+																__TASK_TRACED | EXIT_DEAD | EXIT_ZOMBIE |	\
+																TASK_PARKED)
      #+end_src
 **** schedule
      #+begin_src c
-     //是否在运行队列上
-     int on_rq;
-     //优先级
-     int prio;
-     int static_prio;
-     int normal_prio;
-     unsigned int rt_priority;
-     //调度器类
-     const struct sched_class *sched_class;
-     //调度实体
-     struct sched_entity se;
-     struct sched_rt_entity rt;
-     struct sched_dl_entity dl;
-     //调度策略
-     unsigned int policy;
-     //可以使用哪些CPU
-     int nr_cpus_allowed;
-     cpumask_t cpus_allowed;
-     
-     struct sched_info sched_info;
-     
+			 //是否在运行队列上
+			 int on_rq;
+			 //优先级
+			 int prio;
+			 int static_prio;
+			 int normal_prio;
+			 unsigned int rt_priority;
+			 //调度器类
+			 const struct sched_class *sched_class;
+			 //调度实体
+			 struct sched_entity se;
+			 struct sched_rt_entity rt;
+			 struct sched_dl_entity dl;
+			 //调度策略
+			 unsigned int policy;
+			 //可以使用哪些CPU
+			 int nr_cpus_allowed;
+			 cpumask_t cpus_allowed;
+
+			 struct sched_info sched_info;
+
      #+end_src
 **** signal
      #+begin_src c
-     /* Signal handlers: */
-     struct signal_struct *signal; // signal->shared_pending is process signal set
-     struct sighand_struct *sighand;
-     sigset_t blocked;
-     sigset_t real_blocked;
-     sigset_t saved_sigmask;
-     struct sigpending pending; // signal set of current thread
-     unsigned long sas_ss_sp;
-     size_t sas_ss_size;
-     unsigned int sas_ss_flags;    
+			 /* Signal handlers: */
+			 struct signal_struct *signal; // signal->shared_pending is process signal set
+			 struct sighand_struct *sighand;
+			 sigset_t blocked;
+			 sigset_t real_blocked;
+			 sigset_t saved_sigmask;
+			 struct sigpending pending; // signal set of current thread
+			 unsigned long sas_ss_sp;
+			 size_t sas_ss_size;
+			 unsigned int sas_ss_flags;    
      #+end_src
 
 **** running statistics
      #+begin_src c
-     u64        utime;//用户态消耗的CPU时间
-     u64        stime;//内核态消耗的CPU时间
-     unsigned long      nvcsw;//自愿(voluntary)上下文切换计数
-     unsigned long      nivcsw;//非自愿(involuntary)上下文切换计数
-     u64        start_time;//进程启动时间，不包含睡眠时间
-     u64        real_start_time;//进程启动时间，包含睡眠时间
+			 u64        utime;//用户态消耗的CPU时间
+			 u64        stime;//内核态消耗的CPU时间
+			 unsigned long      nvcsw;//自愿(voluntary)上下文切换计数
+			 unsigned long      nivcsw;//非自愿(involuntary)上下文切换计数
+			 u64        start_time;//进程启动时间，不包含睡眠时间
+			 u64        real_start_time;//进程启动时间，包含睡眠时间
      #+end_src
 **** process affinity
      #+begin_src c     
-     struct task_struct __rcu *real_parent; /* real parent process */
-     struct task_struct __rcu *parent; /* recipient of SIGCHLD, wait4() reports */
-     struct list_head children;      /* list of my children */
-     struct list_head sibling;       /* linkage in my parent's children list */
+			 struct task_struct __rcu *real_parent; /* real parent process */
+			 struct task_struct __rcu *parent; /* recipient of SIGCHLD, wait4() reports */
+			 struct list_head children;      /* list of my children */
+			 struct list_head sibling;       /* linkage in my parent's children list */
      #+end_src
 **** credential
      #+begin_src c
-     /* Objective and real subjective task credentials (COW): */
-     const struct cred __rcu         *real_cred;
-     /* Effective (overridable) subjective task credentials (COW): */
-     const struct cred __rcu         *cred;
-     
-     struct cred {
-	atomic_t	usage;
-#ifdef CONFIG_DEBUG_CREDENTIALS
-	atomic_t	subscribers;	/* number of processes subscribed */
-	void		*put_addr;
-	unsigned	magic;
-#define CRED_MAGIC	0x43736564
-#define CRED_MAGIC_DEAD	0x44656144
-#endif
-	kuid_t		uid;		/* real UID of the task */
-	kgid_t		gid;		/* real GID of the task */
-	kuid_t		suid;		/* saved UID of the task */
-	kgid_t		sgid;		/* saved GID of the task */
-	kuid_t		euid;		/* effective UID of the task */
-	kgid_t		egid;		/* effective GID of the task */
-	kuid_t		fsuid;		/* UID for VFS ops */
-	kgid_t		fsgid;		/* GID for VFS ops */
-	unsigned	securebits;	/* SUID-less security management */
-	kernel_cap_t	cap_inheritable; /* caps our children can inherit */
-	kernel_cap_t	cap_permitted;	/* caps we're permitted */
-	kernel_cap_t	cap_effective;	/* caps we can actually use */
-	kernel_cap_t	cap_bset;	/* capability bounding set */
-	kernel_cap_t	cap_ambient;	/* Ambient capability set */
-#ifdef CONFIG_KEYS
-	unsigned char	jit_keyring;	/* default keyring to attach requested
-					 * keys to */
-	struct key	*session_keyring; /* keyring inherited over fork */
-	struct key	*process_keyring; /* keyring private to this process */
-	struct key	*thread_keyring; /* keyring private to this thread */
-	struct key	*request_key_auth; /* assumed request_key authority */
-#endif
-#ifdef CONFIG_SECURITY
-	void		*security;	/* subjective LSM security */
-#endif
-	struct user_struct *user;	/* real user ID subscription */
-	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
-	struct group_info *group_info;	/* supplementary groups for euid/fsgid */
-	/* RCU deletion */
-	union {
-		int non_rcu;			/* Can we skip RCU deletion? */
-		struct rcu_head	rcu;		/* RCU deletion hook */
-	};
-} __randomize_layout;
+			 /* Objective and real subjective task credentials (COW): */
+			 const struct cred __rcu         *real_cred;
+			 /* Effective (overridable) subjective task credentials (COW): */
+			 const struct cred __rcu         *cred;
+
+			 struct cred {
+				 atomic_t	usage;
+			 #ifdef CONFIG_DEBUG_CREDENTIALS
+				 atomic_t	subscribers;	/* number of processes subscribed */
+				 void		*put_addr;
+				 unsigned	magic;
+			 #define CRED_MAGIC	0x43736564
+			 #define CRED_MAGIC_DEAD	0x44656144
+			 #endif
+				 kuid_t		uid;		/* real UID of the task */
+				 kgid_t		gid;		/* real GID of the task */
+				 kuid_t		suid;		/* saved UID of the task */
+				 kgid_t		sgid;		/* saved GID of the task */
+				 kuid_t		euid;		/* effective UID of the task */
+				 kgid_t		egid;		/* effective GID of the task */
+				 kuid_t		fsuid;		/* UID for VFS ops */
+				 kgid_t		fsgid;		/* GID for VFS ops */
+				 unsigned	securebits;	/* SUID-less security management */
+				 kernel_cap_t	cap_inheritable; /* caps our children can inherit */
+				 kernel_cap_t	cap_permitted;	/* caps we're permitted */
+				 kernel_cap_t	cap_effective;	/* caps we can actually use */
+				 kernel_cap_t	cap_bset;	/* capability bounding set */
+				 kernel_cap_t	cap_ambient;	/* Ambient capability set */
+			 #ifdef CONFIG_KEYS
+				 unsigned char	jit_keyring;	/* default keyring to attach requested
+																			,* keys to */
+				 struct key	*session_keyring; /* keyring inherited over fork */
+				 struct key	*process_keyring; /* keyring private to this process */
+				 struct key	*thread_keyring; /* keyring private to this thread */
+				 struct key	*request_key_auth; /* assumed request_key authority */
+			 #endif
+			 #ifdef CONFIG_SECURITY
+				 void		*security;	/* subjective LSM security */
+			 #endif
+				 struct user_struct *user;	/* real user ID subscription */
+				 struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
+				 struct group_info *group_info;	/* supplementary groups for euid/fsgid */
+				 /* RCU deletion */
+				 union {
+					 int non_rcu;			/* Can we skip RCU deletion? */
+					 struct rcu_head	rcu;		/* RCU deletion hook */
+				 };
+			 } __randomize_layout;
      #+end_src
 **** memory management
      #+begin_src c
-     struct mm_struct                *mm;
-     struct mm_struct                *active_mm;
+			 struct mm_struct                *mm;
+			 struct mm_struct                *active_mm;
      #+end_src
 **** file system and opened files
      #+begin_src c
-     /* Filesystem information: */
-     struct fs_struct                *fs;
-     /* Open file information: */
-     struct files_struct             *files;
+			 /* Filesystem information: */
+			 struct fs_struct                *fs;
+			 /* Open file information: */
+			 struct files_struct             *files;
      #+end_src
 *** current pointer in kernel code
 **** points to the current task which invokes the system call
 **** /home/jocoo/d/linux-5.4/include/asm-generic/current.h
      #+begin_src c
-     #define get_current() (current_thread_info()->task)
-     #define current get_current()
+			 #define get_current() (current_thread_info()->task)
+			 #define current get_current()
      #+end_src
 **** /home/jocoo/d/linux-5.4/arch/arm/include/asm/thread_info.h
      #+begin_src c
-     static inline struct thread_info *current_thread_info(void) __attribute_const__;
+			 static inline struct thread_info *current_thread_info(void) __attribute_const__;
 
-     static inline struct thread_info *current_thread_info(void)
-     {
-        return (struct thread_info *)
-           (current_stack_pointer & ~(THREAD_SIZE - 1));
-     }
+			 static inline struct thread_info *current_thread_info(void)
+			 {
+				 return (struct thread_info *)
+					 (current_stack_pointer & ~(THREAD_SIZE - 1));
+			 }
      #+end_src
 *** task switch
 **** schedule()
 **** __switch_to(struct task_srtuct *prev_p, struct task_struct *next_p)
 ***** read current task pointer from PerCPU variable 
       #+begin_src c
-      __visible __notrace_funcgraph struct task_struct *
-      __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
-      {
-      //......
-      this_cpu_write(current_task, next_p);
-      //......
-      return prev_p;
-      }
+				__visible __notrace_funcgraph struct task_struct *
+				__switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+				{
+				//......
+					this_cpu_write(current_task, next_p);
+				//......
+					return prev_p;
+				}
 
-      DECLARE_PER_CPU(struct task_struct *, current_task);
-      #define this_cpu_read_stable(var)       percpu_stable_op("mov", var)
-      
-      static __always_inline struct task_struct *get_current(void){ 
-        return this_cpu_read_stable(current_task);
-      }
+				DECLARE_PER_CPU(struct task_struct *, current_task);
+				#define this_cpu_read_stable(var)       percpu_stable_op("mov", var)
+
+				static __always_inline struct task_struct *get_current(void){ 
+					return this_cpu_read_stable(current_task);
+				}
       #+end_src
 *** task kernel stack
     #+begin_src c
-    // include/linux/sched.h
-    union thread_union {
-#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK
-	struct task_struct task;
-#endif
-#ifndef CONFIG_THREAD_INFO_IN_TASK
-	struct thread_info thread_info;
-#endif
-	unsigned long stack[THREAD_SIZE/sizeof(long)];
-};
+			// include/linux/sched.h
+			union thread_union {
+			#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK
+				struct task_struct task;
+			#endif
+			#ifndef CONFIG_THREAD_INFO_IN_TASK
+				struct thread_info thread_info;
+			#endif
+				unsigned long stack[THREAD_SIZE/sizeof(long)];
+			};
     #+end_src
 *** mm_struct
 **** vm_area_struct
@@ -1315,50 +1315,50 @@ static void __sched notrace __schedule(bool preempt)
 ***** kernel space enable preempt; preempt_enable() -> schedule()
 **** code
      #+begin_src c
-     static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
-     {
-	     /*
-	      * In order to return to user mode, we need to have IRQs off with
-	      * none of EXIT_TO_USERMODE_LOOP_FLAGS set.  Several of these flags
-	      * can be set at any time on preemptible kernels if we have IRQs on,
-	      * so we need to loop.  Disabling preemption wouldn't help: doing the
-	      * work to clear some of the flags can sleep.
-	      */
-	     while (true) {
-		     /* We have work to do. */
-		     local_irq_enable();
+			 static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+			 {
+				 /*
+					,* In order to return to user mode, we need to have IRQs off with
+					,* none of EXIT_TO_USERMODE_LOOP_FLAGS set.  Several of these flags
+					,* can be set at any time on preemptible kernels if we have IRQs on,
+					,* so we need to loop.  Disabling preemption wouldn't help: doing the
+					,* work to clear some of the flags can sleep.
+					,*/
+				 while (true) {
+					 /* We have work to do. */
+					 local_irq_enable();
 
-		     if (cached_flags & _TIF_NEED_RESCHED)
-			     schedule();
+					 if (cached_flags & _TIF_NEED_RESCHED)
+						 schedule();
 
-		     if (cached_flags & _TIF_UPROBE)
-			     uprobe_notify_resume(regs);
+					 if (cached_flags & _TIF_UPROBE)
+						 uprobe_notify_resume(regs);
 
-		     if (cached_flags & _TIF_PATCH_PENDING)
-			     klp_update_patch_state(current);
+					 if (cached_flags & _TIF_PATCH_PENDING)
+						 klp_update_patch_state(current);
 
-		     /* deal with pending signal delivery */
-		     if (cached_flags & _TIF_SIGPENDING)
-			     do_signal(regs);
+					 /* deal with pending signal delivery */
+					 if (cached_flags & _TIF_SIGPENDING)
+						 do_signal(regs);
 
-		     if (cached_flags & _TIF_NOTIFY_RESUME) {
-			     clear_thread_flag(TIF_NOTIFY_RESUME);
-			     tracehook_notify_resume(regs);
-			     rseq_handle_notify_resume(NULL, regs);
-		     }
+					 if (cached_flags & _TIF_NOTIFY_RESUME) {
+						 clear_thread_flag(TIF_NOTIFY_RESUME);
+						 tracehook_notify_resume(regs);
+						 rseq_handle_notify_resume(NULL, regs);
+					 }
 
-		     if (cached_flags & _TIF_USER_RETURN_NOTIFY)
-			     fire_user_return_notifiers();
+					 if (cached_flags & _TIF_USER_RETURN_NOTIFY)
+						 fire_user_return_notifiers();
 
-		     /* Disable IRQs and retry */
-		     local_irq_disable();
+					 /* Disable IRQs and retry */
+					 local_irq_disable();
 
-		     cached_flags = READ_ONCE(current_thread_info()->flags);
+					 cached_flags = READ_ONCE(current_thread_info()->flags);
 
-		     if (!(cached_flags & EXIT_TO_USERMODE_LOOP_FLAGS))
-			     break;
-	     }
-     }
+					 if (!(cached_flags & EXIT_TO_USERMODE_LOOP_FLAGS))
+						 break;
+				 }
+			 }
      #+end_src
 *** update_curr
 **** update current task vruntime
@@ -1410,10 +1410,10 @@ static void __sched notrace __schedule(bool preempt)
 *** struct path - mount info and dentry
 **** code
      #+begin_src c
-     struct path {
-       struct vfsmount *mnt;
-       struct dentry *dentry;
-     } __randomize_layout;
+			 struct path {
+				 struct vfsmount *mnt;
+				 struct dentry *dentry;
+			 } __randomize_layout;
      #+end_src
 
 *** struct dentry - dir name, file name, associated inode
@@ -1477,280 +1477,280 @@ static void __sched notrace __schedule(bool preempt)
 ***** from freelist of NUMA zone
 ***** code
       #+begin_src c
-/*
- * This is the 'heart' of the zoned buddy allocator.
- */
-struct page *
-__alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
-							nodemask_t *nodemask)
-{
-	struct page *page;
-	unsigned int alloc_flags = ALLOC_WMARK_LOW;
-	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
-	struct alloc_context ac = { };
+				/*
+				 ,* This is the 'heart' of the zoned buddy allocator.
+				 ,*/
+				struct page *
+				__alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
+															 nodemask_t *nodemask)
+				{
+					struct page *page;
+					unsigned int alloc_flags = ALLOC_WMARK_LOW;
+					gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
+					struct alloc_context ac = { };
 
-	/*
-	 * There are several places where we assume that the order value is sane
-	 * so bail out early if the request is out of bound.
-	 */
-	if (unlikely(order >= MAX_ORDER)) {
-		WARN_ON_ONCE(!(gfp_mask & __GFP_NOWARN));
-		return NULL;
-	}
+					/*
+					 ,* There are several places where we assume that the order value is sane
+					 ,* so bail out early if the request is out of bound.
+					 ,*/
+					if (unlikely(order >= MAX_ORDER)) {
+						WARN_ON_ONCE(!(gfp_mask & __GFP_NOWARN));
+						return NULL;
+					}
 
-	gfp_mask &= gfp_allowed_mask;
-	alloc_mask = gfp_mask;
-	if (!prepare_alloc_pages(gfp_mask, order, preferred_nid, nodemask, &ac, &alloc_mask, &alloc_flags))
-		return NULL;
+					gfp_mask &= gfp_allowed_mask;
+					alloc_mask = gfp_mask;
+					if (!prepare_alloc_pages(gfp_mask, order, preferred_nid, nodemask, &ac, &alloc_mask, &alloc_flags))
+						return NULL;
 
-	finalise_ac(gfp_mask, &ac);
+					finalise_ac(gfp_mask, &ac);
 
-	/*
-	 * Forbid the first pass from falling back to types that fragment
-	 * memory until all local zones are considered.
-	 */
-	alloc_flags |= alloc_flags_nofragment(ac.preferred_zoneref->zone, gfp_mask);
+					/*
+					 ,* Forbid the first pass from falling back to types that fragment
+					 ,* memory until all local zones are considered.
+					 ,*/
+					alloc_flags |= alloc_flags_nofragment(ac.preferred_zoneref->zone, gfp_mask);
 
-	/* First allocation attempt */
-	page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
-	if (likely(page))
-		goto out;
+					/* First allocation attempt */
+					page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
+					if (likely(page))
+						goto out;
 
-	/*
-	 * Apply scoped allocation constraints. This is mainly about GFP_NOFS
-	 * resp. GFP_NOIO which has to be inherited for all allocation requests
-	 * from a particular context which has been marked by
-	 * memalloc_no{fs,io}_{save,restore}.
-	 */
-	alloc_mask = current_gfp_context(gfp_mask);
-	ac.spread_dirty_pages = false;
+					/*
+					 ,* Apply scoped allocation constraints. This is mainly about GFP_NOFS
+					 ,* resp. GFP_NOIO which has to be inherited for all allocation requests
+					 ,* from a particular context which has been marked by
+					 ,* memalloc_no{fs,io}_{save,restore}.
+					 ,*/
+					alloc_mask = current_gfp_context(gfp_mask);
+					ac.spread_dirty_pages = false;
 
-	/*
-	 * Restore the original nodemask if it was potentially replaced with
-	 * &cpuset_current_mems_allowed to optimize the fast-path attempt.
-	 */
-	if (unlikely(ac.nodemask != nodemask))
-		ac.nodemask = nodemask;
+					/*
+					 ,* Restore the original nodemask if it was potentially replaced with
+					 ,* &cpuset_current_mems_allowed to optimize the fast-path attempt.
+					 ,*/
+					if (unlikely(ac.nodemask != nodemask))
+						ac.nodemask = nodemask;
 
-	page = __alloc_pages_slowpath(alloc_mask, order, &ac);
+					page = __alloc_pages_slowpath(alloc_mask, order, &ac);
 
-out:
-	if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&
-	    unlikely(__memcg_kmem_charge(page, gfp_mask, order) != 0)) {
-		__free_pages(page, order);
-		page = NULL;
-	}
+				out:
+					if (memcg_kmem_enabled() && (gfp_mask & __GFP_ACCOUNT) && page &&
+							unlikely(__memcg_kmem_charge(page, gfp_mask, order) != 0)) {
+						__free_pages(page, order);
+						page = NULL;
+					}
 
-	trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
+					trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
 
-	return page;
-}
+					return page;
+				}
 
-/*
- * get_page_from_freelist goes through the zonelist trying to allocate
- * a page.
- */
-static struct page *
-get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
-						const struct alloc_context *ac)
-{
-	struct zoneref *z;
-	struct zone *zone;
-	struct pglist_data *last_pgdat_dirty_limit = NULL;
-	bool no_fallback;
+				/*
+				 ,* get_page_from_freelist goes through the zonelist trying to allocate
+				 ,* a page.
+				 ,*/
+				static struct page *
+				get_page_from_freelist(gfp_t gfp_mask, unsigned int order, int alloc_flags,
+															 const struct alloc_context *ac)
+				{
+					struct zoneref *z;
+					struct zone *zone;
+					struct pglist_data *last_pgdat_dirty_limit = NULL;
+					bool no_fallback;
 
-retry:
-	/*
-	 * Scan zonelist, looking for a zone with enough free.
-	 * See also __cpuset_node_allowed() comment in kernel/cpuset.c.
-	 */
-	no_fallback = alloc_flags & ALLOC_NOFRAGMENT;
-	z = ac->preferred_zoneref;
-	for_next_zone_zonelist_nodemask(zone, z, ac->zonelist, ac->high_zoneidx,
-								ac->nodemask) {
-		struct page *page;
-		unsigned long mark;
+				retry:
+					/*
+					 ,* Scan zonelist, looking for a zone with enough free.
+					 ,* See also __cpuset_node_allowed() comment in kernel/cpuset.c.
+					 ,*/
+					no_fallback = alloc_flags & ALLOC_NOFRAGMENT;
+					z = ac->preferred_zoneref;
+					for_next_zone_zonelist_nodemask(zone, z, ac->zonelist, ac->high_zoneidx,
+																					ac->nodemask) {
+						struct page *page;
+						unsigned long mark;
 
-		if (cpusets_enabled() &&
-			(alloc_flags & ALLOC_CPUSET) &&
-			!__cpuset_zone_allowed(zone, gfp_mask))
-				continue;
-		/*
-		 * When allocating a page cache page for writing, we
-		 * want to get it from a node that is within its dirty
-		 * limit, such that no single node holds more than its
-		 * proportional share of globally allowed dirty pages.
-		 * The dirty limits take into account the node's
-		 * lowmem reserves and high watermark so that kswapd
-		 * should be able to balance it without having to
-		 * write pages from its LRU list.
-		 *
-		 * XXX: For now, allow allocations to potentially
-		 * exceed the per-node dirty limit in the slowpath
-		 * (spread_dirty_pages unset) before going into reclaim,
-		 * which is important when on a NUMA setup the allowed
-		 * nodes are together not big enough to reach the
-		 * global limit.  The proper fix for these situations
-		 * will require awareness of nodes in the
-		 * dirty-throttling and the flusher threads.
-		 */
-		if (ac->spread_dirty_pages) {
-			if (last_pgdat_dirty_limit == zone->zone_pgdat)
-				continue;
+						if (cpusets_enabled() &&
+								(alloc_flags & ALLOC_CPUSET) &&
+								!__cpuset_zone_allowed(zone, gfp_mask))
+							continue;
+						/*
+						 ,* When allocating a page cache page for writing, we
+						 ,* want to get it from a node that is within its dirty
+						 ,* limit, such that no single node holds more than its
+						 ,* proportional share of globally allowed dirty pages.
+						 ,* The dirty limits take into account the node's
+						 ,* lowmem reserves and high watermark so that kswapd
+						 ,* should be able to balance it without having to
+						 ,* write pages from its LRU list.
+						 ,*
+						 ,* XXX: For now, allow allocations to potentially
+						 ,* exceed the per-node dirty limit in the slowpath
+						 ,* (spread_dirty_pages unset) before going into reclaim,
+						 ,* which is important when on a NUMA setup the allowed
+						 ,* nodes are together not big enough to reach the
+						 ,* global limit.  The proper fix for these situations
+						 ,* will require awareness of nodes in the
+						 ,* dirty-throttling and the flusher threads.
+						 ,*/
+						if (ac->spread_dirty_pages) {
+							if (last_pgdat_dirty_limit == zone->zone_pgdat)
+								continue;
 
-			if (!node_dirty_ok(zone->zone_pgdat)) {
-				last_pgdat_dirty_limit = zone->zone_pgdat;
-				continue;
-			}
-		}
+							if (!node_dirty_ok(zone->zone_pgdat)) {
+								last_pgdat_dirty_limit = zone->zone_pgdat;
+								continue;
+							}
+						}
 
-		if (no_fallback && nr_online_nodes > 1 &&
-		    zone != ac->preferred_zoneref->zone) {
-			int local_nid;
+						if (no_fallback && nr_online_nodes > 1 &&
+								zone != ac->preferred_zoneref->zone) {
+							int local_nid;
 
-			/*
-			 * If moving to a remote node, retry but allow
-			 * fragmenting fallbacks. Locality is more important
-			 * than fragmentation avoidance.
-			 */
-			local_nid = zone_to_nid(ac->preferred_zoneref->zone);
-			if (zone_to_nid(zone) != local_nid) {
-				alloc_flags &= ~ALLOC_NOFRAGMENT;
-				goto retry;
-			}
-		}
+							/*
+							 ,* If moving to a remote node, retry but allow
+							 ,* fragmenting fallbacks. Locality is more important
+							 ,* than fragmentation avoidance.
+							 ,*/
+							local_nid = zone_to_nid(ac->preferred_zoneref->zone);
+							if (zone_to_nid(zone) != local_nid) {
+								alloc_flags &= ~ALLOC_NOFRAGMENT;
+								goto retry;
+							}
+						}
 
-		mark = wmark_pages(zone, alloc_flags & ALLOC_WMARK_MASK);
-		if (!zone_watermark_fast(zone, order, mark,
-				       ac_classzone_idx(ac), alloc_flags)) {
-			int ret;
+						mark = wmark_pages(zone, alloc_flags & ALLOC_WMARK_MASK);
+						if (!zone_watermark_fast(zone, order, mark,
+																		 ac_classzone_idx(ac), alloc_flags)) {
+							int ret;
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-			/*
-			 * Watermark failed for this zone, but see if we can
-			 * grow this zone if it contains deferred pages.
-			 */
-			if (static_branch_unlikely(&deferred_pages)) {
-				if (_deferred_grow_zone(zone, order))
-					goto try_this_zone;
-			}
-#endif
-			/* Checked here to keep the fast path fast */
-			BUILD_BUG_ON(ALLOC_NO_WATERMARKS < NR_WMARK);
-			if (alloc_flags & ALLOC_NO_WATERMARKS)
-				goto try_this_zone;
+				#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
+							/*
+							 ,* Watermark failed for this zone, but see if we can
+							 ,* grow this zone if it contains deferred pages.
+							 ,*/
+							if (static_branch_unlikely(&deferred_pages)) {
+								if (_deferred_grow_zone(zone, order))
+									goto try_this_zone;
+							}
+				#endif
+							/* Checked here to keep the fast path fast */
+							BUILD_BUG_ON(ALLOC_NO_WATERMARKS < NR_WMARK);
+							if (alloc_flags & ALLOC_NO_WATERMARKS)
+								goto try_this_zone;
 
-			if (node_reclaim_mode == 0 ||
-			    !zone_allows_reclaim(ac->preferred_zoneref->zone, zone))
-				continue;
+							if (node_reclaim_mode == 0 ||
+									!zone_allows_reclaim(ac->preferred_zoneref->zone, zone))
+								continue;
 
-			ret = node_reclaim(zone->zone_pgdat, gfp_mask, order);
-			switch (ret) {
-			case NODE_RECLAIM_NOSCAN:
-				/* did not scan */
-				continue;
-			case NODE_RECLAIM_FULL:
-				/* scanned but unreclaimable */
-				continue;
-			default:
-				/* did we reclaim enough */
-				if (zone_watermark_ok(zone, order, mark,
-						ac_classzone_idx(ac), alloc_flags))
-					goto try_this_zone;
+							ret = node_reclaim(zone->zone_pgdat, gfp_mask, order);
+							switch (ret) {
+							case NODE_RECLAIM_NOSCAN:
+								/* did not scan */
+								continue;
+							case NODE_RECLAIM_FULL:
+								/* scanned but unreclaimable */
+								continue;
+							default:
+								/* did we reclaim enough */
+								if (zone_watermark_ok(zone, order, mark,
+																			ac_classzone_idx(ac), alloc_flags))
+									goto try_this_zone;
 
-				continue;
-			}
-		}
+								continue;
+							}
+						}
 
-try_this_zone:
-		page = rmqueue(ac->preferred_zoneref->zone, zone, order,
-				gfp_mask, alloc_flags, ac->migratetype);
-		if (page) {
-			prep_new_page(page, order, gfp_mask, alloc_flags);
+					try_this_zone:
+						page = rmqueue(ac->preferred_zoneref->zone, zone, order,
+													 gfp_mask, alloc_flags, ac->migratetype);
+						if (page) {
+							prep_new_page(page, order, gfp_mask, alloc_flags);
 
-			/*
-			 * If this is a high-order atomic allocation then check
-			 * if the pageblock should be reserved for the future
-			 */
-			if (unlikely(order && (alloc_flags & ALLOC_HARDER)))
-				reserve_highatomic_pageblock(page, zone, order);
+							/*
+							 ,* If this is a high-order atomic allocation then check
+							 ,* if the pageblock should be reserved for the future
+							 ,*/
+							if (unlikely(order && (alloc_flags & ALLOC_HARDER)))
+								reserve_highatomic_pageblock(page, zone, order);
 
-			return page;
-		} else {
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-			/* Try again if zone has deferred pages */
-			if (static_branch_unlikely(&deferred_pages)) {
-				if (_deferred_grow_zone(zone, order))
-					goto try_this_zone;
-			}
-#endif
-		}
-	}
+							return page;
+						} else {
+				#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
+							/* Try again if zone has deferred pages */
+							if (static_branch_unlikely(&deferred_pages)) {
+								if (_deferred_grow_zone(zone, order))
+									goto try_this_zone;
+							}
+				#endif
+						}
+					}
 
-	/*
-	 * It's possible on a UMA machine to get through all zones that are
-	 * fragmented. If avoiding fragmentation, reset and try again.
-	 */
-	if (no_fallback) {
-		alloc_flags &= ~ALLOC_NOFRAGMENT;
-		goto retry;
-	}
+					/*
+					 ,* It's possible on a UMA machine to get through all zones that are
+					 ,* fragmented. If avoiding fragmentation, reset and try again.
+					 ,*/
+					if (no_fallback) {
+						alloc_flags &= ~ALLOC_NOFRAGMENT;
+						goto retry;
+					}
 
-	return NULL;
-}
+					return NULL;
+				}
 
-/*
- * Go through the free lists for the given migratetype and remove
- * the smallest available page from the freelists
- */
-static __always_inline
-struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
-						int migratetype)
-{
-	unsigned int current_order;
-	struct free_area *area;
-	struct page *page;
+				/*
+				 ,* Go through the free lists for the given migratetype and remove
+				 ,* the smallest available page from the freelists
+				 ,*/
+				static __always_inline
+				struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
+																				int migratetype)
+				{
+					unsigned int current_order;
+					struct free_area *area;
+					struct page *page;
 
-	/* Find a page of the appropriate size in the preferred list */
-	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
-		area = &(zone->free_area[current_order]);
-		page = get_page_from_free_area(area, migratetype);
-		if (!page)
-			continue;
-		del_page_from_free_area(page, area);
-		expand(zone, page, order, current_order, area, migratetype);
-		set_pcppage_migratetype(page, migratetype);
-		return page;
-	}
+					/* Find a page of the appropriate size in the preferred list */
+					for (current_order = order; current_order < MAX_ORDER; ++current_order) {
+						area = &(zone->free_area[current_order]);
+						page = get_page_from_free_area(area, migratetype);
+						if (!page)
+							continue;
+						del_page_from_free_area(page, area);
+						expand(zone, page, order, current_order, area, migratetype);
+						set_pcppage_migratetype(page, migratetype);
+						return page;
+					}
 
-	return NULL;
-}
+					return NULL;
+				}
 
-static inline void expand(struct zone *zone, struct page *page,
-	int low, int high, struct free_area *area,
-	int migratetype)
-{
-	unsigned long size = 1 << high;
+				static inline void expand(struct zone *zone, struct page *page,
+																	int low, int high, struct free_area *area,
+																	int migratetype)
+				{
+					unsigned long size = 1 << high;
 
-	while (high > low) {
-		area--;
-		high--;
-		size >>= 1;
-		VM_BUG_ON_PAGE(bad_range(zone, &page[size]), &page[size]);
+					while (high > low) {
+						area--;
+						high--;
+						size >>= 1;
+						VM_BUG_ON_PAGE(bad_range(zone, &page[size]), &page[size]);
 
-		/*
-		 * Mark as guard pages (or page), that will allow to
-		 * merge back to allocator when buddy will be freed.
-		 * Corresponding page table entries will not be touched,
-		 * pages will stay not present in virtual address space
-		 */
-		if (set_page_guard(zone, &page[size], high, migratetype))
-			continue;
+						/*
+						 ,* Mark as guard pages (or page), that will allow to
+						 ,* merge back to allocator when buddy will be freed.
+						 ,* Corresponding page table entries will not be touched,
+						 ,* pages will stay not present in virtual address space
+						 ,*/
+						if (set_page_guard(zone, &page[size], high, migratetype))
+							continue;
 
-		add_to_free_area(&page[size], area, migratetype);
-		set_page_order(&page[size], high);
-	}
-}
+						add_to_free_area(&page[size], area, migratetype);
+						set_page_order(&page[size], high);
+					}
+				}
       #+end_src
 **** kmap
 ***** map single page
@@ -1760,30 +1760,30 @@ static inline void expand(struct zone *zone, struct page *page,
 ****** hash table
 ****** code
        #+begin_src c
-#define LAST_PKMAP 1024
-/*
- * Describes one page->virtual association
- */
-struct page_address_map {
-	struct page *page;
-	void *virtual;
-	struct list_head list;
-};
+				 #define LAST_PKMAP 1024
+				 /*
+					,* Describes one page->virtual association
+					,*/
+				 struct page_address_map {
+					 struct page *page;
+					 void *virtual;
+					 struct list_head list;
+				 };
 
-static struct page_address_map page_address_maps[LAST_PKMAP];
+				 static struct page_address_map page_address_maps[LAST_PKMAP];
 
-/*
- * Hash table bucket
- */
-static struct page_address_slot {
-	struct list_head lh;			/* List of page_address_maps */
-	spinlock_t lock;			/* Protect this bucket's list */
-} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
+				 /*
+					,* Hash table bucket
+					,*/
+				 static struct page_address_slot {
+					 struct list_head lh;			/* List of page_address_maps */
+					 spinlock_t lock;			/* Protect this bucket's list */
+				 } ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
 
-static struct page_address_slot *page_slot(const struct page *page)
-{
-	return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
-}
+				 static struct page_address_slot *page_slot(const struct page *page)
+				 {
+					 return &page_address_htable[hash_ptr(page, PA_HASH_ORDER)];
+				 }
        #+end_src
 **** kmap_atomic
 ***** not sleep
@@ -2079,48 +2079,66 @@ static struct page_address_slot *page_slot(const struct page *page)
 *** ETag and if-none-match
 * data structure
 ** HashMap
+*** 判断找到key的条件是:
+**** hash相等
+**** key == e.key || (e.key != null && key.equals(e.key))
 *** key is nullable
 *** hash()
     #+begin_src java
-    static final int hash(Object key) {
-      int h;
-      return (key == null) ? 0 : (h = key.hashCode()) ^ (h >> 16);
-    }
+			static final int hash(Object key) {
+				int h;
+				return (key == null) ? 0 : (h = key.hashCode()) ^ (h >> 16);
+			}
     #+end_src
 *** index of key
     #+begin_src java
-    int i = (table.lenght - 1) & hash(key);
+			int i = (table.lenght - 1) & hash(key);
     #+end_src
+** ConcurrentHashMap
+*** 核心方法transfer()
+**** 支持并发式扩容
+**** 以stride步长分段处理
+**** 参与扩容的线程通过CAS更新transferIndex, 分配负责的范围
+**** 正在被处理的table[i]被标记为ForwardingNode
+**** 每个节点在新数组上的索引只可能是i或i+n
+**** sizeCtl
+***** >0 下次扩容大小
+***** -1 初始化
+***** resizeStamp << 16 | (1 + numResizerThread)
+**** sc >>> RESIZE_STAMP_SHIFT != rs 表示扩容标记发生变化
+**** sc == rs + 1 表示扩容结束
+**** sc == rs + MAX_RESIZERS 表示扩容达到上限
+**** transferIndex <= 0 表示原数组已经分配完毕,不需新的线程帮助扩容了
 * get generic type in java at runtime
 ** anonymous inner class
 *** code
     #+begin_src kotlin
-      open class GenericsToken<T> {
-	  var type: Type = Any::class.java
+			open class GenericsToken<T> {
+					var type: Type = Any::class.java
 
-	  init {
-	      val superClass = this.javaClass.genericSuperclass
-	      type = (superClass as ParameterizedType).actualTypeArguments[0]
-	  }
-      }
-      val gt = object : GenericsToken<List<String>>(){}
-      println(gt.type)
+					init {
+							val superClass = this.javaClass.genericSuperclass
+							type = (superClass as ParameterizedType).actualTypeArguments[0]
+					}
+			}
+			val gt = object : GenericsToken<List<String>>(){}
+			println(gt.type)
     #+end_src
 ** kotlin reified inline function
 *** code
     #+begin_src kotlin
-       inline fun <reified T: Any> Gson.fromJson(json: String) : T {
-	   return Gson().fromJson<T>(json, T::class.java)
-       }
+			inline fun <reified T: Any> Gson.fromJson(json: String) : T {
+					return Gson().fromJson<T>(json, T::class.java)
+			}
     #+end_src
 * java generics
 ** generic types in Java are invariant
    #+begin_src java
-   // Java
-   List<String> strs = new ArrayList<String>();
-   List<Object> objs = strs; // !!! The cause of the upcoming problem sits here. Java prohibits this!
-   objs.add(1); // Here we put an Integer into a list of Strings
-   String s = strs.get(0); // !!! ClassCastException: Cannot cast Integer to String
+		 // Java
+		 List<String> strs = new ArrayList<String>();
+		 List<Object> objs = strs; // !!! The cause of the upcoming problem sits here. Java prohibits this!
+		 objs.add(1); // Here we put an Integer into a list of Strings
+		 String s = strs.get(0); // !!! ClassCastException: Cannot cast Integer to String
    #+end_src
 ** covariant
 *** Collection<String> is a subtype of Collection<? extends Object>.
@@ -2132,26 +2150,26 @@ static struct page_address_slot *page_slot(const struct page *page)
 ** kotlin Declaration-site variance
 *** in
     #+begin_src kotlin
-    interface Source<out T> {
-      fun nextT(): T
-    }
+			interface Source<out T> {
+					fun nextT(): T
+			}
 
-    fun demo(strs: Source<String>) {
-      val objects: Source<Any> = strs // This is OK, since T is an out-parameter
-      // ...
-    }
+			fun demo(strs: Source<String>) {
+					val objects: Source<Any> = strs // This is OK, since T is an out-parameter
+					// ...
+			}
     #+end_src
 *** out
     #+begin_src kotlin
-    interface Comparable<in T> {
-      operator fun compareTo(other: T): Int
-    }
+			interface Comparable<in T> {
+					operator fun compareTo(other: T): Int
+			}
 
-    fun demo(x: Comparable<Number>) {
-      x.compareTo(1.0) // 1.0 has type Double, which is a subtype of Number
-      // Thus, we can assign x to a variable of type Comparable<Double>
-      val y: Comparable<Double> = x // OK!
-    }
+			fun demo(x: Comparable<Number>) {
+					x.compareTo(1.0) // 1.0 has type Double, which is a subtype of Number
+					// Thus, we can assign x to a variable of type Comparable<Double>
+					val y: Comparable<Double> = x // OK!
+			}
     #+end_src
 ** notes
 *** if you use a producer-object, say, List<? extends Foo>, you are not allowed to call add() or set() on this object, but this does not mean that this object is immutable: for example, nothing prevents you from calling clear() to remove all items from the list, since clear() does not take any parameters at all. The only thing guaranteed by wildcards (or other types of variance) is type safety. Immutability is a completely different story.
@@ -2159,263 +2177,263 @@ static struct page_address_slot *page_slot(const struct page *page)
 * PriorityQueue
 ** offer
    #+begin_src java
-    public boolean offer(E e) {
-        if (e == null)
-            throw new NullPointerException();
-        modCount++;
-        int i = size;
-        if (i >= queue.length)
-            grow(i + 1);
-        size = i + 1;
-        if (i == 0)
-            queue[0] = e;
-        else
-            siftUp(i, e);
-        return true;
-    }
+		 public boolean offer(E e) {
+			 if (e == null)
+				 throw new NullPointerException();
+			 modCount++;
+			 int i = size;
+			 if (i >= queue.length)
+				 grow(i + 1);
+			 size = i + 1;
+			 if (i == 0)
+				 queue[0] = e;
+			 else
+				 siftUp(i, e);
+			 return true;
+		 }
 
-    private void siftUp(int k, E x) {
-        if (comparator != null)
-            siftUpUsingComparator(k, x);
-        else
-            siftUpComparable(k, x);
-    }
+		 private void siftUp(int k, E x) {
+			 if (comparator != null)
+				 siftUpUsingComparator(k, x);
+			 else
+				 siftUpComparable(k, x);
+		 }
 
-    @SuppressWarnings("unchecked")
-    private void siftUpComparable(int k, E x) {
-        Comparable<? super E> key = (Comparable<? super E>) x;
-        while (k > 0) {
-            int parent = (k - 1) >>> 1;
-            Object e = queue[parent];
-            if (key.compareTo((E) e) >= 0)
-                break;
-            queue[k] = e;
-            k = parent;
-        }
-        queue[k] = key;
-    }
+		 @SuppressWarnings("unchecked")
+		 private void siftUpComparable(int k, E x) {
+			 Comparable<? super E> key = (Comparable<? super E>) x;
+			 while (k > 0) {
+				 int parent = (k - 1) >>> 1;
+				 Object e = queue[parent];
+				 if (key.compareTo((E) e) >= 0)
+					 break;
+				 queue[k] = e;
+				 k = parent;
+			 }
+			 queue[k] = key;
+		 }
    #+end_src
 ** poll
    #+begin_src java
-    public E poll() {
-        if (size == 0)
-            return null;
-        int s = --size;
-        modCount++;
-        E result = (E) queue[0];
-        E x = (E) queue[s];
-        queue[s] = null;
-        if (s != 0)
-            siftDown(0, x);
-        return result;
-    }
+		 public E poll() {
+			 if (size == 0)
+				 return null;
+			 int s = --size;
+			 modCount++;
+			 E result = (E) queue[0];
+			 E x = (E) queue[s];
+			 queue[s] = null;
+			 if (s != 0)
+				 siftDown(0, x);
+			 return result;
+		 }
 
-    private void siftDown(int k, E x) {
-        if (comparator != null)
-            siftDownUsingComparator(k, x);
-        else
-            siftDownComparable(k, x);
-    }
+		 private void siftDown(int k, E x) {
+			 if (comparator != null)
+				 siftDownUsingComparator(k, x);
+			 else
+				 siftDownComparable(k, x);
+		 }
 
-    @SuppressWarnings("unchecked")
-    private void siftDownComparable(int k, E x) {
-        Comparable<? super E> key = (Comparable<? super E>)x;
-        int half = size >>> 1;        // loop while a non-leaf
-        while (k < half) {
-            int child = (k << 1) + 1; // assume left child is least
-            Object c = queue[child];
-            int right = child + 1;
-            if (right < size &&
-                ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0)
-                c = queue[child = right];
-            if (key.compareTo((E) c) <= 0)
-                break;
-            queue[k] = c;
-            k = child;
-        }
-        queue[k] = key;
-    }
+		 @SuppressWarnings("unchecked")
+		 private void siftDownComparable(int k, E x) {
+			 Comparable<? super E> key = (Comparable<? super E>)x;
+			 int half = size >>> 1;        // loop while a non-leaf
+			 while (k < half) {
+				 int child = (k << 1) + 1; // assume left child is least
+				 Object c = queue[child];
+				 int right = child + 1;
+				 if (right < size &&
+						 ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0)
+					 c = queue[child = right];
+				 if (key.compareTo((E) c) <= 0)
+					 break;
+				 queue[k] = c;
+				 k = child;
+			 }
+			 queue[k] = key;
+		 }
    #+end_src
 * epoll
 ** epoll_create
 *** create `struct eventpoll` ep
     #+begin_src c
-error = ep_alloc(&ep);
+			error = ep_alloc(&ep);
     #+end_src
 *** alloc a pseudo file, and attach ep to file->private_data
     #+begin_src c
-fd = get_unused_fd_flags(O_RDWR | (flags & O_CLOEXEC));
-if (fd < 0) {
-	error = fd;
-	goto out_free_ep;
-}
-file = anon_inode_getfile("[eventpoll]", &eventpoll_fops, ep,
-			 O_RDWR | (flags & O_CLOEXEC));
-ep->file = file;
-fd_install(fd, file);
+			fd = get_unused_fd_flags(O_RDWR | (flags & O_CLOEXEC));
+			if (fd < 0) {
+				error = fd;
+				goto out_free_ep;
+			}
+			file = anon_inode_getfile("[eventpoll]", &eventpoll_fops, ep,
+																O_RDWR | (flags & O_CLOEXEC));
+			ep->file = file;
+			fd_install(fd, file);
     #+end_src
 ** epoll_ctl
 *** create a `struct epitem`
 *** add a `struct eppoll_entry` to socket wait_queue and register a `ep_poll_callback` which is triggered when file receive events(POLLIN, POLLOUT)
 *** link `struct epitem` to rbtree ep->rbr
     #+begin_src c
-epi = ep_find(ep, tf.file, fd);
+			epi = ep_find(ep, tf.file, fd);
 
-error = -EINVAL;
-switch (op) {
-case EPOLL_CTL_ADD:
-	if (!epi) {
-		epds.events |= EPOLLERR | EPOLLHUP;
-		error = ep_insert(ep, &epds, tf.file, fd, full_check);
-	} else
-		error = -EEXIST;
-	if (full_check)
-		clear_tfile_check_list();
-	break;
-case EPOLL_CTL_DEL:
-	if (epi)
-		error = ep_remove(ep, epi);
-	else
-		error = -ENOENT;
-	break;
-case EPOLL_CTL_MOD:
-	if (epi) {
-		if (!(epi->event.events & EPOLLEXCLUSIVE)) {
-			epds.events |= EPOLLERR | EPOLLHUP;
-			error = ep_modify(ep, epi, &epds);
-		}
-	} else
-		error = -ENOENT;
-	break;
-}
-static int ep_insert(struct eventpoll *ep, const struct epoll_event *event,
-		     struct file *tfile, int fd, int full_check)
-{
-	int error, pwake = 0;
-	__poll_t revents;
-	long user_watches;
-	struct epitem *epi;
-	struct ep_pqueue epq;
+			error = -EINVAL;
+			switch (op) {
+			case EPOLL_CTL_ADD:
+				if (!epi) {
+					epds.events |= EPOLLERR | EPOLLHUP;
+					error = ep_insert(ep, &epds, tf.file, fd, full_check);
+				} else
+					error = -EEXIST;
+				if (full_check)
+					clear_tfile_check_list();
+				break;
+			case EPOLL_CTL_DEL:
+				if (epi)
+					error = ep_remove(ep, epi);
+				else
+					error = -ENOENT;
+				break;
+			case EPOLL_CTL_MOD:
+				if (epi) {
+					if (!(epi->event.events & EPOLLEXCLUSIVE)) {
+						epds.events |= EPOLLERR | EPOLLHUP;
+						error = ep_modify(ep, epi, &epds);
+					}
+				} else
+					error = -ENOENT;
+				break;
+			}
+			static int ep_insert(struct eventpoll *ep, const struct epoll_event *event,
+													 struct file *tfile, int fd, int full_check)
+			{
+				int error, pwake = 0;
+				__poll_t revents;
+				long user_watches;
+				struct epitem *epi;
+				struct ep_pqueue epq;
 
-	lockdep_assert_irqs_enabled();
+				lockdep_assert_irqs_enabled();
 
-	user_watches = atomic_long_read(&ep->user->epoll_watches);
-	if (unlikely(user_watches >= max_user_watches))
-		return -ENOSPC;
-	if (!(epi = kmem_cache_alloc(epi_cache, GFP_KERNEL)))
-		return -ENOMEM;
+				user_watches = atomic_long_read(&ep->user->epoll_watches);
+				if (unlikely(user_watches >= max_user_watches))
+					return -ENOSPC;
+				if (!(epi = kmem_cache_alloc(epi_cache, GFP_KERNEL)))
+					return -ENOMEM;
 
-	/* Item initialization follow here ... */
-	INIT_LIST_HEAD(&epi->rdllink);
-	INIT_LIST_HEAD(&epi->fllink);
-	INIT_LIST_HEAD(&epi->pwqlist);
-	epi->ep = ep;
-	ep_set_ffd(&epi->ffd, tfile, fd);
-	epi->event = *event;
-	epi->nwait = 0;
-	epi->next = EP_UNACTIVE_PTR;
-	if (epi->event.events & EPOLLWAKEUP) {
-		error = ep_create_wakeup_source(epi);
-		if (error)
-			goto error_create_wakeup_source;
-	} else {
-		RCU_INIT_POINTER(epi->ws, NULL);
-	}
+				/* Item initialization follow here ... */
+				INIT_LIST_HEAD(&epi->rdllink);
+				INIT_LIST_HEAD(&epi->fllink);
+				INIT_LIST_HEAD(&epi->pwqlist);
+				epi->ep = ep;
+				ep_set_ffd(&epi->ffd, tfile, fd);
+				epi->event = *event;
+				epi->nwait = 0;
+				epi->next = EP_UNACTIVE_PTR;
+				if (epi->event.events & EPOLLWAKEUP) {
+					error = ep_create_wakeup_source(epi);
+					if (error)
+						goto error_create_wakeup_source;
+				} else {
+					RCU_INIT_POINTER(epi->ws, NULL);
+				}
 
-	/* Initialize the poll table using the queue callback */
-	epq.epi = epi;
-	init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
+				/* Initialize the poll table using the queue callback */
+				epq.epi = epi;
+				init_poll_funcptr(&epq.pt, ep_ptable_queue_proc);
 
-	/*
-	 * Attach the item to the poll hooks and get current event bits.
-	 * We can safely use the file* here because its usage count has
-	 * been increased by the caller of this function. Note that after
-	 * this operation completes, the poll callback can start hitting
-	 * the new item.
-	 */
-	revents = ep_item_poll(epi, &epq.pt, 1);
+				/*
+				 ,* Attach the item to the poll hooks and get current event bits.
+				 ,* We can safely use the file* here because its usage count has
+				 ,* been increased by the caller of this function. Note that after
+				 ,* this operation completes, the poll callback can start hitting
+				 ,* the new item.
+				 ,*/
+				revents = ep_item_poll(epi, &epq.pt, 1);
 
-	/*
-	 * We have to check if something went wrong during the poll wait queue
-	 * install process. Namely an allocation for a wait queue failed due
-	 * high memory pressure.
-	 */
-	error = -ENOMEM;
-	if (epi->nwait < 0)
-		goto error_unregister;
+				/*
+				 ,* We have to check if something went wrong during the poll wait queue
+				 ,* install process. Namely an allocation for a wait queue failed due
+				 ,* high memory pressure.
+				 ,*/
+				error = -ENOMEM;
+				if (epi->nwait < 0)
+					goto error_unregister;
 
-	/* Add the current item to the list of active epoll hook for this file */
-	spin_lock(&tfile->f_lock);
-	list_add_tail_rcu(&epi->fllink, &tfile->f_ep_links);
-	spin_unlock(&tfile->f_lock);
+				/* Add the current item to the list of active epoll hook for this file */
+				spin_lock(&tfile->f_lock);
+				list_add_tail_rcu(&epi->fllink, &tfile->f_ep_links);
+				spin_unlock(&tfile->f_lock);
 
-	/*
-	 * Add the current item to the RB tree. All RB tree operations are
-	 * protected by "mtx", and ep_insert() is called with "mtx" held.
-	 */
-	ep_rbtree_insert(ep, epi);
+				/*
+				 ,* Add the current item to the RB tree. All RB tree operations are
+				 ,* protected by "mtx", and ep_insert() is called with "mtx" held.
+				 ,*/
+				ep_rbtree_insert(ep, epi);
 
-	/* now check if we've created too many backpaths */
-	error = -EINVAL;
-	if (full_check && reverse_path_check())
-		goto error_remove_epi;
+				/* now check if we've created too many backpaths */
+				error = -EINVAL;
+				if (full_check && reverse_path_check())
+					goto error_remove_epi;
 
-	/* We have to drop the new item inside our item list to keep track of it */
-	write_lock_irq(&ep->lock);
+				/* We have to drop the new item inside our item list to keep track of it */
+				write_lock_irq(&ep->lock);
 
-	/* record NAPI ID of new item if present */
-	ep_set_busy_poll_napi_id(epi);
+				/* record NAPI ID of new item if present */
+				ep_set_busy_poll_napi_id(epi);
 
-	/* If the file is already "ready" we drop it inside the ready list */
-	if (revents && !ep_is_linked(epi)) {
-		list_add_tail(&epi->rdllink, &ep->rdllist);
-		ep_pm_stay_awake(epi);
+				/* If the file is already "ready" we drop it inside the ready list */
+				if (revents && !ep_is_linked(epi)) {
+					list_add_tail(&epi->rdllink, &ep->rdllist);
+					ep_pm_stay_awake(epi);
 
-		/* Notify waiting tasks that events are available */
-		if (waitqueue_active(&ep->wq))
-			wake_up(&ep->wq);
-		if (waitqueue_active(&ep->poll_wait))
-			pwake++;
-	}
+					/* Notify waiting tasks that events are available */
+					if (waitqueue_active(&ep->wq))
+						wake_up(&ep->wq);
+					if (waitqueue_active(&ep->poll_wait))
+						pwake++;
+				}
 
-	write_unlock_irq(&ep->lock);
+				write_unlock_irq(&ep->lock);
 
-	atomic_long_inc(&ep->user->epoll_watches);
+				atomic_long_inc(&ep->user->epoll_watches);
 
-	/* We have to call this outside the lock */
-	if (pwake)
-		ep_poll_safewake(&ep->poll_wait);
+				/* We have to call this outside the lock */
+				if (pwake)
+					ep_poll_safewake(&ep->poll_wait);
 
-	return 0;
+				return 0;
 
-error_remove_epi:
-	spin_lock(&tfile->f_lock);
-	list_del_rcu(&epi->fllink);
-	spin_unlock(&tfile->f_lock);
+			error_remove_epi:
+				spin_lock(&tfile->f_lock);
+				list_del_rcu(&epi->fllink);
+				spin_unlock(&tfile->f_lock);
 
-	rb_erase_cached(&epi->rbn, &ep->rbr);
+				rb_erase_cached(&epi->rbn, &ep->rbr);
 
-error_unregister:
-	ep_unregister_pollwait(ep, epi);
+			error_unregister:
+				ep_unregister_pollwait(ep, epi);
 
-	/*
-	 * We need to do this because an event could have been arrived on some
-	 * allocated wait queue. Note that we don't care about the ep->ovflist
-	 * list, since that is used/cleaned only inside a section bound by "mtx".
-	 * And ep_insert() is called with "mtx" held.
-	 */
-	write_lock_irq(&ep->lock);
-	if (ep_is_linked(epi))
-		list_del_init(&epi->rdllink);
-	write_unlock_irq(&ep->lock);
+				/*
+				 ,* We need to do this because an event could have been arrived on some
+				 ,* allocated wait queue. Note that we don't care about the ep->ovflist
+				 ,* list, since that is used/cleaned only inside a section bound by "mtx".
+				 ,* And ep_insert() is called with "mtx" held.
+				 ,*/
+				write_lock_irq(&ep->lock);
+				if (ep_is_linked(epi))
+					list_del_init(&epi->rdllink);
+				write_unlock_irq(&ep->lock);
 
-	wakeup_source_unregister(ep_wakeup_source(epi));
+				wakeup_source_unregister(ep_wakeup_source(epi));
 
-error_create_wakeup_source:
-	kmem_cache_free(epi_cache, epi);
+			error_create_wakeup_source:
+				kmem_cache_free(epi_cache, epi);
 
-	return error;
-}
+				return error;
+			}
     #+end_src
 ** epoll_wait
 *** check read list `ep->rdllist` or overflow list `ep->ovflist` has events available
@@ -2424,122 +2442,122 @@ error_create_wakeup_source:
 *** new events were added to overflow list `ep->ovflist` when transferring data to user space, which were added to ready list later on
 *** LT events were just added to ready list agian for next trigger
     #+begin_src c
-static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
-		   int maxevents, long timeout)
-{
-	int res = 0, eavail, timed_out = 0;
-	u64 slack = 0;
-	bool waiter = false;
-	wait_queue_entry_t wait;
-	ktime_t expires, *to = NULL;
+			static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
+												 int maxevents, long timeout)
+			{
+				int res = 0, eavail, timed_out = 0;
+				u64 slack = 0;
+				bool waiter = false;
+				wait_queue_entry_t wait;
+				ktime_t expires, *to = NULL;
 
-	lockdep_assert_irqs_enabled();
+				lockdep_assert_irqs_enabled();
 
-	if (timeout > 0) {
-		struct timespec64 end_time = ep_set_mstimeout(timeout);
+				if (timeout > 0) {
+					struct timespec64 end_time = ep_set_mstimeout(timeout);
 
-		slack = select_estimate_accuracy(&end_time);
-		to = &expires;
-		*to = timespec64_to_ktime(end_time);
-	} else if (timeout == 0) {
-		/*
-		 * Avoid the unnecessary trip to the wait queue loop, if the
-		 * caller specified a non blocking operation. We still need
-		 * lock because we could race and not see an epi being added
-		 * to the ready list while in irq callback. Thus incorrectly
-		 * returning 0 back to userspace.
-		 */
-		timed_out = 1;
+					slack = select_estimate_accuracy(&end_time);
+					to = &expires;
+					,*to = timespec64_to_ktime(end_time);
+				} else if (timeout == 0) {
+					/*
+					 ,* Avoid the unnecessary trip to the wait queue loop, if the
+					 ,* caller specified a non blocking operation. We still need
+					 ,* lock because we could race and not see an epi being added
+					 ,* to the ready list while in irq callback. Thus incorrectly
+					 ,* returning 0 back to userspace.
+					 ,*/
+					timed_out = 1;
 
-		write_lock_irq(&ep->lock);
-		eavail = ep_events_available(ep);
-		write_unlock_irq(&ep->lock);
+					write_lock_irq(&ep->lock);
+					eavail = ep_events_available(ep);
+					write_unlock_irq(&ep->lock);
 
-		goto send_events;
-	}
+					goto send_events;
+				}
 
-fetch_events:
+			fetch_events:
 
-	if (!ep_events_available(ep))
-		ep_busy_loop(ep, timed_out);
+				if (!ep_events_available(ep))
+					ep_busy_loop(ep, timed_out);
 
-	eavail = ep_events_available(ep);
-	if (eavail)
-		goto send_events;
+				eavail = ep_events_available(ep);
+				if (eavail)
+					goto send_events;
 
-	/*
-	 * Busy poll timed out.  Drop NAPI ID for now, we can add
-	 * it back in when we have moved a socket with a valid NAPI
-	 * ID onto the ready list.
-	 */
-	ep_reset_busy_poll_napi_id(ep);
+				/*
+				 ,* Busy poll timed out.  Drop NAPI ID for now, we can add
+				 ,* it back in when we have moved a socket with a valid NAPI
+				 ,* ID onto the ready list.
+				 ,*/
+				ep_reset_busy_poll_napi_id(ep);
 
-	/*
-	 * We don't have any available event to return to the caller.  We need
-	 * to sleep here, and we will be woken by ep_poll_callback() when events
-	 * become available.
-	 */
-	if (!waiter) {
-		waiter = true;
-		init_waitqueue_entry(&wait, current);
+				/*
+				 ,* We don't have any available event to return to the caller.  We need
+				 ,* to sleep here, and we will be woken by ep_poll_callback() when events
+				 ,* become available.
+				 ,*/
+				if (!waiter) {
+					waiter = true;
+					init_waitqueue_entry(&wait, current);
 
-		spin_lock_irq(&ep->wq.lock);
-		__add_wait_queue_exclusive(&ep->wq, &wait);
-		spin_unlock_irq(&ep->wq.lock);
-	}
+					spin_lock_irq(&ep->wq.lock);
+					__add_wait_queue_exclusive(&ep->wq, &wait);
+					spin_unlock_irq(&ep->wq.lock);
+				}
 
-	for (;;) {
-		/*
-		 * We don't want to sleep if the ep_poll_callback() sends us
-		 * a wakeup in between. That's why we set the task state
-		 * to TASK_INTERRUPTIBLE before doing the checks.
-		 */
-		set_current_state(TASK_INTERRUPTIBLE);
-		/*
-		 * Always short-circuit for fatal signals to allow
-		 * threads to make a timely exit without the chance of
-		 * finding more events available and fetching
-		 * repeatedly.
-		 */
-		if (fatal_signal_pending(current)) {
-			res = -EINTR;
-			break;
-		}
+				for (;;) {
+					/*
+					 ,* We don't want to sleep if the ep_poll_callback() sends us
+					 ,* a wakeup in between. That's why we set the task state
+					 ,* to TASK_INTERRUPTIBLE before doing the checks.
+					 ,*/
+					set_current_state(TASK_INTERRUPTIBLE);
+					/*
+					 ,* Always short-circuit for fatal signals to allow
+					 ,* threads to make a timely exit without the chance of
+					 ,* finding more events available and fetching
+					 ,* repeatedly.
+					 ,*/
+					if (fatal_signal_pending(current)) {
+						res = -EINTR;
+						break;
+					}
 
-		eavail = ep_events_available(ep);
-		if (eavail)
-			break;
-		if (signal_pending(current)) {
-			res = -EINTR;
-			break;
-		}
+					eavail = ep_events_available(ep);
+					if (eavail)
+						break;
+					if (signal_pending(current)) {
+						res = -EINTR;
+						break;
+					}
 
-		if (!schedule_hrtimeout_range(to, slack, HRTIMER_MODE_ABS)) {
-			timed_out = 1;
-			break;
-		}
-	}
+					if (!schedule_hrtimeout_range(to, slack, HRTIMER_MODE_ABS)) {
+						timed_out = 1;
+						break;
+					}
+				}
 
-	__set_current_state(TASK_RUNNING);
+				__set_current_state(TASK_RUNNING);
 
-send_events:
-	/*
-	 * Try to transfer events to user space. In case we get 0 events and
-	 * there's still timeout left over, we go trying again in search of
-	 * more luck.
-	 */
-	if (!res && eavail &&
-	    !(res = ep_send_events(ep, events, maxevents)) && !timed_out)
-		goto fetch_events;
+			send_events:
+				/*
+				 ,* Try to transfer events to user space. In case we get 0 events and
+				 ,* there's still timeout left over, we go trying again in search of
+				 ,* more luck.
+				 ,*/
+				if (!res && eavail &&
+						!(res = ep_send_events(ep, events, maxevents)) && !timed_out)
+					goto fetch_events;
 
-	if (waiter) {
-		spin_lock_irq(&ep->wq.lock);
-		__remove_wait_queue(&ep->wq, &wait);
-		spin_unlock_irq(&ep->wq.lock);
-	}
+				if (waiter) {
+					spin_lock_irq(&ep->wq.lock);
+					__remove_wait_queue(&ep->wq, &wait);
+					spin_unlock_irq(&ep->wq.lock);
+				}
 
-	return res;
-}
+				return res;
+			}
     #+end_src
 ** multiplex io should use nonblocking fd
 ** ET and LT
@@ -2646,12 +2664,12 @@ send_events:
 ***** Returns an observable that emits the items emitted by the source observable until a second observable emits an item.
 **** code
      #+begin_src java
-     networkObservable.publish(new Function<Observable<LocalLifeModel>, ObservableSource<LocalLifeModel>>() {
-       @Override
-       public ObservableSource<LocalLifeModel> apply(@io.reactivex.annotations.NonNull Observable<LocalLifeModel> localLifeModelObservable) throws Exception {
-         return Observable.merge(localLifeModelObservable, cacheObservable.takeUntil(localLifeModelObservable));
-       }
-   })
+			 networkObservable.publish(new Function<Observable<LocalLifeModel>, ObservableSource<LocalLifeModel>>() {
+					 @Override
+					 public ObservableSource<LocalLifeModel> apply(@io.reactivex.annotations.NonNull Observable<LocalLifeModel> localLifeModelObservable) throws Exception {
+						 return Observable.merge(localLifeModelObservable, cacheObservable.takeUntil(localLifeModelObservable));
+					 }
+				 })
      #+end_src
 ** PublishSubject
 *** A Subject that emits(multicasts) items to currently subscribed Observers and terminal events to current or late Observers
@@ -2682,73 +2700,74 @@ send_events:
 *** lambda expression or method reference expression invoke the lambda function through `INVOKEDYNAMIC` instruction and MethodLookup MethodHandle
 *** `invokeDynamic` sugar:
 **** invokeStatic LambdaMetafactory.metafactory
+**** return a method handle for the invoke dynamic call site via callling a bootstrap method
 ** Java Thread start
 **** State
      #+begin_src java
-         public enum State {
-         /**
-          * Thread state for a thread which has not yet started.
-          */
-         NEW,
+			 public enum State {
+				 /**
+					,* Thread state for a thread which has not yet started.
+					,*/
+				 NEW,
 
-         /**
-          * Thread state for a runnable thread.  A thread in the runnable
-          * state is executing in the Java virtual machine but it may
-          * be waiting for other resources from the operating system
-          * such as processor.
-          */
-         RUNNABLE,
+				 /**
+					,* Thread state for a runnable thread.  A thread in the runnable
+					,* state is executing in the Java virtual machine but it may
+					,* be waiting for other resources from the operating system
+					,* such as processor.
+					,*/
+				 RUNNABLE,
 
-         /**
-          * Thread state for a thread blocked waiting for a monitor lock.
-          * A thread in the blocked state is waiting for a monitor lock
-          * to enter a synchronized block/method or
-          * reenter a synchronized block/method after calling
-          * {@link Object#wait() Object.wait}.
-          */
-         BLOCKED,
+				 /**
+					,* Thread state for a thread blocked waiting for a monitor lock.
+					,* A thread in the blocked state is waiting for a monitor lock
+					,* to enter a synchronized block/method or
+					,* reenter a synchronized block/method after calling
+					,* {@link Object#wait() Object.wait}.
+					,*/
+				 BLOCKED,
 
-         /**
-          * Thread state for a waiting thread.
-          * A thread is in the waiting state due to calling one of the
-          * following methods:
-          * <ul>
-          *   <li>{@link Object#wait() Object.wait} with no timeout</li>
-          *   <li>{@link #join() Thread.join} with no timeout</li>
-          *   <li>{@link LockSupport#park() LockSupport.park}</li>
-          * </ul>
-          *
-          * <p>A thread in the waiting state is waiting for another thread to
-          * perform a particular action.
-          *
-          * For example, a thread that has called <tt>Object.wait()</tt>
-          * on an object is waiting for another thread to call
-          * <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
-          * that object. A thread that has called <tt>Thread.join()</tt>
-          * is waiting for a specified thread to terminate.
-          */
-         WAITING,
+				 /**
+					,* Thread state for a waiting thread.
+					,* A thread is in the waiting state due to calling one of the
+					,* following methods:
+					,* <ul>
+					,*   <li>{@link Object#wait() Object.wait} with no timeout</li>
+					,*   <li>{@link #join() Thread.join} with no timeout</li>
+					,*   <li>{@link LockSupport#park() LockSupport.park}</li>
+					,* </ul>
+					,*
+					,* <p>A thread in the waiting state is waiting for another thread to
+					,* perform a particular action.
+					,*
+					,* For example, a thread that has called <tt>Object.wait()</tt>
+					,* on an object is waiting for another thread to call
+					,* <tt>Object.notify()</tt> or <tt>Object.notifyAll()</tt> on
+					,* that object. A thread that has called <tt>Thread.join()</tt>
+					,* is waiting for a specified thread to terminate.
+					,*/
+				 WAITING,
 
-         /**
-          * Thread state for a waiting thread with a specified waiting time.
-          * A thread is in the timed waiting state due to calling one of
-          * the following methods with a specified positive waiting time:
-          * <ul>
-          *   <li>{@link #sleep Thread.sleep}</li>
-          *   <li>{@link Object#wait(long) Object.wait} with timeout</li>
-          *   <li>{@link #join(long) Thread.join} with timeout</li>
-          *   <li>{@link LockSupport#parkNanos LockSupport.parkNanos}</li>
-          *   <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
-          * </ul>
-          */
-         TIMED_WAITING,
+				 /**
+					,* Thread state for a waiting thread with a specified waiting time.
+					,* A thread is in the timed waiting state due to calling one of
+					,* the following methods with a specified positive waiting time:
+					,* <ul>
+					,*   <li>{@link #sleep Thread.sleep}</li>
+					,*   <li>{@link Object#wait(long) Object.wait} with timeout</li>
+					,*   <li>{@link #join(long) Thread.join} with timeout</li>
+					,*   <li>{@link LockSupport#parkNanos LockSupport.parkNanos}</li>
+					,*   <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
+					,* </ul>
+					,*/
+				 TIMED_WAITING,
 
-         /**
-          * Thread state for a terminated thread.
-          * The thread has completed execution.
-          */
-         TERMINATED;
-     }
+				 /**
+					,* Thread state for a terminated thread.
+					,* The thread has completed execution.
+					,*/
+				 TERMINATED;
+			 }
      #+end_src
 
 **** android-source/art/runtime/thread_state.h
@@ -2958,164 +2977,164 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ****** mHandler.getLooper().getQueue().postSyncBarrier()
 ******* Message is synchronous by default
 ******** code
-	 #+begin_src java
-     public boolean isAsynchronous() {
-         return (flags & FLAG_ASYNCHRONOUS) != 0;
-     }
+				 #+begin_src java
+					 public boolean isAsynchronous() {
+						 return (flags & FLAG_ASYNCHRONOUS) != 0;
+					 }
 
-     public static Message obtain() {
-         synchronized (sPoolSync) {
-             if (sPool != null) {
-                 Message m = sPool;
-                 sPool = m.next;
-                 m.next = null;
-                 m.flags = 0; // clear in-use flag, no FLAG_ASYNCHRONOUS flag
-                 sPoolSize--;
-                 return m;
-             }
-         }
-         return new Message();
-     }
+					 public static Message obtain() {
+						 synchronized (sPoolSync) {
+							 if (sPool != null) {
+								 Message m = sPool;
+								 sPool = m.next;
+								 m.next = null;
+								 m.flags = 0; // clear in-use flag, no FLAG_ASYNCHRONOUS flag
+								 sPoolSize--;
+								 return m;
+							 }
+						 }
+						 return new Message();
+					 }
 
-     private int postSyncBarrier(long when) {
-         // Enqueue a new sync barrier token.
-         // We don't need to wake the queue because the purpose of a barrier is to stall it.
-         synchronized (this) {
-             final int token = mNextBarrierToken++;
-             final Message msg = Message.obtain();
-             msg.markInUse();
-             msg.when = when;
-             msg.arg1 = token;
+					 private int postSyncBarrier(long when) {
+						 // Enqueue a new sync barrier token.
+						 // We don't need to wake the queue because the purpose of a barrier is to stall it.
+						 synchronized (this) {
+							 final int token = mNextBarrierToken++;
+							 final Message msg = Message.obtain();
+							 msg.markInUse();
+							 msg.when = when;
+							 msg.arg1 = token;
 
-             Message prev = null;
-             Message p = mMessages;
-             if (when != 0) {
-                 while (p != null && p.when <= when) {
-                     prev = p;
-                     p = p.next;
-                 }
-             }
-             if (prev != null) { // invariant: p == prev.next
-                 msg.next = p;
-                 prev.next = msg;
-             } else {
-                 msg.next = p;
-                 mMessages = msg;
-             }
-             return token;
-         }
-     }
-	 #+end_src
+							 Message prev = null;
+							 Message p = mMessages;
+							 if (when != 0) {
+								 while (p != null && p.when <= when) {
+									 prev = p;
+									 p = p.next;
+								 }
+							 }
+							 if (prev != null) { // invariant: p == prev.next
+								 msg.next = p;
+								 prev.next = msg;
+							 } else {
+								 msg.next = p;
+								 mMessages = msg;
+							 }
+							 return token;
+						 }
+					 }
+				 #+end_src
 ******* Message#next()
 ******** when head msg is sync barrier, find first asynchronous msg
 ********* code
-	  #+begin_src java
-     Message next() {
-         // Return here if the message loop has already quit and been disposed.
-         // This can happen if the application tries to restart a looper after quit
-         // which is not supported.
-         final long ptr = mPtr;
-         if (ptr == 0) {
-             return null;
-         }
+					#+begin_src java
+						Message next() {
+							// Return here if the message loop has already quit and been disposed.
+							// This can happen if the application tries to restart a looper after quit
+							// which is not supported.
+							final long ptr = mPtr;
+							if (ptr == 0) {
+								return null;
+							}
 
-         int pendingIdleHandlerCount = -1; // -1 only during first iteration
-         int nextPollTimeoutMillis = 0;
-         for (;;) {
-             if (nextPollTimeoutMillis != 0) {
-                 Binder.flushPendingCommands();
-             }
+							int pendingIdleHandlerCount = -1; // -1 only during first iteration
+							int nextPollTimeoutMillis = 0;
+							for (;;) {
+								if (nextPollTimeoutMillis != 0) {
+									Binder.flushPendingCommands();
+								}
 
-             nativePollOnce(ptr, nextPollTimeoutMillis);
+								nativePollOnce(ptr, nextPollTimeoutMillis);
 
-             synchronized (this) {
-                 // Try to retrieve the next message.  Return if found.
-                 final long now = SystemClock.uptimeMillis();
-                 Message prevMsg = null;
-                 Message msg = mMessages;
-                 if (msg != null && msg.target == null) {
-                     // Stalled by a barrier.  Find the next asynchronous message in the queue.
-                     do {
-                         prevMsg = msg;
-                         msg = msg.next;
-                     } while (msg != null && !msg.isAsynchronous());
-                 }
-                 if (msg != null) {
-                     if (now < msg.when) {
-                         // Next message is not ready.  Set a timeout to wake up when it is ready.
-                         nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
-                     } else {
-                         // Got a message.
-                         mBlocked = false;
-                         if (prevMsg != null) {
-                             prevMsg.next = msg.next;
-                         } else {
-                             mMessages = msg.next;
-                         }
-                         msg.next = null;
-                         if (DEBUG) Log.v(TAG, "Returning message: " + msg);
-                         msg.markInUse();
-                         return msg;
-                     }
-                 } else {
-                     // No more messages.
-                     nextPollTimeoutMillis = -1;
-                 }
+								synchronized (this) {
+									// Try to retrieve the next message.  Return if found.
+									final long now = SystemClock.uptimeMillis();
+									Message prevMsg = null;
+									Message msg = mMessages;
+									if (msg != null && msg.target == null) {
+										// Stalled by a barrier.  Find the next asynchronous message in the queue.
+										do {
+											prevMsg = msg;
+											msg = msg.next;
+										} while (msg != null && !msg.isAsynchronous());
+									}
+									if (msg != null) {
+										if (now < msg.when) {
+											// Next message is not ready.  Set a timeout to wake up when it is ready.
+											nextPollTimeoutMillis = (int) Math.min(msg.when - now, Integer.MAX_VALUE);
+										} else {
+											// Got a message.
+											mBlocked = false;
+											if (prevMsg != null) {
+												prevMsg.next = msg.next;
+											} else {
+												mMessages = msg.next;
+											}
+											msg.next = null;
+											if (DEBUG) Log.v(TAG, "Returning message: " + msg);
+											msg.markInUse();
+											return msg;
+										}
+									} else {
+										// No more messages.
+										nextPollTimeoutMillis = -1;
+									}
 
-                 // Process the quit message now that all pending messages have been handled.
-                 if (mQuitting) {
-                     dispose();
-                     return null;
-                 }
+									// Process the quit message now that all pending messages have been handled.
+									if (mQuitting) {
+										dispose();
+										return null;
+									}
 
-                 // If first time idle, then get the number of idlers to run.
-                 // Idle handles only run if the queue is empty or if the first message
-                 // in the queue (possibly a barrier) is due to be handled in the future.
-                 if (pendingIdleHandlerCount < 0
-                         && (mMessages == null || now < mMessages.when)) {
-                     pendingIdleHandlerCount = mIdleHandlers.size();
-                 }
-                 if (pendingIdleHandlerCount <= 0) {
-                     // No idle handlers to run.  Loop and wait some more.
-                     mBlocked = true;
-                     continue;
-                 }
+									// If first time idle, then get the number of idlers to run.
+									// Idle handles only run if the queue is empty or if the first message
+									// in the queue (possibly a barrier) is due to be handled in the future.
+									if (pendingIdleHandlerCount < 0
+											&& (mMessages == null || now < mMessages.when)) {
+										pendingIdleHandlerCount = mIdleHandlers.size();
+									}
+									if (pendingIdleHandlerCount <= 0) {
+										// No idle handlers to run.  Loop and wait some more.
+										mBlocked = true;
+										continue;
+									}
 
-                 if (mPendingIdleHandlers == null) {
-                     mPendingIdleHandlers = new IdleHandler[Math.max(pendingIdleHandlerCount, 4)];
-                 }
-                 mPendingIdleHandlers = mIdleHandlers.toArray(mPendingIdleHandlers);
-             }
+									if (mPendingIdleHandlers == null) {
+										mPendingIdleHandlers = new IdleHandler[Math.max(pendingIdleHandlerCount, 4)];
+									}
+									mPendingIdleHandlers = mIdleHandlers.toArray(mPendingIdleHandlers);
+								}
 
-             // Run the idle handlers.
-             // We only ever reach this code block during the first iteration.
-             for (int i = 0; i < pendingIdleHandlerCount; i++) {
-                 final IdleHandler idler = mPendingIdleHandlers[i];
-                 mPendingIdleHandlers[i] = null; // release the reference to the handler
+								// Run the idle handlers.
+								// We only ever reach this code block during the first iteration.
+								for (int i = 0; i < pendingIdleHandlerCount; i++) {
+									final IdleHandler idler = mPendingIdleHandlers[i];
+									mPendingIdleHandlers[i] = null; // release the reference to the handler
 
-                 boolean keep = false;
-                 try {
-                     keep = idler.queueIdle();
-                 } catch (Throwable t) {
-                     Log.wtf(TAG, "IdleHandler threw exception", t);
-                 }
+									boolean keep = false;
+									try {
+										keep = idler.queueIdle();
+									} catch (Throwable t) {
+										Log.wtf(TAG, "IdleHandler threw exception", t);
+									}
 
-                 if (!keep) {
-                     synchronized (this) {
-                         mIdleHandlers.remove(idler);
-                     }
-                 }
-             }
+									if (!keep) {
+										synchronized (this) {
+											mIdleHandlers.remove(idler);
+										}
+									}
+								}
 
-             // Reset the idle handler count to 0 so we do not run them again.
-             pendingIdleHandlerCount = 0;
+								// Reset the idle handler count to 0 so we do not run them again.
+								pendingIdleHandlerCount = 0;
 
-             // While calling an idle handler, a new message could have been delivered
-             // so go back and look again for a pending message without waiting.
-             nextPollTimeoutMillis = 0;
-         }
-     }
-	  #+end_src
+								// While calling an idle handler, a new message could have been delivered
+								// so go back and look again for a pending message without waiting.
+								nextPollTimeoutMillis = 0;
+							}
+						}
+					#+end_src
 ****** mChoreographer.postCallback(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null)
 *** rendering
 **** software render
@@ -3220,33 +3239,33 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ****** associate 'struct file_operations' binder_fops
 ****** code
        #+begin_src c
-  static int __init init_binder_device(const char *name)
-  {
-	  int ret;
-	  struct binder_device *binder_device;
+				 static int __init init_binder_device(const char *name)
+				 {
+					 int ret;
+					 struct binder_device *binder_device;
 
-	  binder_device = kzalloc(sizeof(*binder_device), GFP_KERNEL);
-	  if (!binder_device)
-		  return -ENOMEM;
+					 binder_device = kzalloc(sizeof(*binder_device), GFP_KERNEL);
+					 if (!binder_device)
+						 return -ENOMEM;
 
-	  binder_device->miscdev.fops = &binder_fops;
-	  binder_device->miscdev.minor = MISC_DYNAMIC_MINOR;
-	  binder_device->miscdev.name = name;
+					 binder_device->miscdev.fops = &binder_fops;
+					 binder_device->miscdev.minor = MISC_DYNAMIC_MINOR;
+					 binder_device->miscdev.name = name;
 
-	  binder_device->context.binder_context_mgr_uid = INVALID_UID;
-	  binder_device->context.name = name;
-	  mutex_init(&binder_device->context.context_mgr_node_lock);
+					 binder_device->context.binder_context_mgr_uid = INVALID_UID;
+					 binder_device->context.name = name;
+					 mutex_init(&binder_device->context.context_mgr_node_lock);
 
-	  ret = misc_register(&binder_device->miscdev);
-	  if (ret < 0) {
-		  kfree(binder_device);
-		  return ret;
-	  }
+					 ret = misc_register(&binder_device->miscdev);
+					 if (ret < 0) {
+						 kfree(binder_device);
+						 return ret;
+					 }
 
-	  hlist_add_head(&binder_device->hlist, &binder_devices);
+					 hlist_add_head(&binder_device->hlist, &binder_devices);
 
-	  return ret;
-  }
+					 return ret;
+				 }
        #+end_src
 
 ***** create binderfs
@@ -3294,60 +3313,60 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 ********** `fp->handle = rdata.desc;`
 *********** handle of `struct binder_ref` is the index when added to target_proc's `struct rb_root` refs_by_node rbtree
 ********** code
-	   #+begin_src c
- static int binder_translate_binder(struct flat_binder_object *fp,
-				    struct binder_transaction *t,
-				    struct binder_thread *thread)
- {
-	 struct binder_node *node;
-	 struct binder_proc *proc = thread->proc;
-	 struct binder_proc *target_proc = t->to_proc;
-	 struct binder_ref_data rdata;
-	 int ret = 0;
+					 #+begin_src c
+						 static int binder_translate_binder(struct flat_binder_object *fp,
+																								struct binder_transaction *t,
+																								struct binder_thread *thread)
+						 {
+							 struct binder_node *node;
+							 struct binder_proc *proc = thread->proc;
+							 struct binder_proc *target_proc = t->to_proc;
+							 struct binder_ref_data rdata;
+							 int ret = 0;
 
-	 node = binder_get_node(proc, fp->binder);
-	 if (!node) {
-		 node = binder_new_node(proc, fp);
-		 if (!node)
-			 return -ENOMEM;
-	 }
-	 if (fp->cookie != node->cookie) {
-		 binder_user_error("%d:%d sending u%016llx node %d, cookie mismatch %016llx != %016llx\n",
-				   proc->pid, thread->pid, (u64)fp->binder,
-				   node->debug_id, (u64)fp->cookie,
-				   (u64)node->cookie);
-		 ret = -EINVAL;
-		 goto done;
-	 }
-	 if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
-		 ret = -EPERM;
-		 goto done;
-	 }
+							 node = binder_get_node(proc, fp->binder);
+							 if (!node) {
+								 node = binder_new_node(proc, fp);
+								 if (!node)
+									 return -ENOMEM;
+							 }
+							 if (fp->cookie != node->cookie) {
+								 binder_user_error("%d:%d sending u%016llx node %d, cookie mismatch %016llx != %016llx\n",
+																	 proc->pid, thread->pid, (u64)fp->binder,
+																	 node->debug_id, (u64)fp->cookie,
+																	 (u64)node->cookie);
+								 ret = -EINVAL;
+								 goto done;
+							 }
+							 if (security_binder_transfer_binder(proc->tsk, target_proc->tsk)) {
+								 ret = -EPERM;
+								 goto done;
+							 }
 
-	 ret = binder_inc_ref_for_node(target_proc, node,
-			 fp->hdr.type == BINDER_TYPE_BINDER,
-			 &thread->todo, &rdata);
-	 if (ret)
-		 goto done;
+							 ret = binder_inc_ref_for_node(target_proc, node,
+																						 fp->hdr.type == BINDER_TYPE_BINDER,
+																						 &thread->todo, &rdata);
+							 if (ret)
+								 goto done;
 
-	 if (fp->hdr.type == BINDER_TYPE_BINDER)
-		 fp->hdr.type = BINDER_TYPE_HANDLE;
-	 else
-		 fp->hdr.type = BINDER_TYPE_WEAK_HANDLE;
-	 fp->binder = 0;
-	 fp->handle = rdata.desc;
-	 fp->cookie = 0;
+							 if (fp->hdr.type == BINDER_TYPE_BINDER)
+								 fp->hdr.type = BINDER_TYPE_HANDLE;
+							 else
+								 fp->hdr.type = BINDER_TYPE_WEAK_HANDLE;
+							 fp->binder = 0;
+							 fp->handle = rdata.desc;
+							 fp->cookie = 0;
 
-	 trace_binder_transaction_node_to_ref(t, node, &rdata);
-	 binder_debug(BINDER_DEBUG_TRANSACTION,
-		      "        node %d u%016llx -> ref %d desc %d\n",
-		      node->debug_id, (u64)node->ptr,
-		      rdata.debug_id, rdata.desc);
- done:
-	 binder_put_node(node);
-	 return ret;
- }
-	   #+end_src
+							 trace_binder_transaction_node_to_ref(t, node, &rdata);
+							 binder_debug(BINDER_DEBUG_TRANSACTION,
+														"        node %d u%016llx -> ref %d desc %d\n",
+														node->debug_id, (u64)node->ptr,
+														rdata.debug_id, rdata.desc);
+						 done:
+							 binder_put_node(node);
+							 return ret;
+						 }
+					 #+end_src
 
 ********* `binder_alloc_copy_to_buffer`
 ********** repalce the original binder object with the translated one
@@ -3716,72 +3735,72 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** If this future is already completed, the callback will not be called immediately, but will be scheduled in a later microtask
 *** practise
     #+begin_src dart
-Future(() => print('f1'));//声明一个匿名Future
-Future fx = Future(() =>  null);//声明Future fx，其执行体为null
+			Future(() => print('f1'));//声明一个匿名Future
+			Future fx = Future(() =>  null);//声明Future fx，其执行体为null
 
-//声明一个匿名Future，并注册了两个then。在第一个then回调里启动了一个微任务
-Future(() => print('f2')).then((_) {
-  print('f3');
-  scheduleMicrotask(() => print('f4'));
-}).then((_) => print('f5'));
+			//声明一个匿名Future，并注册了两个then。在第一个then回调里启动了一个微任务
+			Future(() => print('f2')).then((_) {
+					print('f3');
+					scheduleMicrotask(() => print('f4'));
+			}).then((_) => print('f5'));
 
-//声明了一个匿名Future，并注册了两个then。第一个then是一个Future
-Future(() => print('f6'))
-  .then((_) => Future(() => print('f7')))
-  .then((_) => print('f8'));
+			//声明了一个匿名Future，并注册了两个then。第一个then是一个Future
+			Future(() => print('f6'))
+			.then((_) => Future(() => print('f7')))
+			.then((_) => print('f8'));
 
-//声明了一个匿名Future
-Future(() => print('f9'));
+			//声明了一个匿名Future
+			Future(() => print('f9'));
 
-//往执行体为null的fx注册了了一个then
-fx.then((_) => print('f10'));
+			//往执行体为null的fx注册了了一个then
+			fx.then((_) => print('f10'));
 
-//启动一个微任务
-scheduleMicrotask(() => print('f11'));
-print('f12');
+			//启动一个微任务
+			scheduleMicrotask(() => print('f11'));
+			print('f12');
 
-//result
-f12
-f11
-f1
-f10
-f2
-f3
-f5
-f4
-f6
-f9
-f7
-f8
+			//result
+			f12
+			f11
+			f1
+			f10
+			f2
+			f3
+			f5
+			f4
+			f6
+			f9
+			f7
+			f8
 
 
-Future(() => print('f1'))
-  .then((_) async => await Future(() => print('f2')))
-  .then((_) => print('f3'));
-Future(() => print('f4'));
+			Future(() => print('f1'))
+			.then((_) async => await Future(() => print('f2')))
+			.then((_) => print('f3'));
+			Future(() => print('f4'));
 
-// result
-f1
-f4
-f2
-f3
+			// result
+			f1
+			f4
+			f2
+			f3
 
-Future<String> fetchContent() =>
-    Future<String>.delayed(Duration(seconds: 3), () => "Hello")
-        .then((x) => '$x Jocoo');
+			Future<String> fetchContent() =>
+			Future<String>.delayed(Duration(seconds: 3), () => "Hello")
+			.then((x) => '$x Jocoo');
 
-func() async => print(await fetchContent());
+			func() async => print(await fetchContent());
 
-main(List<String> args) async {
-  print('func before');
-  func();
-  print('func after');
-}
+			main(List<String> args) async {
+				print('func before');
+				func();
+				print('func after');
+			}
 
-// result
-func before
-func after
-Hello Jocoo
+			// result
+			func before
+			func after
+			Hello Jocoo
 
     #+end_src
 ** asynchronous
@@ -3987,24 +4006,146 @@ Hello Jocoo
 *** 必须与引用队列一起使用，提供在finalize执行之后得到通知的机会，比如执行post-mortem清理机制
 * zip file format
 ** overview of ZIP file format
-      [local file header 1]
-      [encryption header 1]
-      [file data 1]
-      [data descriptor 1]
-      . 
-      .
-      .
-      [local file header n]
-      [encryption header n]
-      [file data n]
-      [data descriptor n]
-      [archive decryption header] 
-      [archive extra data record] 
-      [central directory header 1]
-      .
-      .
-      .
-      [central directory header n]
-      [zip64 end of central directory record]
-      [zip64 end of central directory locator] 
-      [end of central directory record]
+   [local file header 1]
+   [encryption header 1]
+   [file data 1]
+   [data descriptor 1]
+   . 
+   .
+   .
+   [local file header n]
+   [encryption header n]
+   [file data n]
+   [data descriptor n]
+   [archive decryption header] 
+   [archive extra data record] 
+   [central directory header 1]
+   .
+   .
+   .
+   [central directory header n]
+   [zip64 end of central directory record]
+   [zip64 end of central directory locator] 
+   [end of central directory record]
+* lancet
+** a lightweight aop framework for android
+** sample
+*** #+begin_src java
+		public class HookClass {
+      @TargetClass("com.sample.playground.CoffeeMaker")
+			@Insert("brew")
+			public Cup brew(Cup cup) {
+			  System.out.println("SetFieldTest");
+				CoffeeBox coffeeBox = (CoffeeBox) This.getField("coffeeBox");
+				System.out.println("get " + coffeeBox.getLatte());
+				return (Cup) Origin.call();
+			}
+		}
+		public class CoffeeMaker {
+      private final Heater heater;
+			private final Pump pump;
+			private final CoffeeBox coffeeBox;
+
+      CoffeeMaker(Heater heater, Pump pump,CoffeeBox coffeeBox) {
+        this.heater = heater;
+        this.pump = pump;
+        this.coffeeBox = coffeeBox;
+			}
+
+			public Cup brew(Cup cup) {
+        cup.putCoffee(coffeeBox.getLatte());
+        SugarBox.addSugar(cup,10);
+        hand(cup);
+        return cup;
+			}
+		}
+		#+end_src
+** 原理
+*** preAnalysis
+**** generate Graph(HashMap)
+**** find HookClass -> generate TransformInfo
+*** ASM weaver
+**** #+begin_src java
+public class CoffeeMaker {
+    private final Heater heater;
+    private final Pump pump;
+    private final CoffeeBox coffeeBox;
+
+    CoffeeMaker(Heater heater, Pump pump, CoffeeBox coffeeBox) {
+        this.heater = heater;
+        this.pump = pump;
+        this.coffeeBox = coffeeBox;
+    }
+
+    static Cup access$000(CoffeeMaker var0, Cup var1) {
+        return var0.brew$___twin___(var1);
+    }
+
+    static CoffeeBox access$001(CoffeeMaker var0) {
+        return var0.coffeeBox;
+    }
+
+    static Cup access$002(CoffeeMaker var0, Cup var1) {
+        return CoffeeMaker._lancet.me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(var0, var1);
+    }
+
+    public Cup brew(Cup var1) {
+        return CoffeeMaker._lancet.com_sample_playground_HookClass_brew(this, var1);
+    }
+
+    private Cup brew$___twin___(Cup cup) {
+        cup.putCoffee(this.coffeeBox.getLatte());
+        SugarBox.addSugar(cup, 10);
+        this.hand(cup);
+        return cup;
+    }
+
+    private void hand(Cup cup) {
+        this.heater.on();
+        this.pump.pump();
+        cup.full();
+        this.heater.off();
+    }
+
+    private static class _lancet {
+        private _lancet() {
+        }
+
+        @TargetClass("com.sample.playground.CoffeeMaker")
+        @Insert("brew")
+        static Cup me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(CoffeeMaker var0, Cup var1) {
+            System.out.println("SetFieldTest");
+            CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
+            System.out.println("get " + var2.getLatte());
+            return CoffeeMaker.access$000(var0, var1);
+        }
+
+        @TargetClass("com.sample.playground.CoffeeMaker")
+        @Insert("brew")
+        static Cup com_sample_playground_HookClass_brew(CoffeeMaker var0, Cup var1) {
+            System.out.println("SetFieldTest");
+            CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
+            System.out.println("get " + var2.getLatte());
+            return CoffeeMaker.access$002(var0, var1);
+        }
+    }
+}
+		 #+end_src
+
+* ASM
+** core api
+*** event-based api
+**** faster
+**** two-passes to handle class comparing to Tree-api
+*** api
+**** ClassReader
+**** ClassWriter
+**** ClassVisiter
+**** MethodVisiter
+**** FieldVisiter
+** tree api
+*** handle class in any order
+*** api
+**** ClassNode
+**** MethodNode
+**** FieldNode
