@@ -3918,6 +3918,8 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** diff data
 **** extra data
 *** bzip2 write patch file
+*** paper
+**** [[http://www.daemonology.net/papers/bsdiff.pdf]]
 * spring
 ** core
 *** IoC
@@ -4065,73 +4067,83 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 **** generate Graph(HashMap)
 **** find HookClass -> generate TransformInfo
 *** ASM weaver
-**** #+begin_src java
-public class CoffeeMaker {
-    private final Heater heater;
-    private final Pump pump;
-    private final CoffeeBox coffeeBox;
+**** HookClassVisitor
+**** InsertClassVisitor
+***** hook declaration of method
+***** MethodChain
+****** generating access$001 methods
+****** change original method `f`to `f$___twin__` delegated to method in `$_lancet` inner class
+****** generating inner class `$_lancet` with hooked method(comes from HookClass) in it
+***** #+begin_src java
+ public class CoffeeMaker {
+     private final Heater heater;
+     private final Pump pump;
+     private final CoffeeBox coffeeBox;
 
-    CoffeeMaker(Heater heater, Pump pump, CoffeeBox coffeeBox) {
-        this.heater = heater;
-        this.pump = pump;
-        this.coffeeBox = coffeeBox;
-    }
+     CoffeeMaker(Heater heater, Pump pump, CoffeeBox coffeeBox) {
+         this.heater = heater;
+         this.pump = pump;
+         this.coffeeBox = coffeeBox;
+     }
 
-    static Cup access$000(CoffeeMaker var0, Cup var1) {
-        return var0.brew$___twin___(var1);
-    }
+     static Cup access$000(CoffeeMaker var0, Cup var1) {
+         return var0.brew$___twin___(var1);
+     }
 
-    static CoffeeBox access$001(CoffeeMaker var0) {
-        return var0.coffeeBox;
-    }
+     static CoffeeBox access$001(CoffeeMaker var0) {
+         return var0.coffeeBox;
+     }
 
-    static Cup access$002(CoffeeMaker var0, Cup var1) {
-        return CoffeeMaker._lancet.me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(var0, var1);
-    }
+     static Cup access$002(CoffeeMaker var0, Cup var1) {
+         return CoffeeMaker._lancet.me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(var0, var1);
+     }
 
-    public Cup brew(Cup var1) {
-        return CoffeeMaker._lancet.com_sample_playground_HookClass_brew(this, var1);
-    }
+     public Cup brew(Cup var1) {
+         return CoffeeMaker._lancet.com_sample_playground_HookClass_brew(this, var1);
+     }
 
-    private Cup brew$___twin___(Cup cup) {
-        cup.putCoffee(this.coffeeBox.getLatte());
-        SugarBox.addSugar(cup, 10);
-        this.hand(cup);
-        return cup;
-    }
+     private Cup brew$___twin___(Cup cup) {
+         cup.putCoffee(this.coffeeBox.getLatte());
+         SugarBox.addSugar(cup, 10);
+         this.hand(cup);
+         return cup;
+     }
 
-    private void hand(Cup cup) {
-        this.heater.on();
-        this.pump.pump();
-        cup.full();
-        this.heater.off();
-    }
+     private void hand(Cup cup) {
+         this.heater.on();
+         this.pump.pump();
+         cup.full();
+         this.heater.off();
+     }
 
-    private static class _lancet {
-        private _lancet() {
-        }
+     private static class _lancet {
+         private _lancet() {
+         }
 
-        @TargetClass("com.sample.playground.CoffeeMaker")
-        @Insert("brew")
-        static Cup me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(CoffeeMaker var0, Cup var1) {
-            System.out.println("SetFieldTest");
-            CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
-            System.out.println("get " + var2.getLatte());
-            return CoffeeMaker.access$000(var0, var1);
-        }
+         @TargetClass("com.sample.playground.CoffeeMaker")
+         @Insert("brew")
+         static Cup me_ele_lancet_testcase_insert_GetFieldTest$HookClass_brew(CoffeeMaker var0, Cup var1) {
+             System.out.println("SetFieldTest");
+             CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
+             System.out.println("get " + var2.getLatte());
+             return CoffeeMaker.access$000(var0, var1);
+         }
 
-        @TargetClass("com.sample.playground.CoffeeMaker")
-        @Insert("brew")
-        static Cup com_sample_playground_HookClass_brew(CoffeeMaker var0, Cup var1) {
-            System.out.println("SetFieldTest");
-            CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
-            System.out.println("get " + var2.getLatte());
-            return CoffeeMaker.access$002(var0, var1);
-        }
-    }
-}
-		 #+end_src
+         @TargetClass("com.sample.playground.CoffeeMaker")
+         @Insert("brew")
+         static Cup com_sample_playground_HookClass_brew(CoffeeMaker var0, Cup var1) {
+             System.out.println("SetFieldTest");
+             CoffeeBox var2 = (CoffeeBox)CoffeeMaker.access$001(var0);
+             System.out.println("get " + var2.getLatte());
+             return CoffeeMaker.access$002(var0, var1);
+         }
+     }
+ }
+			#+end_src
 
+**** ProxyClassVisitor
+***** hook invocation of method
+**** TryCatchInfoClassVisitor
 * ASM
 ** core api
 *** event-based api
@@ -4140,12 +4152,33 @@ public class CoffeeMaker {
 *** api
 **** ClassReader
 **** ClassWriter
-**** ClassVisiter
-**** MethodVisiter
-**** FieldVisiter
+**** ClassVisitor
+**** MethodVisitor
+**** FieldVisitor
 ** tree api
 *** handle class in any order
 *** api
 **** ClassNode
 **** MethodNode
 **** FieldNode
+** util
+*** ASMifier
+**** dump class code with ASM style
+*** TraceClassVisitor
+*** LocalVariablesSorter
+**** add new local variable to a method
+*** AdviceAdapter
+**** extends from LocalVariablesSorter
+**** insert code at the beginning of the method and just before any RETURN or ATHROW instruction
+** tencent matrix
+*** MethodTracer
+*** MethodCollector
+* Xposed
+** hook app_process
+*** XposedBridge -> ZygoteInit
+* millionare's problem
+** simple version
+*** A can lock, B can unlock, 0 <i,j<=10
+*** supposed to have 10 boxes, A set Box[k] = 0 if k < i, otherwise Box[k] = 1 if k >> i, then lock 10 boxes
+*** B get the jth box Box[j] and destroy all the other boxes
+*** the result is: i > j if Box[j] = 0, otherwise i <= j if Box[j] = 1
