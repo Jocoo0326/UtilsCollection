@@ -1277,17 +1277,17 @@
     |  struct dl_rq dl;  |        |}                                |          |            X           X
     |}                   |        +---------------------------------+          |           X             X
     +--------------------+                                                     |      +-------+        +-------+
-    |      |rb_node|        |rb_node|
-    |     X+------X+        +---X--- X
-    |    X        X             X     X
-    v   X         X             X      X
-    +--+----+     +-------+    +-------+   +-------+
-    |rb_node|     |rb_node|    |rb_node|   |rb_node|
-    +-------+     +-------+    +-------+   +-+-----+
-    ^
-    |
-    |
-    |
+                                                                               |      |rb_node|        |rb_node|
+                                                                               |     X+------X+        +---X--- X
+                                                                               |    X        X             X     X
+                                                                               v   X         X             X      X
+                                                                               +--+----+     +-------+    +-------+   +-------+
+                                                                               |rb_node|     |rb_node|    |rb_node|   |rb_node|
+                                                                               +-------+     +-------+    +-------+   +-+-----+
+                                                                                     ^
+                                                                                     |
+                                                                                     |
+                                                                                     |
     +-----------------------------+               +--------------------------+       |
     |struct task_struct {         |               |struct sched_entity {     |       |
     |  struct sched_entity se;    +-------------->+  struct rb_node run_node;+-------+
@@ -1375,6 +1375,7 @@
 *** copy_process
 **** dup_task_struct
 *** call `start_thread` as a trampoline to call `start_routine` of thread with user-defined arg
+**** switch to new thread stack
 ** signal
 *** [1,31] non-rt signal [32, x] real-time signal
 *** kill -> process
@@ -4182,3 +4183,9 @@ mount_all /xx/fstab // will load rc files in /{system, vendor, odm]/etc/init dir
 *** supposed to have 10 boxes, A set Box[k] = 0 if k < i, otherwise Box[k] = 1 if k >> i, then lock 10 boxes
 *** B get the jth box Box[j] and destroy all the other boxes
 *** the result is: i > j if Box[j] = 0, otherwise i <= j if Box[j] = 1
+* https
+** 结合非对称加密和对称加密，以兼顾效率和安全性
+** (网站域名 + 公钥)由CA机构私钥加密得到证书
+** 客户端用CA公钥解密网站签名，若解密成功并且网站域名和请求网站域名相同，签名安全，取出网站公钥
+** 利用公钥沟通对称加密的密钥和加密套件
+** 对称加密传输数据
