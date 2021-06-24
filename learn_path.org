@@ -1873,6 +1873,10 @@
 **** semctl
 **** semop
 ** socket
+*** socket(int domain, int type, int protocol)创建一个file, struct socket, 从数组inetsw里根据type protocol查找struct inet_protosw
+**** socket->ops = answer->ops(aka. inet_stream_ops)
+**** 创建struct sock *sk, sk->sk_prot = answer->tcp_prot, struct socket对接用户，struct sock对接网络协议栈, tcp_prot是协议栈中的函数
+**** struct sock维护3个队列以及状态
 *** sock_init (in socket.c)
 **** initialize the network sysctl infrastructure
 **** initialize skbuff SLAB cache
@@ -2276,6 +2280,91 @@
 ** epoll_ctl
 *** create a `struct epitem`
 *** add a `struct eppoll_entry` to socket wait_queue and register a `ep_poll_callback` which is triggered when file receive events(POLLIN, POLLOUT)
+**** ep_insert
+***** ep_ptable_queue_proc
+****** add wait queue entry to target file wake queue, wait queue entry has a `func` which is called when file has events
+******* #+begin_src c
+struct wait_queue_entry {
+	unsigned int		flags;
+	void			*private;
+	wait_queue_func_t	func;
+	struct list_head	entry;
+};
+static int __wake_up_common(struct wait_queue_head *wq_head, unsigned int mode,
+			int nr_exclusive, int wake_flags, void *key,
+			wait_queue_entry_t *bookmark)
+{
+	wait_queue_entry_t *curr, *next;
+	int cnt = 0;
+
+	lockdep_assert_held(&wq_head->lock);
+
+	if (bookmark && (bookmark->flags & WQ_FLAG_BOOKMARK)) {
+		curr = list_next_entry(bookmark, entry);
+
+		list_del(&bookmark->entry);
+		bookmark->flags = 0;
+	} else
+		curr = list_first_entry(&wq_head->head, wait_queue_entry_t, entry);
+
+	if (&curr->entry == &wq_head->head)
+		return nr_exclusive;
+
+	list_for_each_entry_safe_from(curr, next, &wq_head->head, entry) {
+		unsigned flags = curr->flags;
+		int ret;
+
+		if (flags & WQ_FLAG_BOOKMARK)
+			continue;
+
+		ret = curr->func(curr, mode, wake_flags, key);
+		if (ret < 0)
+			break;
+		if (ret && (flags & WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)
+			break;
+
+		if (bookmark && (++cnt > WAITQUEUE_WALK_BREAK_CNT) &&
+				(&next->entry != &wq_head->head)) {
+			bookmark->flags = WQ_FLAG_BOOKMARK;
+			list_add_tail(&bookmark->entry, &next->entry);
+			break;
+		}
+	}
+
+	return nr_exclusive;
+}
+				#+end_src
+****** wait queue entry func is `ep_poll_callback`
+****** wait entry and epitem is associated together with struct eppoll_entry
+******* #+begin_src c
+struct eppoll_entry {
+ /* List header used to link this structure to the "struct epitem" */
+ struct list_head llink;
+
+ /* The "base" pointer is set to the container "struct epitem" */
+ struct epitem *base;
+
+ /*
+   * Wait queue item that will be linked to the target file wait
+   * queue head.
+   */
+  wait_queue_entry_t wait;
+
+  /* The wait queue head that linked the "wait" wait queue item */
+  wait_queue_head_t *whead;
+};
+				#+end_src
+***** init_poll_funcptr(&epq.pt, ep_ptable_queue_proc)
+****** poll_table knows how to add wait queue entry to target file wakeup lists queue, but dont know the queue,
+****** so it becomes the callback handled to vfs_poll, file provides the wait queue, file_operations invoke the callback with its wait queue
+***** ep_item_poll
+****** vfs_poll
+******* file->fop->poll(file, pt)
+******* for socket, it call socket_file_ops->poll -> sock_poll -> sock->ops->poll -> tcp_prot->poll -> tcp_poll -> sock_poll_wait
+******* -> poll_wait(file, &sock->wq.wait, p) -> p->qproc
+******* socket file wait queue is &sock->wq.wait
+******* invoke the poll callback when events ready
+******** for socket, tcp_data_queue -> tcp_data_ready -> sk->sk_data_ready -> sock_def_readable -> wake_up_interruptible_sync_poll
 *** link `struct epitem` to rbtree ep->rbr
     #+begin_src c
 			epi = ep_find(ep, tf.file, fd);
